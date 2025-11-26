@@ -5,10 +5,7 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 from typing import cast
 
-# import utils.gm as gm
-# import utils.misc as misc
-# from interface.songDisplay import SongDisplay
-# from utils import eventList
+from interface.program.patternViewFrame import PatternViewFrame
 
 PROGRAM_NAME = "TMidiTracker"
 
@@ -41,12 +38,11 @@ _logger = logging.getLogger(__name__)
 
 root = tk.Tk()
 root.title(PROGRAM_NAME)
-root.state('zoomed')
+root.state("zoomed")
 # root.geometry("800x600")
 root.option_add("*tearOff", False)
 
-
-
+PatternViewFrame(root).pack(fill="both", expand=True)
 
 
 root.mainloop()
