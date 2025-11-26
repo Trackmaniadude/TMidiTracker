@@ -1,0 +1,4 @@
+.venv
+INSTALLED
+Makefile
+*.code-workspace
