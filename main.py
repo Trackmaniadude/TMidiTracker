@@ -10,14 +10,14 @@ from typing import cast
 # from interface.songDisplay import SongDisplay
 # from utils import eventList
 
-PROGRAM_NAME = "TMidiRemapper"
+PROGRAM_NAME = "TMidiTracker"
 
 parser = argparse.ArgumentParser(
     prog=PROGRAM_NAME,
-    description="Remap instruments in midi files, as well as other modifications.",
+    description="Midi tracker.",
 )
 
-parser.add_argument("-f", "--file", help="File to open on start.")
+# parser.add_argument("-f", "--file", help="File to open on start.")
 
 loggerGroup = parser.add_mutually_exclusive_group()
 loggerGroup.add_argument(
@@ -41,7 +41,8 @@ _logger = logging.getLogger(__name__)
 
 root = tk.Tk()
 root.title(PROGRAM_NAME)
-root.geometry("800x600")
+root.state('zoomed')
+# root.geometry("800x600")
 root.option_add("*tearOff", False)
 
 
