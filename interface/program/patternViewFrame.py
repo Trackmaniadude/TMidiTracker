@@ -4,12 +4,21 @@ AKA the main editing window.
 """
 
 import tkinter as tk
+from dataclasses import dataclass
 from tkinter import ttk
 
-from interface.program.patternView import PatternView
+from interface.program.patternView import PVLM, PatternView
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from structures import program
 from utils.constants import CHANNEL_COUNT, DRUM_CHANNEL
+
+
+@dataclass
+class Target:
+    channel: int
+    row: int
+    column: PVLM
+    subcolumn: int
 
 
 class PatternViewFrame(ttk.Frame):
@@ -22,15 +31,22 @@ class PatternViewFrame(ttk.Frame):
         self.__content = sf.content
         self.row = 0
 
+        self.target: Target = Target(2, 3, PVLM.VELOCITY, 1)
+
         self.views: list[PatternView] = list()
 
         for channel in range(CHANNEL_COUNT):
             view = PatternView(
-                self.__content, program.currentSong.getPattern(channel, 0)
+                self.__content, self, program.currentSong.getPattern(channel, 0)
             )
             self.views.append(view)
 
         self.showChannels()
+
+    def setTarget(self, channel: int, row: int, column: PVLM, subcolumn: int):
+        self.target = Target(channel, row, column, subcolumn)
+        for view in self.views:
+            view.refreshLabels()
 
     def showChannels(self):
         for view in self.views:

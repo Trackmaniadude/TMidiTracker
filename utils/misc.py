@@ -29,3 +29,9 @@ def mapRange(a, b, c, d, i: float):
     if b - a == 0:
         return (0.5 * (d - c)) + c
     return (((i - a) / (b - a)) * (d - c)) + c
+
+
+def clamp(v, v1, v2):
+    mn = min(v1, v2)
+    mx = max(v1, v2)
+    return max(mn, min(mx, v))

@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from structures.song import Song
     from structures.channel import Channel
     from structures.pattern import Pattern
+    from interface.program.patternViewFrame import PatternViewFrame
 
 import tkinter as tk
 from tkinter import ttk
@@ -101,14 +102,16 @@ class PatternViewLabel(ttk.Label):
 
         self.inputing: bool = False
 
-        self.entry = ttk.Entry(self, width=width)
+        self.entryVar = tk.StringVar(self)
+        self.entry = ttk.Entry(self, width=width, textvariable=self.entryVar)
+
+        self.lastStyle = ""
 
         self.bind("<FocusIn>", lambda *_: self.startEntry())
         if mode == PVLM.NOTE:
 
             def press(note: int | Literal["stop"] | None):
                 def onEvent(*_):
-                    print(note, self.view.pattern.channel.channel)
                     if type(note) is int:
                         n = note + (program.currentOctave * NOTES_PER_OCTAVE)
                         if program.playbackInEdit:
@@ -150,11 +153,14 @@ class PatternViewLabel(ttk.Label):
         else:
             self.entry.bind("<FocusOut>", lambda *_: self.endEntry())
 
-    def noteEntryEventHandler(self):
-        pass
-
     def startEntry(self):
         self.inputing = True
+        self.view.viewFrame.setTarget(
+            self.view.pattern.channel.channel,
+            self.row,
+            self.mode,
+            self.column,
+        )
         if self.mode == PVLM.NOTE:
             pass
         else:
@@ -169,7 +175,7 @@ class PatternViewLabel(ttk.Label):
         else:
             self.entry.grid_forget()
 
-            value = self.entry.get()
+            value = self.entryVar.get()
             try:
                 if value == "":
                     value = None
@@ -190,13 +196,36 @@ class PatternViewLabel(ttk.Label):
         else:
             text = self.mode.value.toView(value, self.view.pattern.channel.channel)
         self.config(text=text)
+        self.entryVar.set(text)
+
+        # Highlight
+        target = self.view.viewFrame.target
+        highlight = False
+        if self.row == target.row:
+            highlight = True
+        elif self.view.pattern.channel.channel == target.channel:
+            if self.mode == target.column:
+                if self.column == target.subcolumn:
+                    highlight = True
+        if self.row % program.currentSong.majorSubdiv == 0:
+            style = "NoteMajorTarget" if highlight else "NoteMajor"
+        elif self.row % program.currentSong.minorSubdiv == 0:
+            style = "NoteMinorTarget" if highlight else "NoteMinor"
+        else:
+            style = "NoteTarget" if highlight else "Note"
+        if style != self.lastStyle:
+            self.config(style=style + ".TLabel")
+            self.lastStyle = style
 
 
 class PatternView(ttk.Frame):
-    def __init__(self, parent: tk.Misc, initialPattern: Pattern):
+    def __init__(
+        self, parent: tk.Misc, viewFrame: PatternViewFrame, initialPattern: Pattern
+    ):
         super().__init__(parent, borderwidth=1, relief="raised")
 
         self.pattern: Pattern = initialPattern
+        self.viewFrame: PatternViewFrame = viewFrame
 
         self.__labels: set[PatternViewLabel] = set()
 

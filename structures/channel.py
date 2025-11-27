@@ -4,7 +4,7 @@ Contains channel information and channel playback state.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -17,7 +17,8 @@ from utils.reactiveClass import ReactiveClass
 
 @dataclass
 class ChannelPlaybackState:
-    velocity: int = 64
+    velocities: dict[int, int] = field(default_factory=lambda: dict())
+    """Current velocity for each subchannel."""
 
 
 class Channel(ReactiveClass):

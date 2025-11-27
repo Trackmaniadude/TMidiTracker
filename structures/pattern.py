@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from structures.channel import Channel
 
 from structures import program
+from utils.misc import clamp
 from utils.reactiveClass import ReactiveClass
 from utils.types import *
 
@@ -36,7 +37,10 @@ class Pattern(ReactiveClass):
         if note is None and (row, column) in self.notes:
             del self.notes[row, column]
         if note is not None:
-            self.notes[row, column] = note
+            if type(note) is int:
+                self.notes[row, column] = clamp(note, 0, 127)
+            else:
+                self.notes[row, column] = note
 
     def getVelocity(self, row: int, column: int) -> velocity | None:
         return self.velocities.get((row, column))
@@ -45,7 +49,7 @@ class Pattern(ReactiveClass):
         if velocity is None and (row, column) in self.velocities:
             del self.notes[row, column]
         if velocity is not None:
-            self.velocities[row, column] = velocity
+            self.velocities[row, column] = clamp(velocity, 0, 127)
 
     def getEffect(self, row: int, column: int) -> effect | None:
         return self.effects.get((row, column))
