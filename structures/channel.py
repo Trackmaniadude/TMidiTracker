@@ -4,6 +4,7 @@ Contains channel information and channel playback state.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -12,6 +13,11 @@ if TYPE_CHECKING:
 
 from structures import program
 from utils.reactiveClass import ReactiveClass
+
+
+@dataclass
+class ChannelPlaybackState:
+    velocity: int = 64
 
 
 class Channel(ReactiveClass):
@@ -23,3 +29,5 @@ class Channel(ReactiveClass):
 
         self.noteColumns = 2
         self.effectColumns = 1
+
+        self.playbackState = ChannelPlaybackState()

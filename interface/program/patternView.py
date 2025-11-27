@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 import tkinter as tk
 from tkinter import ttk
 
+import mido
+
 from structures import program
 from utils.constants import (
     KEYBOARD_MAP,
@@ -45,7 +47,11 @@ class PatternViewLabelModes(Enum):
         setter="setNote",
         getter="getNote",
         fromView=lambda _: _,
-        toView=lambda v: "STP" if v == "stop" else NOTE_NAMES_SHARP[v % NOTES_PER_OCTAVE] + str(v // NOTES_PER_OCTAVE),
+        toView=lambda v: (
+            "STP"
+            if v == "stop"
+            else NOTE_NAMES_SHARP[v % NOTES_PER_OCTAVE] + str(v // NOTES_PER_OCTAVE)
+        ),
     )
     VELOCITY = PatternViewLabelMode(
         velocity,
@@ -93,20 +99,48 @@ class PatternViewLabel(ttk.Label):
 
         self.bind("<FocusIn>", lambda *_: self.startEntry())
         if mode == PVLM.NOTE:
-            for key, note in KEYBOARD_MAP.items():
 
-                def f(note):
-                    # There's probably a better way to do this
-                    # Make the lambda "remember" what note was
-
-                    def onEvent(*_):
+            def press(note: int | Literal["stop"] | None):
+                def onEvent(*_):
+                    print(_)
+                    if type(note) is int:
                         n = note + (program.currentOctave * NOTES_PER_OCTAVE)
-                        self.view.pattern.setNote(self.row, self.column, n)
-                        self.refresh()
+                        if program.playbackInEdit:
+                            message = mido.Message(
+                                "note_on",
+                                channel=self.view.pattern.channel.channel,
+                                note=n,
+                                velocity=64,
+                            )
+                            program.currentPort.send(message)
+                    else:
+                        n = note
+                    self.view.pattern.setNote(self.row, self.column, n)
+                    self.refresh()
 
-                    return onEvent
+                return onEvent
 
-                self.bind(key, f(note))
+            def release(note):
+                def onEvent(*_):
+                    print(_, note, type(note))
+                    if type(note) is int:
+                        n = note + (program.currentOctave * NOTES_PER_OCTAVE)
+                        message = mido.Message(
+                            "note_off",
+                            channel=self.view.pattern.channel.channel,
+                            note=n,
+                            velocity=0,
+                        )
+                        program.currentPort.send(message)
+
+                return onEvent
+
+            for key, note in KEYBOARD_MAP.items():
+                self.bind(f"<KeyPress-{key}>", press(note))
+                self.bind(f"<KeyRelease-{key}>", release(note))
+            self.bind(f"<Tab>", press("stop"))
+            self.bind(f"<BackSpace>", press(None))
+            self.bind(f"<Delete>", press(None))
             self.bind("<FocusOut>", lambda *_: self.endEntry())
         else:
             self.entry.bind("<FocusOut>", lambda *_: self.endEntry())

@@ -42,6 +42,9 @@ root.title(PROGRAM_NAME)
 root.state("zoomed")
 # root.geometry("800x600")
 root.option_add("*tearOff", False)
+root.unbind_all("<Tab>")
+root.unbind_all("<<NextWindow>>")
+root.unbind_all("<<PrevWindow>>")
 
 from interface import theme
 
@@ -54,6 +57,10 @@ def focus(event):
 
 
 root.bind_all("<Button-1>", focus)
+# root.bind_all(
+#     "<Space>",
+#     lambda *_: setattr(program, "allowEditingPattern", not program.allowEditingPattern),
+# )
 
 
 PatternViewFrame(root).pack(fill="both", expand=True)
