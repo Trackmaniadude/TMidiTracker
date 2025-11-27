@@ -12,6 +12,21 @@ class ReactiveClass:
         self.Changed: Event[[str, Any, Any]] = Event()
         """Fired when any attribute is changed. (name: str, old: Any, new: Any)"""
 
+    def getPropertyChangedEvent(self, name: str) -> Event[[Any, Any]]:
+        """
+        Get an event that fires when a specific property is changed.
+        Event args: (old: Any, new: Any)
+        """
+        # TODO: Is there a way to type the event?
+        e = Event()
+
+        def h(changedName: str, old: Any, new: Any):
+            if name == changedName:
+                e.fire(old, new)
+
+        self.Changed.connect(h)
+        return e
+
     def __setattr__(self, name: str, value: Any) -> None:
         # Only act on existing values
         if hasattr(self, name):

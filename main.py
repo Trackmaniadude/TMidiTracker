@@ -48,6 +48,14 @@ root.unbind_all("<<PrevWindow>>")
 
 from interface import theme
 
+menubar = tk.Menu(root)
+root["menu"] = menubar
+
+testMenu = tk.Menu(menubar)
+menubar.add_cascade(menu=testMenu, label="Menu")
+testMenu.add_command(label="Play", command=lambda: program.songPlayer.play())
+testMenu.add_command(label="Pause", command=lambda: program.songPlayer.pause())
+
 
 def focus(event):
     try:

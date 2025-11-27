@@ -15,10 +15,12 @@ class Song(ReactiveClass):
     def __init__(self) -> None:
         super().__init__()
 
-        self.displayChannelCount = 4
-        self.patternLength = 32
-        self.majorSubdiv = 16
-        self.minorSubdiv = 4
+        self.displayChannelCount: int = 4
+        self.patternLength: int = 32
+        self.majorSubdiv: int = 16
+        self.minorSubdiv: int = 4
+        self.clock: float = 60
+        self.groove: list[int] = [4]
 
         self.channels: list[Channel] = [Channel(self, i) for i in range(CHANNEL_COUNT)]
         self.patterns: dict[tuple[int, int], Pattern] = dict()

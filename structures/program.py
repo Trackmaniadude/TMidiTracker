@@ -4,10 +4,13 @@ Singleton class maintaining program state.
 
 import mido
 
+from structures.player import Player
 from structures.song import Song
 
 currentPortName: str = mido.get_output_names()[0]  # type: ignore
 currentPort: mido.ports.BaseOutput = mido.open_output(currentPortName)  # type: ignore
+
+songPlayer: Player = Player()
 
 currentSong: Song = Song()
 """Current active song object."""
