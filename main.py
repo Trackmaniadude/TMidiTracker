@@ -60,3 +60,4 @@ PatternViewFrame(root).pack(fill="both", expand=True)
 
 
 root.mainloop()
+program.close()

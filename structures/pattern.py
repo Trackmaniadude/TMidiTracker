@@ -24,20 +24,31 @@ class Pattern(ReactiveClass):
 
         self.notes: dict[tuple[int, int], note] = dict()
         """Play note/stop note commands. (Does not directly map to midi)"""
+        self.velocities: dict[tuple[int, int], velocity] = dict()
+        """Note velocities. Notes use the most recent velocity command."""
         self.effects: dict[tuple[int, int], effect] = dict()
         """Tracker effects, like vibrato and playback control. Some effects may map to midi messages."""
 
     def getNote(self, row: int, column: int) -> note | None:
         return self.notes.get((row, column))
 
-    def getEffect(self, row: int, column: int) -> effect | None:
-        return self.effects.get((row, column))
-
     def setNote(self, row: int, column: int, note: note | None):
         if note is None and (row, column) in self.notes:
             del self.notes[row, column]
         if note is not None:
             self.notes[row, column] = note
+
+    def getVelocity(self, row: int, column: int) -> velocity | None:
+        return self.velocities.get((row, column))
+
+    def setVelocity(self, row: int, column: int, velocity: velocity | None):
+        if velocity is None and (row, column) in self.velocities:
+            del self.notes[row, column]
+        if velocity is not None:
+            self.velocities[row, column] = velocity
+
+    def getEffect(self, row: int, column: int) -> effect | None:
+        return self.effects.get((row, column))
 
     def setEffect(self, row: int, column: int, effect: effect | None):
         if effect is None and (row, column) in self.effects:
