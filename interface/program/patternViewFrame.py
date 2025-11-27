@@ -22,7 +22,7 @@ class PatternViewFrame(ttk.Frame):
         self.__content = sf.content
 
         for channel in range(CHANNEL_COUNT):
-            view = PatternView(self.__content)
+            view = PatternView(
+                self.__content, program.currentSong.getPattern(channel, 0)
+            )
             view.pack(side="left", expand=True)
-
-            view.setPattern(program.currentSong.getPattern(channel, 0))

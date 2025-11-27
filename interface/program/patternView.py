@@ -32,10 +32,10 @@ class PatternViewLabel(ttk.Label):
 
 
 class PatternView(ttk.Frame):
-    def __init__(self, parent: tk.Misc):
+    def __init__(self, parent: tk.Misc, initialPattern: Pattern):
         super().__init__(parent, borderwidth=1, relief="raised")
 
-        self.__pattern: Pattern | None = None
+        self.__pattern: Pattern = initialPattern
 
         self.__labels: dict[tuple[int, int], ttk.Label] = dict()
 
@@ -48,17 +48,13 @@ class PatternView(ttk.Frame):
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
 
+        self.buildLabels()
+
     def buildLabels(self):
         # Remove old labels
         for key, label in self.__labels.items():
             label.destroy()
             del self.__labels[key]
-
-        if self.__pattern is None:
-            label = ttk.Label(self.noteFrame, text="NO PATTERN")
-            label.grid(row=0, column=0, columnspan=100, sticky="we")
-            self.__labels[0, 0] = label
-            return
 
         # Notes
         rows = program.currentSong.patternLength
@@ -78,6 +74,6 @@ class PatternView(ttk.Frame):
                 label.grid(row=row, column=column)
                 self.__labels[row, column] = label
 
-    def setPattern(self, pattern: Pattern | None):
+    def setPattern(self, pattern: Pattern):
         self.__pattern = pattern
         self.buildLabels()
