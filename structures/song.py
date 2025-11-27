@@ -15,6 +15,7 @@ class Song(ReactiveClass):
     def __init__(self) -> None:
         super().__init__()
 
+        self.displayChannelCount = 4
         self.patternLength = 32
         self.majorSubdiv = 16
         self.minorSubdiv = 4

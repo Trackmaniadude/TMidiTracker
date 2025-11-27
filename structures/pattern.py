@@ -26,3 +26,21 @@ class Pattern(ReactiveClass):
         """Play note/stop note commands. (Does not directly map to midi)"""
         self.effects: dict[tuple[int, int], effect] = dict()
         """Tracker effects, like vibrato and playback control. Some effects may map to midi messages."""
+
+    def getNote(self, row: int, column: int) -> note | None:
+        return self.notes.get((row, column))
+
+    def getEffect(self, row: int, column: int) -> effect | None:
+        return self.effects.get((row, column))
+
+    def setNote(self, row: int, column: int, note: note | None):
+        if note is None and (row, column) in self.notes:
+            del self.notes[row, column]
+        if note is not None:
+            self.notes[row, column] = note
+
+    def setEffect(self, row: int, column: int, effect: effect | None):
+        if effect is None and (row, column) in self.effects:
+            del self.effects[row, column]
+        if effect is not None:
+            self.effects[row, column] = effect

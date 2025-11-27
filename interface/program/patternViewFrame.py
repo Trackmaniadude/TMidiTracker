@@ -9,7 +9,6 @@ from tkinter import ttk
 from interface.program.patternView import PatternView
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from structures import program
-from utils.constants import CHANNEL_COUNT
 
 
 class PatternViewFrame(ttk.Frame):
@@ -20,9 +19,19 @@ class PatternViewFrame(ttk.Frame):
         sf.pack(fill="both", expand=True)
 
         self.__content = sf.content
+        self.row = 0
 
-        for channel in range(CHANNEL_COUNT):
+        self.views: list[PatternView] = list()
+
+        for channel in range(program.currentSong.displayChannelCount):
             view = PatternView(
                 self.__content, program.currentSong.getPattern(channel, 0)
             )
             view.pack(side="left", expand=True)
+            self.views.append(view)
+
+    def setRow(self, row: int):
+        self.row = row
+
+        for channel, view in enumerate(self.views):
+            view.setPattern(program.currentSong.getPatternByLocation(channel, row))

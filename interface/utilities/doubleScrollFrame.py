@@ -23,7 +23,7 @@ class DScrollFrame(ttk.Frame):
         self.isVertical = mode == "DOUBLE" or mode == "VERTICAL"
 
         # Create elements
-        self.__canvas = tk.Canvas(self, background="white")
+        self.__canvas = tk.Canvas(self, highlightthickness=0)
         self.__canvas.grid(row=0, column=0, sticky="nesw")
 
         self.__canvas.scan_mark(0, 0)

@@ -43,6 +43,17 @@ root.state("zoomed")
 # root.geometry("800x600")
 root.option_add("*tearOff", False)
 
+
+def focus(event):
+    try:
+        event.widget.focus_set()
+    except AttributeError:
+        pass
+
+
+root.bind_all("<Button-1>", focus)
+
+
 PatternViewFrame(root).pack(fill="both", expand=True)
 
 
