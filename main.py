@@ -6,6 +6,7 @@ from tkinter import filedialog, ttk
 from typing import cast
 
 from interface.program.patternViewFrame import PatternViewFrame
+from structures import program
 
 PROGRAM_NAME = "TMidiTracker"
 
