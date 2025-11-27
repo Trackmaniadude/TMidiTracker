@@ -1,5 +1,7 @@
 CHANNEL_COUNT = 16
 
+DRUM_CHANNEL = 9
+
 NOTES_PER_OCTAVE = 12
 
 KEYBOARD_MAP: dict[str, int] = dict()

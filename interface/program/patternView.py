@@ -20,6 +20,8 @@ import mido
 
 from structures import program
 from utils.constants import (
+    DRUM_CHANNEL,
+    DRUM_NAMES,
     KEYBOARD_MAP,
     NOTE_NAMES_FLAT,
     NOTE_NAMES_SHARP,
@@ -36,7 +38,7 @@ class PatternViewLabelMode[T]:
     setter: str
     getter: str
     fromView: Callable[[str], T]
-    toView: Callable[[T], str]
+    toView: Callable[[T, int], str]
 
 
 class PatternViewLabelModes(Enum):
@@ -47,10 +49,14 @@ class PatternViewLabelModes(Enum):
         setter="setNote",
         getter="getNote",
         fromView=lambda _: _,
-        toView=lambda v: (
+        toView=lambda v, c: (
             "STP"
             if v == "stop"
-            else NOTE_NAMES_SHARP[v % NOTES_PER_OCTAVE] + str(v // NOTES_PER_OCTAVE)
+            else (
+                NOTE_NAMES_SHARP[v % NOTES_PER_OCTAVE] + str(v // NOTES_PER_OCTAVE)
+                if c != DRUM_CHANNEL
+                else DRUM_NAMES[v]
+            )
         ),
     )
     VELOCITY = PatternViewLabelMode(
@@ -60,7 +66,7 @@ class PatternViewLabelModes(Enum):
         setter="setVelocity",
         getter="getVelocity",
         fromView=lambda s: int(s, 16),
-        toView=lambda v: hex(v)[2:].upper(),
+        toView=lambda v, _: hex(v)[2:].upper(),
     )
     EFFECT = PatternViewLabelMode(
         effect,
@@ -69,7 +75,7 @@ class PatternViewLabelModes(Enum):
         setter="setEffect",
         getter="getEffect",
         fromView=lambda _: _,
-        toView=lambda _: _,
+        toView=lambda *_: _,
     )
 
 
@@ -102,7 +108,7 @@ class PatternViewLabel(ttk.Label):
 
             def press(note: int | Literal["stop"] | None):
                 def onEvent(*_):
-                    print(_)
+                    print(note, self.view.pattern.channel.channel)
                     if type(note) is int:
                         n = note + (program.currentOctave * NOTES_PER_OCTAVE)
                         if program.playbackInEdit:
@@ -122,7 +128,6 @@ class PatternViewLabel(ttk.Label):
 
             def release(note):
                 def onEvent(*_):
-                    print(_, note, type(note))
                     if type(note) is int:
                         n = note + (program.currentOctave * NOTES_PER_OCTAVE)
                         message = mido.Message(
@@ -183,7 +188,7 @@ class PatternViewLabel(ttk.Label):
         if value is None:
             text = ""
         else:
-            text = self.mode.value.toView(value)
+            text = self.mode.value.toView(value, self.view.pattern.channel.channel)
         self.config(text=text)
 
 

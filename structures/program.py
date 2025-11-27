@@ -12,7 +12,7 @@ currentPort: mido.ports.BaseOutput = mido.open_output(currentPortName)  # type: 
 currentSong: Song = Song()
 """Current active song object."""
 
-currentOctave: int = 5
+currentOctave: int = 4
 """Base octave for entering notes."""
 
 allowEditingPattern: bool = False
