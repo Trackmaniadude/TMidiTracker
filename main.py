@@ -43,6 +43,8 @@ root.state("zoomed")
 # root.geometry("800x600")
 root.option_add("*tearOff", False)
 
+from interface import theme
+
 
 def focus(event):
     try:
