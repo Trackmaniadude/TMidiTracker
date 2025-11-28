@@ -116,15 +116,15 @@ class PatternViewLabel(ttk.Label):
             def press(note: int | Literal["stop"] | None):
                 def onEvent(*_):
                     if type(note) is int:
-                        n = note + (program.currentOctave * NOTES_PER_OCTAVE)
-                        if program.playbackInEdit:
+                        n = note + (program.p.currentOctave * NOTES_PER_OCTAVE)
+                        if program.p.playbackInEdit:
                             message = mido.Message(
                                 "note_on",
                                 channel=self.view.pattern.channel.channel,
                                 note=n,
                                 velocity=64,
                             )
-                            program.currentPort.send(message)
+                            program.p.currentPort.send(message)
                     else:
                         n = note
                     self.view.pattern.setNote(self.row, self.column, n)
@@ -135,14 +135,14 @@ class PatternViewLabel(ttk.Label):
             def release(note):
                 def onEvent(*_):
                     if type(note) is int:
-                        n = note + (program.currentOctave * NOTES_PER_OCTAVE)
+                        n = note + (program.p.currentOctave * NOTES_PER_OCTAVE)
                         message = mido.Message(
                             "note_off",
                             channel=self.view.pattern.channel.channel,
                             note=n,
                             velocity=0,
                         )
-                        program.currentPort.send(message)
+                        program.p.currentPort.send(message)
 
                 return onEvent
 
@@ -210,9 +210,9 @@ class PatternViewLabel(ttk.Label):
             if self.mode == target.column:
                 if self.column == target.subcolumn:
                     highlight = True
-        if self.row % program.currentSong.majorSubdiv == 0:
+        if self.row % program.p.currentSong.majorSubdiv == 0:
             style = "NoteMajorTarget" if highlight else "NoteMajor"
-        elif self.row % program.currentSong.minorSubdiv == 0:
+        elif self.row % program.p.currentSong.minorSubdiv == 0:
             style = "NoteMinorTarget" if highlight else "NoteMinor"
         else:
             style = "NoteTarget" if highlight else "Note"
@@ -251,7 +251,7 @@ class PatternView(ttk.Frame):
             label.destroy()
 
         # Notes
-        rows = program.currentSong.patternLength
+        rows = program.p.currentSong.patternLength
         notes = self.pattern.channel.noteColumns
         effects = self.pattern.channel.effectColumns
 

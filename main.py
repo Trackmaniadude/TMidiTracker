@@ -55,8 +55,8 @@ root["menu"] = menubar
 
 testMenu = tk.Menu(menubar)
 menubar.add_cascade(menu=testMenu, label="Menu")
-testMenu.add_command(label="Play", command=lambda: program.songPlayer.play())
-testMenu.add_command(label="Pause", command=lambda: program.songPlayer.pause())
+testMenu.add_command(label="Play", command=lambda: program.p.songPlayer.play())
+testMenu.add_command(label="Pause", command=lambda: program.p.songPlayer.pause())
 
 
 def focus(event):
@@ -79,4 +79,4 @@ PatternList(root).pack(side="left")
 
 
 root.mainloop()
-program.close()
+program.p.close()

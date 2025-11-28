@@ -26,8 +26,8 @@ class Player:
             while True:
                 self.resume.wait()
 
-                tickLength = 1 / program.currentSong.clock
-                ticks = program.currentSong.groove[0]
+                tickLength = 1 / program.p.currentSong.clock
+                ticks = program.p.currentSong.groove[0]
 
                 print(time.time())
 

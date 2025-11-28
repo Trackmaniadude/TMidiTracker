@@ -40,7 +40,7 @@ class PatternViewFrame(ttk.Frame):
 
         for channel in range(CHANNEL_COUNT):
             view = PatternView(
-                self.__content, self, program.currentSong.getPattern(channel, 0)
+                self.__content, self, program.p.currentSong.getPattern(channel, 0)
             )
             self.views.append(view)
 
@@ -55,7 +55,7 @@ class PatternViewFrame(ttk.Frame):
         for view in self.views:
             view.pack_forget()
         self.views[DRUM_CHANNEL].pack(side="left", expand=True)
-        for i in range(program.currentSong.displayChannelCount):
+        for i in range(program.p.currentSong.displayChannelCount):
             if i == DRUM_CHANNEL:
                 continue
             view = self.views[i]
@@ -65,4 +65,4 @@ class PatternViewFrame(ttk.Frame):
         self.row = row
 
         for channel, view in enumerate(self.views):
-            view.setPattern(program.currentSong.getPatternByLocation(channel, row))
+            view.setPattern(program.p.currentSong.getPatternByLocation(channel, row))
