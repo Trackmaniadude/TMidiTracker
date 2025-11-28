@@ -7,8 +7,11 @@ import mido
 from structures.player import Player
 from structures.song import Song
 
-currentPortName: str = mido.get_output_names()[0]  # type: ignore
-currentPort: mido.ports.BaseOutput = mido.open_output(currentPortName)  # type: ignore
+# fmt: off
+currentPortName: str = mido.get_output_names()[0] # pyright: ignore[reportAttributeAccessIssue]
+currentPort: mido.ports.BaseOutput = mido.open_output(currentPortName)  # pyright: ignore[reportAttributeAccessIssue]
+# fmt: on
+# TODO: handle no port connected
 
 songPlayer: Player = Player()
 
@@ -23,6 +26,9 @@ allowEditingPattern: bool = False
 
 playbackInEdit: bool = True
 """When entering a note, play it."""
+
+currentMatrixRow: int = 0
+currentPatternRow: int = 0
 
 
 def close():

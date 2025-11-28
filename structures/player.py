@@ -9,6 +9,10 @@ from structures import program  # Note: Can't use during init
 
 
 class Player:
+    """
+    Provides live playback of song data.
+    """
+
     def __init__(self):
 
         self.resume = Event()

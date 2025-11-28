@@ -12,6 +12,11 @@ from utils.reactiveClass import ReactiveClass
 
 
 class Song(ReactiveClass):
+    """
+    Contains data pertaining to the song itself.
+    (Anything in here makes sense to save to file.)
+    """
+
     def __init__(self) -> None:
         super().__init__()
 

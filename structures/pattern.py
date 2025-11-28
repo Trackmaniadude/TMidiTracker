@@ -17,6 +17,10 @@ from utils.types import *
 
 
 class Pattern(ReactiveClass):
+    """
+    Contains pattern data, such as notes and effects.
+    """
+
     def __init__(self, song: Song, channel: Channel) -> None:
         super().__init__()
 
