@@ -5,6 +5,8 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 from typing import cast
 
+from interface.program.patternList import PatternList
+from interface.program.patternMatrix import PatternMatrix
 from interface.program.patternViewFrame import PatternViewFrame
 from structures import program
 
@@ -71,7 +73,9 @@ root.bind_all("<Button-1>", focus)
 # )
 
 
-PatternViewFrame(root).pack(fill="both", expand=True)
+PatternViewFrame(root).pack(side="bottom", fill="both", expand=True)
+PatternMatrix(root).pack(side="left")
+PatternList(root).pack(side="left")
 
 
 root.mainloop()
