@@ -4,11 +4,15 @@ Contains song information such as speed, pattern length, and author.
 Also contains a grid of pattern references, as well as a pattern table.
 """
 
+import logging
+
 from structures import program
 from structures.channel import Channel
 from structures.pattern import Pattern
 from utils.constants import CHANNEL_COUNT
 from utils.reactiveClass import ReactiveClass
+
+_logger = logging.getLogger(__name__)
 
 
 class Song(ReactiveClass):
@@ -32,6 +36,8 @@ class Song(ReactiveClass):
         """Pattern lookup. (channel number, pattern number) -> Pattern"""
         self.patternTable: dict[tuple[int, int], int] = dict()
         """Locational pattern reference. (channel (x), row (y)) -> pattern number"""
+
+        self.setupContainerListen()
 
     def getPattern(self, channel: int, pattern: int) -> Pattern:
         """Get pattern by its number for a given channel. Makes a new one if it does not exist."""

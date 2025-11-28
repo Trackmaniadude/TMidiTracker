@@ -3,6 +3,7 @@ Horizontal list of each channels' current pattern.
 AKA the main editing window.
 """
 
+import logging
 import tkinter as tk
 from dataclasses import dataclass
 from tkinter import ttk
@@ -11,6 +12,8 @@ from interface.program.patternView import PVLM, PatternView
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from structures import program
 from utils.constants import CHANNEL_COUNT, DRUM_CHANNEL
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -23,7 +26,7 @@ class Target:
 
 class PatternViewFrame(ttk.Frame):
     def __init__(self, parent: tk.Misc):
-        super().__init__(parent)
+        super().__init__(parent, relief="raised", borderwidth=2)
 
         sf = DScrollFrame(self, mode="DOUBLE")
         sf.pack(fill="both", expand=True)

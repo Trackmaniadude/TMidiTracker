@@ -10,10 +10,14 @@ if TYPE_CHECKING:
     from structures.song import Song
     from structures.channel import Channel
 
+import logging
+
 from structures import program
 from utils.misc import clamp
 from utils.reactiveClass import ReactiveClass
 from utils.types import *
+
+_logger = logging.getLogger(__name__)
 
 
 class Pattern(ReactiveClass):
@@ -33,6 +37,8 @@ class Pattern(ReactiveClass):
         """Note velocities. Notes use the most recent velocity command."""
         self.effects: dict[tuple[int, int], effect] = dict()
         """Tracker effects, like vibrato and playback control. Some effects may map to midi messages."""
+
+        self.setupContainerListen()
 
     def getNote(self, row: int, column: int) -> note | None:
         return self.notes.get((row, column))

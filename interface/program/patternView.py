@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from structures.pattern import Pattern
     from interface.program.patternViewFrame import PatternViewFrame
 
+import logging
 import tkinter as tk
 from tkinter import ttk
 
@@ -29,6 +30,8 @@ from utils.constants import (
     NOTES_PER_OCTAVE,
 )
 from utils.types import *
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass

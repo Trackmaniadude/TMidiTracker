@@ -16,6 +16,9 @@ import mido
 from structures import program
 from utils.reactiveClass import ReactiveClass
 
+import logging
+_logger = logging.getLogger(__name__)
+
 
 @dataclass
 class ChannelPlaybackState:
@@ -38,6 +41,8 @@ class Channel(ReactiveClass):
         self.effectColumns = 1
 
         self.playbackState = ChannelPlaybackState()
+
+        self.setupContainerListen()
 
     def tick(self, read: bool) -> list[mido.Message | mido.MetaMessage]:
         """
