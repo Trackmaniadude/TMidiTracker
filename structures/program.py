@@ -11,6 +11,8 @@ from utils.reactiveClass import ReactiveClass
 
 class Program(ReactiveClass):
     def __init__(self):
+        super().__init__()
+        
         # fmt: off
         self.currentPortName: str = mido.get_output_names()[0] # pyright: ignore[reportAttributeAccessIssue]
         self.currentPort: mido.ports.BaseOutput = mido.open_output(self.currentPortName)  # pyright: ignore[reportAttributeAccessIssue]
