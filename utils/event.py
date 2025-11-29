@@ -46,5 +46,5 @@ class Event[**P]:
 
     def fire(self, *args: P.args, **kwargs: P.kwargs):
         """Fire the event (calls all registered callbacks with the provided arguments)"""
-        for con in self.__connections:
+        for con in list(self.__connections):
             con.callback(*args, **kwargs)
