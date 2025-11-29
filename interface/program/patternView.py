@@ -213,13 +213,13 @@ class PatternViewLabel(ttk.Label):
                 if self.column == target.subcolumn:
                     highlight = True
 
-        
         if self.row % program.p.currentSong.majorSubdiv == 0:
             style = Note.MajorTarget if highlight else Note.Major
         elif self.row % program.p.currentSong.minorSubdiv == 0:
             style = Note.MinorTarget if highlight else Note.Minor
         else:
             style = Note.DefaultTarget if highlight else Note.Default
+
         if style != self.lastStyle:
             self.config(style=cast(str, style))
             self.lastStyle = style

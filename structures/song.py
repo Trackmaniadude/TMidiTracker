@@ -24,8 +24,8 @@ class Song(ReactiveClass):
     def __init__(self) -> None:
         super().__init__()
 
-        self.visibleChannels: int = 4
-        self.visibleMatrixRows: int = 4
+        self.visibleChannels: int = 5
+        self.visibleMatrixRows: int = 12
 
         self.patternLength: int = 32
         self.majorSubdiv: int = 16
@@ -39,7 +39,7 @@ class Song(ReactiveClass):
         self.patternMatrix: dict[tuple[int, int], int] = dict()
         """Locational pattern reference. (channel (x), row (y)) -> pattern number"""
 
-        self.highlightedMatrixRows: set[int] = set()
+        self.highlightedMatrixRows: set[int] = set([3, 5])
 
         self.setupContainerListen()
 

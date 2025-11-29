@@ -4,7 +4,7 @@ View/editor for the pattern matrix.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from structures.song import Song
@@ -15,6 +15,7 @@ import logging
 import tkinter as tk
 from tkinter import ttk
 
+from interface.theme import MatrixLabel
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from structures import program
 from utils.constants import CHANNEL_ORDER
@@ -61,8 +62,18 @@ class PatternSelector(ttk.Label):
         pass
 
     def refresh(self):
+        if self.row == program.p.currentMatrixRow:
+            style = MatrixLabel.Target
+        elif self.row in program.p.currentSong.highlightedMatrixRows:
+            style = MatrixLabel.Highlight
+        else:
+            style = (
+                MatrixLabel.DefaultEven
+                if self.channel % 2 == 1
+                else MatrixLabel.DefaultOdd
+            )
 
-        self.config(text=self.getPattern())
+        self.config(text=self.getPattern(), style=cast(str, style))
 
     def destroy(self) -> None:
         return super().destroy()
