@@ -17,13 +17,13 @@ class DScrollFrame(ttk.Frame):
     def __init__(
         self, parent: tk.Misc, *, mode: Literal["VERTICAL", "HORIZONTAL", "DOUBLE"]
     ):
-        super().__init__(parent)
+        super().__init__(parent, width=0, height=0)
 
         self.isHorizontal = mode == "DOUBLE" or mode == "HORIZONTAL"
         self.isVertical = mode == "DOUBLE" or mode == "VERTICAL"
 
         # Create elements
-        self.__canvas = tk.Canvas(self, highlightthickness=0)
+        self.__canvas = tk.Canvas(self, highlightthickness=0, width=0, height=0)
         self.__canvas.grid(row=0, column=0, sticky="nesw")
 
         self.__canvas.scan_mark(0, 0)
