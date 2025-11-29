@@ -62,25 +62,39 @@ def StyleBase(base: str):
     return inner
 
 
-# Create styles
+# Colormap
+class Colors:
+    class BG:
+        Default = "#FFFFFF"
+        Shade1 = "#EEEEEE"
+        Shade2 = "#CCCCCC"
+
+    class Select:
+        Default = "#DDDDFF"
+        Shade1 = "#CCCCEE"
+        Shade2 = "#AAAACC"
+
+    class Highlight:
+        Default = "#FFFFCC"
 
 
+# Styles
 @StyleBase("TLabel")
 class Note:
-    Default = BackgroundStyle("#FFFFFF")
-    Minor = BackgroundStyle("#EEEEEE")
-    Major = BackgroundStyle("#CCCCCC")
-    DefaultTarget = BackgroundStyle("#DDDDFF")
-    MinorTarget = BackgroundStyle("#CCCCEE")
-    MajorTarget = BackgroundStyle("#AAAACC")
+    Default = BackgroundStyle(Colors.BG.Default)
+    Minor = BackgroundStyle(Colors.BG.Shade1)
+    Major = BackgroundStyle(Colors.BG.Shade2)
+    DefaultTarget = BackgroundStyle(Colors.Select.Default)
+    MinorTarget = BackgroundStyle(Colors.Select.Shade1)
+    MajorTarget = BackgroundStyle(Colors.Select.Shade2)
 
 
 @StyleBase("TLabel")
 class MatrixLabel:
-    DefaultEven = BackgroundStyle("#FFFFFF")
-    DefaultOdd = BackgroundStyle("#EEEEEE")
-    Target = BackgroundStyle("#CCCCFF")
-    Highlight = BackgroundStyle("#FFFFCC")
+    DefaultEven = BackgroundStyle(Colors.BG.Default)
+    DefaultOdd = BackgroundStyle(Colors.BG.Shade1)
+    Target = BackgroundStyle(Colors.Select.Default)
+    Highlight = BackgroundStyle(Colors.Highlight.Default)
 
 
 def generate():
