@@ -43,6 +43,22 @@ class Song(ReactiveClass):
 
         self.setupContainerListen()
 
+    def getPatternID(self, pattern: Pattern) -> tuple[int, int]:
+        """Get the channel and pattern number for a given pattern."""
+        for key, testPattern in self.patternList.items():
+            if testPattern is pattern:
+                return key
+        raise Exception
+
+    def getPatternUsage(self, pattern: Pattern) -> int:
+        count = 0
+        for key, patternNumber in self.patternMatrix.items():
+            channel, row = key
+            testPattern = self.patternList.get((channel, patternNumber))
+            if testPattern is pattern:
+                count += 1
+        return count
+
     def getPatternNumberByLocation(self, channel: int, row: int) -> int:
         """
         Get the pattern number at a location in the pattern matrix. Defaults 0 if not available.
@@ -53,7 +69,10 @@ class Song(ReactiveClass):
     def setPatternNumber(self, channel: int, row: int, value: int):
         self.patternMatrix[channel, row] = value
 
-    def getPattern(self, channel: int, pattern: int) -> Pattern:
+    def patternIdExists(self, channel: int, pattern: int) -> bool:
+        return (channel, pattern) in self.patternList
+
+    def getPatternById(self, channel: int, pattern: int) -> Pattern:
         """Get pattern by its number for a given channel. Makes a new one if it does not exist."""
         if (channel, pattern) not in self.patternList:
             _logger.debug(
@@ -66,7 +85,7 @@ class Song(ReactiveClass):
         """Get pattern by its value in the pattern table. Inits to pattern 0 if not available."""
         if (channel, row) not in self.patternMatrix:
             self.patternMatrix[channel, row] = 0
-        return self.getPattern(channel, self.patternMatrix[channel, row])
+        return self.getPatternById(channel, self.patternMatrix[channel, row])
 
     # @property
     # def patternMatrixLength(self) -> int:

@@ -75,7 +75,7 @@ class PatternViewFrame(ttk.Frame):
                     view = PatternView(
                         self.__content,
                         self,
-                        program.p.currentSong.getPattern(CHANNEL_ORDER[i], 0),
+                        program.p.currentSong.getPatternById(CHANNEL_ORDER[i], 0),
                     )
                     view.pack(side="left", expand=True)
                     newList.append(view)

@@ -107,10 +107,14 @@ class PatternMatrix(ttk.Frame):
 
         # Labels
         for row in range(rows):
+            if (row, -1) in self.__labels:
+                continue
             label = ttk.Label(self.__content, text=hex(row)[2:].upper(), width=3)
             label.grid(row=row + 1, column=0)
             self.__labels[row, -1] = label
         for col in range(cols):
+            if (-1, col) in self.__labels:
+                continue
             label = ttk.Label(self.__content, text=CHANNEL_ORDER[col] + 1, width=3)
             label.grid(row=0, column=col + 1)
             self.__labels[-1, col] = label
