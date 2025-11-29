@@ -11,12 +11,13 @@ if TYPE_CHECKING:
     from structures.pattern import Pattern
     from structures.song import Song
 
+import logging
+
 import mido
 
 from structures import program
 from utils.reactiveClass import ReactiveClass
 
-import logging
 _logger = logging.getLogger(__name__)
 
 

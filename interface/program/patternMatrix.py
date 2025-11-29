@@ -2,6 +2,8 @@
 View/editor for the pattern matrix.
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -9,20 +11,104 @@ if TYPE_CHECKING:
     from structures.channel import Channel
     from structures.pattern import Pattern
 
-from interface.utilities.doubleScrollFrame import DScrollFrame
-
 import logging
 import tkinter as tk
 from tkinter import ttk
 
+from interface.utilities.doubleScrollFrame import DScrollFrame
+from structures import program
+from utils.constants import CHANNEL_ORDER
+
 _logger = logging.getLogger(__name__)
+
+
+class PatternSelector(ttk.Label):
+    def __init__(self, parent: tk.Misc, matrix: PatternMatrix, channel: int, row: int):
+        super().__init__(parent, relief="sunken")
+
+        self.matrix = matrix
+
+        self.channel = channel
+        self.row = row
+
+        self.bind("<Button-1>", lambda *_: self.increment())
+        self.bind("<Button-3>", lambda *_: self.decrement())
+
+        program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
+            lambda key, *_: self.refresh() if key == (self.channel, self.row) else None
+        )
+        self.refresh()
+
+    def getPattern(self) -> int:
+        return program.p.currentSong.getPatternNumberByLocation(self.channel, self.row)
+
+    def setPattern(self, pattern: int):
+        program.p.currentSong.setPatternNumber(self.channel, self.row, pattern)
+
+    def increment(self):
+        self.setPattern(self.getPattern() + 1)
+
+    def decrement(self):
+        self.setPattern(max(0, self.getPattern() - 1))
+
+    def beginSet(self):
+        pass
+
+    def endSet(self):
+        pass
+
+    def copyAbove(self):
+        pass
+
+    def refresh(self):
+
+        self.config(text=self.getPattern())
+
+    def destroy(self) -> None:
+        return super().destroy()
 
 
 class PatternMatrix(ttk.Frame):
     def __init__(self, parent: tk.Misc):
-        super().__init__(parent, relief="raised", width=200, height=200)
+        super().__init__(parent, relief="raised", width=300, height=200)
 
         sf = DScrollFrame(self, mode="DOUBLE")
         sf.pack(fill="both", expand=True)
 
+        self.pack_propagate(False)
+
         self.__content = sf.content
+
+        self.__labels: dict[tuple[int, int], ttk.Label] = dict()
+        """(row, col) -> PatternSelector"""
+
+        self.refresh()
+
+    def refresh(self):
+        rows = program.p.currentSong.visibleMatrixRows
+        cols = program.p.currentSong.visibleChannels
+
+        # Clear old ones
+        for p, label in self.__labels.items():
+            row, col = p
+            if row > rows or col > cols:
+                label.destroy()
+
+        # Labels
+        for row in range(rows):
+            label = ttk.Label(self.__content, text=hex(row)[2:].upper(), width=3)
+            label.grid(row=row + 1, column=0)
+            self.__labels[row, -1] = label
+        for col in range(cols):
+            label = ttk.Label(self.__content, text=CHANNEL_ORDER[col] + 1, width=3)
+            label.grid(row=0, column=col + 1)
+            self.__labels[-1, col] = label
+
+        # Edits
+        for row in range(rows):
+            for col in range(cols):
+                if (row, col) in self.__labels:
+                    continue
+                label = PatternSelector(self.__content, self, CHANNEL_ORDER[col], row)
+                label.grid(row=row + 1, column=col + 1, sticky="nesw")
+                self.__labels[row, col] = label

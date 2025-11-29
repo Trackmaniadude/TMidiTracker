@@ -20,6 +20,20 @@ class ReactiveList[TContent](ReactiveContainer):
     def __init__(self, list: list[TContent]) -> None:
         super().__init__()
         self.__container = list
+        for name in dir(dict):
+            if name.startswith("__"):
+                continue
+
+            def a(name):
+                setattr(
+                    self,
+                    name,
+                    lambda *args, **kwargs: getattr(self.__container, name)(
+                        *args, **kwargs
+                    ),
+                )
+
+            a(name)
 
     def __getitem__(self, index: int) -> TContent:
         return self.__container[index]
@@ -38,7 +52,20 @@ class ReactiveDict[TKey, TContent](ReactiveContainer):
     def __init__(self, dict: dict[TKey, TContent]) -> None:
         super().__init__()
         self.__container = dict
-        self.get = dict.get
+        for name in dir(dict):
+            if name.startswith("__"):
+                continue
+
+            def a(name):
+                setattr(
+                    self,
+                    name,
+                    lambda *args, **kwargs: getattr(self.__container, name)(
+                        *args, **kwargs
+                    ),
+                )
+
+            a(name)
 
     def __getitem__(self, key: TKey) -> TContent:
         return self.__container[key]
@@ -87,9 +114,9 @@ class ReactiveClass:
             q(name)
             super().__setattr__(name, r)
 
-    def getPropertyChangedEvent(self, name: str) -> Event[[Any, Any, Any]]:
+    def getAttributeChangedEvent(self, name: str) -> Event[[Any, Any, Any]]:
         """
-        Get an event that fires when a specific property is changed.
+        Get an event that fires when a specific attribute is changed.
         Event args: (key: Any, old: Any, new: Any)
         """
         # TODO: Is there a way to type the event?

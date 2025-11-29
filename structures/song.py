@@ -24,7 +24,9 @@ class Song(ReactiveClass):
     def __init__(self) -> None:
         super().__init__()
 
-        self.displayChannelCount: int = 4
+        self.visibleChannels: int = 4
+        self.visibleMatrixRows: int = 4
+
         self.patternLength: int = 32
         self.majorSubdiv: int = 16
         self.minorSubdiv: int = 4
@@ -32,21 +34,35 @@ class Song(ReactiveClass):
         self.groove: list[int] = [4]
 
         self.channels: list[Channel] = [Channel(self, i) for i in range(CHANNEL_COUNT)]
-        self.patterns: dict[tuple[int, int], Pattern] = dict()
+        self.patternList: dict[tuple[int, int], Pattern] = dict()
         """Pattern lookup. (channel number, pattern number) -> Pattern"""
-        self.patternTable: dict[tuple[int, int], int] = dict()
+        self.patternMatrix: dict[tuple[int, int], int] = dict()
         """Locational pattern reference. (channel (x), row (y)) -> pattern number"""
 
         self.setupContainerListen()
 
+    def getPatternNumberByLocation(self, channel: int, row: int) -> int:
+        """
+        Get the pattern number at a location in the pattern matrix. Defaults 0 if not available.
+        (Attempting to get a nonexistent pattern (0) will create it.)
+        """
+        return self.patternMatrix.get((channel, row), 0)
+
+    def setPatternNumber(self, channel: int, row: int, value: int):
+        self.patternMatrix[channel, row] = value
+
     def getPattern(self, channel: int, pattern: int) -> Pattern:
         """Get pattern by its number for a given channel. Makes a new one if it does not exist."""
-        if (channel, pattern) not in self.patterns:
-            self.patterns[channel, pattern] = Pattern(self, self.channels[channel])
-        return self.patterns[channel, pattern]
+        if (channel, pattern) not in self.patternList:
+            self.patternList[channel, pattern] = Pattern(self, self.channels[channel])
+        return self.patternList[channel, pattern]
 
     def getPatternByLocation(self, channel: int, row: int) -> Pattern:
         """Get pattern by its value in the pattern table. Inits to pattern 0 if not available."""
-        if (channel, row) not in self.patternTable:
-            self.patternTable[channel, row] = 0
-        return self.getPattern(channel, self.patternTable[channel, row])
+        if (channel, row) not in self.patternMatrix:
+            self.patternMatrix[channel, row] = 0
+        return self.getPattern(channel, self.patternMatrix[channel, row])
+
+    # @property
+    # def patternMatrixLength(self) -> int:
+    #     return max((y for x, y in self.patternMatrix.keys()), default=0)

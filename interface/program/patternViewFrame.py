@@ -11,7 +11,7 @@ from tkinter import ttk
 from interface.program.patternView import PVLM, PatternView
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from structures import program
-from utils.constants import CHANNEL_COUNT, DRUM_CHANNEL
+from utils.constants import CHANNEL_COUNT, CHANNEL_ORDER, DRUM_CHANNEL
 
 _logger = logging.getLogger(__name__)
 
@@ -38,12 +38,6 @@ class PatternViewFrame(ttk.Frame):
 
         self.views: list[PatternView] = list()
 
-        for channel in range(CHANNEL_COUNT):
-            view = PatternView(
-                self.__content, self, program.p.currentSong.getPattern(channel, 0)
-            )
-            self.views.append(view)
-
         self.showChannels()
 
     def setTarget(self, channel: int, row: int, column: PVLM, subcolumn: int):
@@ -52,14 +46,33 @@ class PatternViewFrame(ttk.Frame):
             view.refreshLabels()
 
     def showChannels(self):
-        for view in self.views:
-            view.pack_forget()
-        self.views[DRUM_CHANNEL].pack(side="left", expand=True)
-        for i in range(program.p.currentSong.displayChannelCount):
-            if i == DRUM_CHANNEL:
-                continue
-            view = self.views[i]
-            view.pack(side="left", expand=True)
+        currentChannelsShown = len(self.views)
+        newList = list()
+        for i in range(CHANNEL_COUNT):
+            if i < currentChannelsShown:
+                if i < program.p.currentSong.visibleChannels:
+                    newList.append(self.views[i])
+                else:
+                    self.views[i].destroy()
+            else:
+                if i < program.p.currentSong.visibleChannels:
+                    view = PatternView(
+                        self.__content,
+                        self,
+                        program.p.currentSong.getPattern(CHANNEL_ORDER[i], 0),
+                    )
+                    view.pack(side="left", expand=True)
+                    newList.append(view)
+                else:
+                    pass
+        self.views = newList
+        # for view in self.views:
+        #     view.pack_forget()
+        # self.views[DRUM_CHANNEL].pack(side="left", expand=True)
+        # for i in range(program.p.currentSong.visibleChannels):
+        #     if i == DRUM_CHANNEL:
+        #         continue
+        #     view = self.views[i]
 
     def setRow(self, row: int):
         self.row = row

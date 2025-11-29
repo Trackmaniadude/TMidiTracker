@@ -74,8 +74,8 @@ root.bind_all("<Button-1>", focus)
 
 
 PatternViewFrame(root).pack(side="bottom", fill="both", expand=True)
-PatternMatrix(root).pack(side="left")
-PatternList(root).pack(side="left")
+PatternMatrix(root).pack(side="left", fill="both")
+PatternList(root).pack(side="left", fill="both")
 
 
 root.mainloop()
