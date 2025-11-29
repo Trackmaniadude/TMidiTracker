@@ -50,6 +50,8 @@ root.unbind_all("<<PrevWindow>>")
 
 from interface import theme
 
+theme.generate()
+
 menubar = tk.Menu(root)
 root["menu"] = menubar
 

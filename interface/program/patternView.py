@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Callable, Literal
+from typing import TYPE_CHECKING, Callable, Literal, cast
 
 if TYPE_CHECKING:
     from structures.song import Song
@@ -20,6 +20,7 @@ from tkinter import ttk
 
 import mido
 
+from interface.theme import Note
 from structures import program
 from utils.constants import (
     DRUM_CHANNEL,
@@ -204,20 +205,23 @@ class PatternViewLabel(ttk.Label):
         # Highlight
         target = self.view.viewFrame.target
         highlight = False
+
         if self.row == target.row:
             highlight = True
         elif self.view.pattern.channel.channel == target.channel:
             if self.mode == target.column:
                 if self.column == target.subcolumn:
                     highlight = True
+
+        
         if self.row % program.p.currentSong.majorSubdiv == 0:
-            style = "NoteMajorTarget" if highlight else "NoteMajor"
+            style = Note.MajorTarget if highlight else Note.Major
         elif self.row % program.p.currentSong.minorSubdiv == 0:
-            style = "NoteMinorTarget" if highlight else "NoteMinor"
+            style = Note.MinorTarget if highlight else Note.Minor
         else:
-            style = "NoteTarget" if highlight else "Note"
+            style = Note.DefaultTarget if highlight else Note.Default
         if style != self.lastStyle:
-            self.config(style=style + ".TLabel")
+            self.config(style=cast(str, style))
             self.lastStyle = style
 
 

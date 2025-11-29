@@ -1,27 +1,102 @@
+from __future__ import annotations
+
+import logging
 import tkinter as tk
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from tkinter import ttk
+from typing import cast
 
-NOTE_BG = "#FFFFFF"
-NOTE_MINOR = "#EEEEEE"
-NOTE_MAJOR = "#CCCCCC"
+_logger = logging.getLogger(__name__)
 
-NOTE_BG_TARGET = "#EEEEEE"
-NOTE_MINOR_TARGET = "#DDDDDD"
-NOTE_MAJOR_TARGET = "#BBBBBB"
 
-s = ttk.Style()
-# s.theme_use("clam")
+class Style(ABC):
+    instances: list[Style] = list()
 
-s.configure("TLabel", font="TkFixedFont")
-s.configure("TButton", font="TkFixedFont")
-s.configure("TEntry", font="TkFixedFont")
+    def __post_init__(self):
+        self.instances.append(self)
 
-s.configure("Note.TLabel", font="TkFixedFont", background=NOTE_BG)
-s.configure("NoteMinor.TLabel", font="TkFixedFont", background=NOTE_MINOR)
-s.configure("NoteMajor.TLabel", font="TkFixedFont", background=NOTE_MAJOR)
-s.configure("NoteTarget.TLabel", font="TkFixedFont", background=NOTE_BG_TARGET)
-s.configure("NoteMinorTarget.TLabel", font="TkFixedFont", background=NOTE_MINOR_TARGET)
-s.configure("NoteMajorTarget.TLabel", font="TkFixedFont", background=NOTE_MAJOR_TARGET)
+    @abstractmethod
+    def generate(self, s: ttk.Style): ...
+
+    @classmethod
+    def generateAll(cls, s: ttk.Style):
+        for instance in cls.instances:
+            instance.generate(s)
+
+
+@dataclass
+class StyleDC(Style):
+    def __post_init__(self):
+        self.name: str = cast(str, None)
+        self.owningClass: type = cast(type, None)
+        self.base: str = cast(str, None)
+        return super().__post_init__()
+
+    def generate(self, s: ttk.Style):
+        dct = {field: getattr(self, field) for field in self.__dataclass_fields__}
+
+        trueName = f"{self.owningClass.__name__}{self.name}.{self.base}"
+
+        _logger.debug(f"Generating style '{trueName}': {dct}")
+        s.configure(trueName, **dct)
+
+        setattr(self.owningClass, self.name, trueName)
+
+
+@dataclass
+class BackgroundStyle(StyleDC):
+    background: str
+
+
+def StyleBase(base: str):
+    def inner(cls):
+        for name in dir(cls):
+            obj = getattr(cls, name)
+            if isinstance(obj, StyleDC):
+                obj.name = name
+                obj.base = base
+                obj.owningClass = cls
+        return cls
+
+    return inner
+
+
+# Create styles
+
+
+@StyleBase("TLabel")
+class Note:
+    Default = BackgroundStyle("#FFFFFF")
+    Minor = BackgroundStyle("#EEEEEE")
+    Major = BackgroundStyle("#CCCCCC")
+    DefaultTarget = BackgroundStyle("#DDDDFF")
+    MinorTarget = BackgroundStyle("#CCCCEE")
+    MajorTarget = BackgroundStyle("#AAAACC")
+
+
+@StyleBase("TLabel")
+class MatrixLabel:
+    DefaultEven = BackgroundStyle("#FFFFFF")
+    DefaultOdd = BackgroundStyle("#EEEEEE")
+    Target = BackgroundStyle("#CCCCFF")
+    Highlight = BackgroundStyle("#FFFFCC")
+
+
+def generate():
+    s = ttk.Style()
+    # s.theme_use("clam")
+
+    s.configure("TLabel", font="TkFixedFont")
+    s.configure("TButton", font="TkFixedFont")
+    s.configure("TEntry", font="TkFixedFont")
+
+    Style.generateAll(s)
+
 
 if __name__ == "__main__":
-    print(s.theme_names())
+    logging.basicConfig(level=logging.DEBUG)
+    print(Note.__dict__)
+    generate()
+    print(Note.__dict__)
+    # print(s.theme_names())
