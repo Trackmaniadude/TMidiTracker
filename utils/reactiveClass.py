@@ -90,6 +90,7 @@ class ReactiveClass:
         Fired when any attribute is changed. (name: str, key: Any, old: Any, new: Any)
         Key is set if a container was changed. Otherwise it is the attribute singleton.
         """
+        self.__individualChangeEvents: dict[str, Event] = dict()
 
         if _logger.getEffectiveLevel() >= logging.DEBUG:
             self.Changed.connect(lambda *_: _logger.debug(_))
@@ -119,15 +120,18 @@ class ReactiveClass:
         Get an event that fires when a specific attribute is changed.
         Event args: (key: Any, old: Any, new: Any)
         """
-        # TODO: Is there a way to type the event?
-        e = Event()
+        if name not in self.__individualChangeEvents:
+            # TODO: Is there a way to type the event?
+            e = Event()
 
-        def h(changedName: str, key: Any, old: Any, new: Any):
-            if name == changedName:
-                e.fire(key, old, new)
+            def h(changedName: str, key: Any, old: Any, new: Any):
+                if name == changedName:
+                    e.fire(key, old, new)
 
-        self.Changed.connect(h)
-        return e
+            self.Changed.connect(h)
+            self.__individualChangeEvents[name] = e
+
+        return self.__individualChangeEvents[name]
 
     def __setattr__(self, name: str, value: Any) -> None:
         # Only act on existing values

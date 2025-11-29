@@ -56,6 +56,9 @@ class Song(ReactiveClass):
     def getPattern(self, channel: int, pattern: int) -> Pattern:
         """Get pattern by its number for a given channel. Makes a new one if it does not exist."""
         if (channel, pattern) not in self.patternList:
+            _logger.debug(
+                f"Created new pattern for channel={channel} with id {pattern}"
+            )
             self.patternList[channel, pattern] = Pattern(self, self.channels[channel])
         return self.patternList[channel, pattern]
 

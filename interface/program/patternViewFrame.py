@@ -11,7 +11,12 @@ from tkinter import ttk
 from interface.program.patternView import PVLM, PatternView
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from structures import program
-from utils.constants import CHANNEL_COUNT, CHANNEL_ORDER, DRUM_CHANNEL
+from utils.constants import (
+    CHANNEL_COUNT,
+    CHANNEL_ORDER,
+    CHANNEL_ORDER_INVERSE,
+    DRUM_CHANNEL,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -40,6 +45,17 @@ class PatternViewFrame(ttk.Frame):
 
         self.showChannels()
 
+        def matrixChangedEvent(key: tuple[int, int], old: int | None, new: int):
+            channel, row = key
+            viewIndex = CHANNEL_ORDER_INVERSE[channel]
+            view = self.views[viewIndex]
+            view.pattern = program.p.currentSong.getPatternByLocation(channel, row)
+            view.refreshLabels()
+
+        program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
+            matrixChangedEvent
+        )
+
     def setTarget(self, channel: int, row: int, column: PVLM, subcolumn: int):
         self.target = Target(channel, row, column, subcolumn)
         for view in self.views:
@@ -66,13 +82,6 @@ class PatternViewFrame(ttk.Frame):
                 else:
                     pass
         self.views = newList
-        # for view in self.views:
-        #     view.pack_forget()
-        # self.views[DRUM_CHANNEL].pack(side="left", expand=True)
-        # for i in range(program.p.currentSong.visibleChannels):
-        #     if i == DRUM_CHANNEL:
-        #         continue
-        #     view = self.views[i]
 
     def setRow(self, row: int):
         self.row = row
