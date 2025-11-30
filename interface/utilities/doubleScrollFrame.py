@@ -59,6 +59,9 @@ class DScrollFrame(ttk.Frame):
             0, 0, window=self.content, anchor="nw"
         )
 
+        self.content.bind("<Configure>", lambda *_: self.moveCanvas())
+        self.bind("<Configure>", lambda *_: self.moveCanvas())
+
     def moveCanvas(self):
         # Move canvas
         bbox = BBox(*self.__canvas.bbox(self.__windowId))
