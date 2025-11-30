@@ -59,7 +59,7 @@ class Song(ReactiveClass):
                 count += 1
         return count
 
-    def getPatternNumberByLocation(self, channel: int, row: int) -> int:
+    def getPatternIdByLocation(self, channel: int, row: int) -> int:
         """
         Get the pattern number at a location in the pattern matrix. Defaults 0 if not available.
         (Attempting to get a nonexistent pattern (0) will create it.)

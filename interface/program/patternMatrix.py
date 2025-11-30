@@ -32,16 +32,23 @@ class PatternSelector(ttk.Label):
         self.channel = channel
         self.row = row
 
-        self.bind("<Button-1>", lambda *_: self.increment())
-        self.bind("<Button-3>", lambda *_: self.decrement())
+        self.bind("<Button-1>", lambda *_: (self.increment(), self.setCurrentRow()))
+        self.bind("<Button-2>", lambda *_: (self.copyAbove(), self.setCurrentRow()))
+        self.bind("<Button-3>", lambda *_: (self.decrement(), self.setCurrentRow()))
 
         program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
             lambda key, *_: self.refresh() if key == (self.channel, self.row) else None
         )
+        program.p.currentSong.getAttributeChangedEvent("currentMatrixRow").connect(
+            lambda key, *_: self.refresh()
+        )
         self.refresh()
 
+    def setCurrentRow(self):
+        program.p.currentMatrixRow = self.row
+
     def getPattern(self) -> int:
-        return program.p.currentSong.getPatternNumberByLocation(self.channel, self.row)
+        return program.p.currentSong.getPatternIdByLocation(self.channel, self.row)
 
     def setPattern(self, pattern: int):
         program.p.currentSong.setPatternNumber(self.channel, self.row, pattern)
@@ -59,7 +66,11 @@ class PatternSelector(ttk.Label):
         pass
 
     def copyAbove(self):
-        pass
+        if self.row == 0:
+            return
+        p = program.p.currentSong.getPatternIdByLocation(self.channel, self.row - 1)
+        self.setPattern(p)
+        
 
     def refresh(self):
         if self.row == program.p.currentMatrixRow:
