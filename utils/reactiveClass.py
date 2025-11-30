@@ -78,6 +78,9 @@ class ReactiveDict[TKey, TContent](ReactiveContainer):
 
     def __contains__(self, v):
         return v in self.__container
+    
+    def __delitem__(self, key: Any):
+        del self.__container[key]
 
 
 attribute = object()
@@ -139,6 +142,9 @@ class ReactiveClass:
             old = self.__getattribute__(name)
             super().__setattr__(name, value)
             if old != value:
-                self.Changed.fire(name, attribute, old, value)
+                try:
+                    self.Changed.fire(name, attribute, old, value)
+                except Exception as e:
+                    _logger.error(e)
         else:
             super().__setattr__(name, value)
