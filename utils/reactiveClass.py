@@ -155,10 +155,25 @@ class ReactiveClass:
 
 class ReactiveClassView(ttk.Frame):
     def __init__(
-        self, parent: tk.Misc, target: ReactiveClass, title: str | None = None
+        self,
+        parent: tk.Misc,
+        target: ReactiveClass,
+        *,
+        title: str | None = None,
+        fields: set[str] | None = None,
     ):
-        super().__init__(parent)
-        self.target = target
+        super().__init__(parent, height=400)
 
         hf = HeaderFrame(self, title or target.__class__.__qualname__)
         hf.pack(fill="both")
+
+        if fields is None:
+            fields = {
+                name for name in target.__dict__.keys() if not name.startswith("_")
+            }
+
+        for i, field in enumerate(fields):
+            ttk.Label(hf.content, text=field).grid(row=i, column=0, sticky="nesw")
+
+            val = ttk.Label(hf.content, text=getattr(target, field))
+            val.grid(row=i, column=1)
