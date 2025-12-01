@@ -70,7 +70,6 @@ class PatternSelector(ttk.Label):
             return
         p = program.p.currentSong.getPatternIdByLocation(self.channel, self.row - 1)
         self.setPattern(p)
-        
 
     def refresh(self):
         if self.row == program.p.currentMatrixRow:

@@ -3,8 +3,11 @@ Gives a class a Changed event, fired when any value is changed.
 """
 
 import logging
+import tkinter as tk
+from tkinter import ttk
 from typing import Any
 
+from interface.utilities.headerFrame import HeaderFrame
 from utils.event import Event
 
 _logger = logging.getLogger(__name__)
@@ -78,7 +81,7 @@ class ReactiveDict[TKey, TContent](ReactiveContainer):
 
     def __contains__(self, v):
         return v in self.__container
-    
+
     def __delitem__(self, key: Any):
         del self.__container[key]
 
@@ -148,3 +151,14 @@ class ReactiveClass:
                     _logger.error(e)
         else:
             super().__setattr__(name, value)
+
+
+class ReactiveClassView(ttk.Frame):
+    def __init__(
+        self, parent: tk.Misc, target: ReactiveClass, title: str | None = None
+    ):
+        super().__init__(parent)
+        self.target = target
+
+        hf = HeaderFrame(self, title or target.__class__.__qualname__)
+        hf.pack(fill="both")
