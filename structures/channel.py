@@ -22,7 +22,7 @@ _logger = logging.getLogger(__name__)
 
 
 class ChannelPlaybackState(ReactiveClass):
-    def __post_init__(self):
+    def __init__(self):
         super().__init__()
 
         self.velocities: dict[int, int] = dict()
