@@ -85,16 +85,28 @@ class PatternViewFrame(ttk.Frame):
         RowList(self.__content).pack(side="left", fill="y")
         self.showChannels()
 
-        def matrixChangedEvent(key: tuple[int, int], old: int | None, new: int):
-            channel, row = key
-            viewIndex = CHANNEL_ORDER_INVERSE[channel]
-            view = self.views[viewIndex]
-            view.pattern = program.p.currentSong.getPatternByLocation(channel, row)
-            view.refreshLabels()
-
         program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
-            matrixChangedEvent
+            self.matrixChangedEvent
         )
+
+        program.p.getAttributeChangedEvent("currentMatrixRow").connect(
+            self.onMatrixRowChange
+        )
+
+    def matrixChangedEvent(self, key: tuple[int, int], old: int | None, new: int):
+        channel, row = key
+        viewIndex = CHANNEL_ORDER_INVERSE[channel]
+        view = self.views[viewIndex]
+        view.pattern = program.p.currentSong.getPatternByLocation(channel, row)
+        view.refreshLabels()
+
+    def onMatrixRowChange(self, key, old, new):
+        for i, view in enumerate(self.views):
+            channel = CHANNEL_ORDER[i]
+            view.pattern = program.p.currentSong.getPatternByLocation(
+                channel, program.p.currentMatrixRow
+            )
+            view.refreshLabels()
 
     def setTarget(self, channel: int, row: int, column: PVLM, subcolumn: int):
         self.target = Target(channel, row, column, subcolumn)

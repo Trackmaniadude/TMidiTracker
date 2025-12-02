@@ -116,8 +116,8 @@ class ReactiveClass:
 
         self.Changed.connect(individualHandler)
 
-        if _logger.getEffectiveLevel() >= logging.DEBUG:
-            self.Changed.connect(lambda *_: _logger.debug(_))
+        # if _logger.getEffectiveLevel() >= logging.DEBUG:
+        #     self.Changed.connect(lambda *_: _logger.debug(_))
 
     def setupContainerListen(self):
         for name in dir(self):
