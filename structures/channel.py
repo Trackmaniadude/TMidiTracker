@@ -21,10 +21,16 @@ from utils.reactiveClass import ReactiveClass
 _logger = logging.getLogger(__name__)
 
 
-@dataclass
-class ChannelPlaybackState:
-    velocities: dict[int, int] = field(default_factory=lambda: dict())
-    """Current velocity for each subchannel."""
+class ChannelPlaybackState(ReactiveClass):
+    def __post_init__(self):
+        super().__init__()
+
+        self.velocities: dict[int, int] = dict()
+        """Current velocity for each subchannel."""
+        self.activeNotes: set[int] = set()
+        """All notes currently playing in this channel."""
+
+        self.setupContainerListen()
 
 
 class Channel(ReactiveClass):
