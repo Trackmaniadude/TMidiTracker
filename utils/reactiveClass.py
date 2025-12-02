@@ -18,7 +18,7 @@ class ReactiveContainer[TContainer, TKey, TContent]:
         self.Changed: Event[[TKey, TContent, TContent]] = Event()
         """Event(index: int, old: T, new: T)"""
         self._container = container
-        
+
         for name in dir(self._container):
             if name.startswith("_"):
                 continue
@@ -39,6 +39,9 @@ class ReactiveContainer[TContainer, TKey, TContent]:
 
     def __str__(self) -> str:
         return str(self._container)
+
+    def __len__(self) -> int:
+        return len(self._container)  # pyright: ignore[reportArgumentType]
 
 
 class ReactiveSet[TContent](ReactiveContainer):
@@ -96,7 +99,17 @@ class ReactiveClass:
         Fired when any attribute is changed. (name: str, key: Any, old: Any, new: Any)
         Key is set if a container was changed. Otherwise it is the attribute singleton.
         """
-        self.__individualChangeEvents: dict[str, Event] = dict()
+        self.__individualChangeEvents: dict[str, Event[[Any, Any, Any]]] = dict()
+        """
+        Events fired for individual attributes (when requested).
+        (key: Any, old: Any, new: Any)
+        """
+
+        def individualHandler(changedName: str, key: Any, old: Any, new: Any):
+            if changedName in self.__individualChangeEvents:
+                self.__individualChangeEvents[changedName].fire(key, old, new)
+
+        self.Changed.connect(individualHandler)
 
         if _logger.getEffectiveLevel() >= logging.DEBUG:
             self.Changed.connect(lambda *_: _logger.debug(_))
@@ -129,14 +142,8 @@ class ReactiveClass:
         Event args: (key: Any, old: Any, new: Any)
         """
         if name not in self.__individualChangeEvents:
-            # TODO: Is there a way to type the event?
+            _logger.debug(f"Generating attribute change event for {name} ({self})")
             e = Event()
-
-            def h(changedName: str, key: Any, old: Any, new: Any):
-                if name == changedName:
-                    e.fire(key, old, new)
-
-            self.Changed.connect(h)
             self.__individualChangeEvents[name] = e
 
         return self.__individualChangeEvents[name]
@@ -157,6 +164,7 @@ class ReactiveClass:
 
 class ReactiveClassView(ttk.Frame):
     REMOVE = {"Changed"}
+
     def __init__(
         self,
         parent: tk.Misc,
@@ -173,23 +181,36 @@ class ReactiveClassView(ttk.Frame):
 
         if fields is None:
             fields = {
-                name for name in target.__dict__.keys() if not (name.startswith("_") or name in self.REMOVE)
+                name
+                for name in target.__dict__.keys()
+                if not (name.startswith("_") or name in self.REMOVE)
             }
 
         for i, field in enumerate(fields):
+
             def setup():
                 targetVal = getattr(target, field)
 
                 if isinstance(targetVal, ReactiveClass) and recursionLevel > 0:
-                    view = ReactiveClassView(hf.content, targetVal, title=field, recursionLevel=recursionLevel - 1)
+                    view = ReactiveClassView(
+                        hf.content,
+                        targetVal,
+                        title=field,
+                        recursionLevel=recursionLevel - 1,
+                    )
                     view.grid(row=i, column=0, columnspan=2)
                 else:
-                    ttk.Label(hf.content, text=field).grid(row=i, column=0, sticky="nesw")
+                    ttk.Label(hf.content, text=field).grid(
+                        row=i, column=0, sticky="nesw"
+                    )
                     view = ttk.Label(hf.content)
                     view.grid(row=i, column=1)
+
                     def g():
                         targetVal = getattr(target, field)
                         view.config(text=str(targetVal))
+
                     g()
                     target.getAttributeChangedEvent(field).connect(lambda *_: g())
+
             setup()
