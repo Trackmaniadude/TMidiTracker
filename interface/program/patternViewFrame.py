@@ -86,11 +86,11 @@ class PatternViewFrame(ttk.Frame):
         self.showChannels()
 
         program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
-            self.matrixChangedEvent
+            lambda *a: self.after(0, self.matrixChangedEvent, *a)
         )
 
         program.p.getAttributeChangedEvent("currentMatrixRow").connect(
-            self.onMatrixRowChange
+            lambda *a: self.after(0, self.onMatrixRowChange, *a)
         )
 
     def matrixChangedEvent(self, key: tuple[int, int], old: int | None, new: int):
