@@ -133,6 +133,7 @@ class PatternMatrix(ttk.Frame):
         self.refresh()
 
     def setMatrixRow(self, row: int):
+        program.p.currentPatternRow = 0
         program.p.currentMatrixRow = row
 
     def toggleRowHighlight(self, row: int):
