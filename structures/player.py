@@ -41,9 +41,8 @@ class Player:
 
                 self.grooveTimer += 1
 
-
                 mainTick = False
-                if self.grooveTimer > program.p.currentSong.groove[self.grooveIndex]:
+                if self.grooveTimer >= program.p.currentSong.groove[self.grooveIndex]:
                     self.grooveTimer = 0
                     self.grooveIndex = (self.grooveIndex + 1) % len(
                         program.p.currentSong.groove
@@ -51,10 +50,15 @@ class Player:
                     program.p.currentPatternRow += 1
                     if (
                         program.p.currentPatternRow
-                        > program.p.currentSong.patternLength
+                        >= program.p.currentSong.patternLength
                     ):
                         program.p.currentPatternRow = 0
                         program.p.currentMatrixRow += 1
+                        if (
+                            program.p.currentMatrixRow
+                            >= program.p.currentSong.visibleMatrixRows
+                        ):
+                            program.p.currentMatrixRow = 0
                     mainTick = True
 
                 messages: list[Message | MetaMessage] = list()
@@ -63,7 +67,6 @@ class Player:
 
                 for message in messages:
                     program.p.currentPort.send(message)
-
 
                 tickLength = 1 / program.p.currentSong.clock
 

@@ -72,21 +72,23 @@ class Channel(ReactiveClass):
                 prevNote = self.playbackState.columnNotes.get(col)
                 if note == "stop":
                     if prevNote:
-                        self.playbackState.activeNotes.remove(prevNote)
-                        del self.playbackState.columnNotes[col]
-                        messages.append(
-                            mido.Message(
-                                "note_off", channel=self.channel, note=prevNote
+                        if prevNote in self.playbackState.activeNotes:
+                            self.playbackState.activeNotes.remove(prevNote)
+                            del self.playbackState.columnNotes[col]
+                            messages.append(
+                                mido.Message(
+                                    "note_off", channel=self.channel, note=prevNote
+                                )
                             )
-                        )
                 else:
                     if prevNote:
-                        self.playbackState.activeNotes.remove(prevNote)
-                        messages.append(
-                            mido.Message(
-                                "note_off", channel=self.channel, note=prevNote
+                        if prevNote in self.playbackState.activeNotes:
+                            self.playbackState.activeNotes.remove(prevNote)
+                            messages.append(
+                                mido.Message(
+                                    "note_off", channel=self.channel, note=prevNote
+                                )
                             )
-                        )
                     self.playbackState.columnNotes[col] = note
                     self.playbackState.activeNotes.add(note)
                     messages.append(
