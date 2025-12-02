@@ -40,7 +40,10 @@ class PatternSelector(ttk.Label):
         self.bind("<Button-3>", lambda *_: (self.decrement(), self.setCurrentRow()))
 
         program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
-            lambda key, *_: self.refresh() if key == (self.channel, self.row) else None
+            lambda key, *_: self.refresh()
+        )
+        program.p.currentSong.getAttributeChangedEvent("highlightedMatrixRows").connect(
+            lambda key, *_: self.refresh()
         )
         program.p.getAttributeChangedEvent("currentMatrixRow").connect(
             lambda key, *_: self.refresh()
@@ -129,6 +132,15 @@ class PatternMatrix(ttk.Frame):
 
         self.refresh()
 
+    def setMatrixRow(self, row: int):
+        program.p.currentMatrixRow = row
+
+    def toggleRowHighlight(self, row: int):
+        if row in program.p.currentSong.highlightedMatrixRows:
+            program.p.currentSong.highlightedMatrixRows.remove(row)
+        else:
+            program.p.currentSong.highlightedMatrixRows.add(row)
+
     def refresh(self):
         rows = program.p.currentSong.visibleMatrixRows
         cols = program.p.currentSong.visibleChannels
@@ -146,6 +158,10 @@ class PatternMatrix(ttk.Frame):
             label = ttk.Label(self.__content, text=hex(row)[2:].upper(), width=3)
             label.grid(row=row + 1, column=0)
             self.__labels[row, -1] = label
+            def _(row):
+                label.bind("<Button-1>", lambda *_: self.setMatrixRow(row))
+                label.bind("<Button-3>", lambda *_: self.toggleRowHighlight(row))
+            _(row)
         for col in range(cols):
             if (-1, col) in self.__labels:
                 continue
