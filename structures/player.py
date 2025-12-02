@@ -30,11 +30,17 @@ class Player:
         self.grooveIndex: int = 0
         self.grooveTimer: int = 0
 
+        self.expectedTime: float = 0
+        self.actualTime: float = 0
+
         def playbackDaemon():
             while True:
                 self.resume.wait()
 
+                t0 = time.perf_counter()
+
                 self.grooveTimer += 1
+
 
                 mainTick = False
                 if self.grooveTimer > program.p.currentSong.groove[self.grooveIndex]:
@@ -58,8 +64,17 @@ class Player:
                 for message in messages:
                     program.p.currentPort.send(message)
 
+
                 tickLength = 1 / program.p.currentSong.clock
-                time.sleep(tickLength)
+
+                self.expectedTime += tickLength
+                elapsed = time.perf_counter() - t0
+                self.actualTime += elapsed
+                diff = self.expectedTime - self.actualTime
+                sleepTime = max(0, diff)
+
+                self.actualTime += sleepTime
+                time.sleep(sleepTime)
 
         Thread(name="PlaybackDaemon", target=playbackDaemon, daemon=True).start()
 
