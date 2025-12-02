@@ -27,7 +27,7 @@ class Song(ReactiveClass):
         self.visibleChannels: int = 5
         self.visibleMatrixRows: int = 12
 
-        self.patternLength: int = 32
+        self.patternLength: int = 16
         self.majorSubdiv: int = 16
         self.minorSubdiv: int = 4
         self.clock: float = 60

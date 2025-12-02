@@ -96,6 +96,8 @@ class PatternViewFrame(ttk.Frame):
     def matrixChangedEvent(self, key: tuple[int, int], old: int | None, new: int):
         channel, row = key
         viewIndex = CHANNEL_ORDER_INVERSE[channel]
+        if viewIndex >= len(self.views):
+            return
         view = self.views[viewIndex]
         view.pattern = program.p.currentSong.getPatternByLocation(channel, row)
         view.refreshLabels()

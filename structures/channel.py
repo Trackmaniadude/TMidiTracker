@@ -26,9 +26,11 @@ class ChannelPlaybackState(ReactiveClass):
         super().__init__()
 
         self.velocities: dict[int, int] = dict()
-        """Current velocity for each subchannel."""
+        """Current velocity for each column."""
         self.activeNotes: set[int] = set()
         """All notes currently playing in this channel."""
+        self.columnNotes: dict[int, int] = dict()
+        """What note each column is currently playing, if any."""
 
         self.setupContainerListen()
 
@@ -56,7 +58,44 @@ class Channel(ReactiveClass):
         Tick the channel, optionally reading commands at the current song playback position.
         Returns a list of midi messages. Messages have time set to 0; change in whatever's ticking things.
         """
+
         messages = list()
+
+        currentPattern = program.p.currentSong.getPatternByLocation(
+            self.channel, program.p.currentMatrixRow
+        )
+
+        if read:
+            rowData = currentPattern.getRow(program.p.currentPatternRow)
+
+            for col, note in rowData.notes.items():
+                prevNote = self.playbackState.columnNotes.get(col)
+                if note == "stop":
+                    if prevNote:
+                        self.playbackState.activeNotes.remove(prevNote)
+                        del self.playbackState.columnNotes[col]
+                        messages.append(
+                            mido.Message(
+                                "note_off", channel=self.channel, note=prevNote
+                            )
+                        )
+                else:
+                    if prevNote:
+                        self.playbackState.activeNotes.remove(prevNote)
+                        messages.append(
+                            mido.Message(
+                                "note_off", channel=self.channel, note=prevNote
+                            )
+                        )
+                    self.playbackState.columnNotes[col] = note
+                    self.playbackState.activeNotes.add(note)
+                    messages.append(
+                        mido.Message(
+                            "note_on", channel=self.channel, note=note, velocity=64
+                        )
+                    )
+
+                print(col, note)
 
         return messages
 

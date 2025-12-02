@@ -56,7 +56,7 @@ class Player:
                     messages.extend(channel.tick(mainTick))
 
                 for message in messages:
-                    print(message)
+                    program.p.currentPort.send(message)
 
                 tickLength = 1 / program.p.currentSong.clock
                 time.sleep(tickLength)

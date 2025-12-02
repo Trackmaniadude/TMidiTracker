@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from structures.channel import Channel
 
 import logging
+from dataclasses import dataclass
 
 from structures import program
 from utils.misc import clamp
@@ -18,6 +19,13 @@ from utils.reactiveClass import ReactiveClass
 from utils.types import *
 
 _logger = logging.getLogger(__name__)
+
+
+@dataclass
+class PatternRow:
+    notes: dict[int, note]
+    velocities: dict[int, velocity]
+    effects: dict[int, effect]
 
 
 class Pattern(ReactiveClass):
@@ -32,13 +40,30 @@ class Pattern(ReactiveClass):
         self.channel = channel
 
         self.notes: dict[tuple[int, int], note] = dict()
-        """Play note/stop note commands. (Does not directly map to midi)"""
+        """
+        Play note/stop note commands. (Does not directly map to midi)
+        (row, col) -> (int # | 'stop')
+        """
         self.velocities: dict[tuple[int, int], velocity] = dict()
-        """Note velocities. Notes use the most recent velocity command."""
+        """
+        Note velocities. Notes use the most recent velocity command.
+        (row, col) -> int
+        """
         self.effects: dict[tuple[int, int], effect] = dict()
-        """Tracker effects, like vibrato and playback control. Some effects may map to midi messages."""
+        """
+        Tracker effects, like vibrato and playback control. Some effects may map to midi messages.
+        (row, col) -> (int, ...)
+        """
 
         self.setupContainerListen()
+
+    def getRow(self, row: int) -> PatternRow:
+        """Get all data from a row."""
+        return PatternRow(
+            {p[1]: n for p, n in self.notes.items() if p[0] == row},
+            {p[1]: v for p, v in self.velocities.items() if p[0] == row},
+            {p[1]: f for p, f in self.effects.items() if p[0] == row},
+        )
 
     def getNote(self, row: int, column: int) -> note | None:
         return self.notes.get((row, column))
