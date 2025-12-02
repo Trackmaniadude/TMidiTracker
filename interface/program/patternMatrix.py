@@ -32,6 +32,9 @@ class PatternSelector(ttk.Label):
         self.channel = channel
         self.row = row
 
+        self.__style: str = ""
+        self.__text: str = ""
+
         self.bind("<Button-1>", lambda *_: (self.increment(), self.setCurrentRow()))
         self.bind("<Button-2>", lambda *_: (self.copyAbove(), self.setCurrentRow()))
         self.bind("<Button-3>", lambda *_: (self.decrement(), self.setCurrentRow()))
@@ -39,7 +42,7 @@ class PatternSelector(ttk.Label):
         program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
             lambda key, *_: self.refresh() if key == (self.channel, self.row) else None
         )
-        program.p.currentSong.getAttributeChangedEvent("currentMatrixRow").connect(
+        program.p.getAttributeChangedEvent("currentMatrixRow").connect(
             lambda key, *_: self.refresh()
         )
         self.refresh()
@@ -83,10 +86,31 @@ class PatternSelector(ttk.Label):
                 else MatrixLabel.DefaultOdd
             )
 
-        self.config(text=self.getPattern(), style=cast(str, style))
+        self.text = str(self.getPattern())
+        self.style = cast(str, style)
 
     def destroy(self) -> None:
         return super().destroy()
+
+    @property
+    def style(self) -> str:
+        return self.__style
+
+    @style.setter
+    def style(self, newStyle: str):
+        if newStyle != self.__style:
+            self.__style = newStyle
+            self.config(style=self.style)
+
+    @property
+    def text(self) -> str:
+        return self.__text
+
+    @text.setter
+    def text(self, newText: str):
+        if newText != self.__text:
+            self.__text = newText
+            self.config(text=self.__text)
 
 
 class PatternMatrix(ttk.Frame):
