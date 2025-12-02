@@ -68,6 +68,12 @@ class Channel(ReactiveClass):
         if read:
             rowData = currentPattern.getRow(program.p.currentPatternRow)
 
+            for col, effect in rowData.effects.items():
+                pass
+
+            for col, vel in rowData.velocities.items():
+                self.playbackState.velocities[col] = vel
+
             for col, note in rowData.notes.items():
                 prevNote = self.playbackState.columnNotes.get(col)
                 if note == "stop":
@@ -91,9 +97,10 @@ class Channel(ReactiveClass):
                             )
                     self.playbackState.columnNotes[col] = note
                     self.playbackState.activeNotes.add(note)
+                    velocity = self.playbackState.velocities.get(col, 64)
                     messages.append(
                         mido.Message(
-                            "note_on", channel=self.channel, note=note, velocity=64
+                            "note_on", channel=self.channel, note=note, velocity=velocity
                         )
                     )
 
