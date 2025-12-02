@@ -50,6 +50,9 @@ class ReactiveList[TContent](ReactiveContainer):
     def __contains__(self, v):
         return v in self.__container
 
+    def __str__(self) -> str:
+        return str(self.__container)
+
 
 class ReactiveDict[TKey, TContent](ReactiveContainer):
     def __init__(self, dict: dict[TKey, TContent]) -> None:
@@ -84,6 +87,9 @@ class ReactiveDict[TKey, TContent](ReactiveContainer):
 
     def __delitem__(self, key: Any):
         del self.__container[key]
+
+    def __str__(self) -> str:
+        return str(self.__container)
 
 
 attribute = object()
@@ -154,6 +160,7 @@ class ReactiveClass:
 
 
 class ReactiveClassView(ttk.Frame):
+    REMOVE = {"Changed"}
     def __init__(
         self,
         parent: tk.Misc,
@@ -161,6 +168,7 @@ class ReactiveClassView(ttk.Frame):
         *,
         title: str | None = None,
         fields: set[str] | None = None,
+        recursionLevel: int = 0,
     ):
         super().__init__(parent, height=400)
 
@@ -169,11 +177,23 @@ class ReactiveClassView(ttk.Frame):
 
         if fields is None:
             fields = {
-                name for name in target.__dict__.keys() if not name.startswith("_")
+                name for name in target.__dict__.keys() if not (name.startswith("_") or name in self.REMOVE)
             }
 
         for i, field in enumerate(fields):
-            ttk.Label(hf.content, text=field).grid(row=i, column=0, sticky="nesw")
+            def setup():
+                targetVal = getattr(target, field)
 
-            val = ttk.Label(hf.content, text=getattr(target, field))
-            val.grid(row=i, column=1)
+                if isinstance(targetVal, ReactiveClass) and recursionLevel > 0:
+                    view = ReactiveClassView(hf.content, targetVal, title=field, recursionLevel=recursionLevel - 1)
+                    view.grid(row=i, column=0, columnspan=2)
+                else:
+                    ttk.Label(hf.content, text=field).grid(row=i, column=0, sticky="nesw")
+                    view = ttk.Label(hf.content)
+                    view.grid(row=i, column=1)
+                    def g():
+                        targetVal = getattr(target, field)
+                        view.config(text=str(targetVal))
+                    g()
+                    target.getAttributeChangedEvent(field).connect(lambda *_: g())
+            setup()
