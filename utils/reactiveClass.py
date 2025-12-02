@@ -13,83 +13,77 @@ from utils.event import Event
 _logger = logging.getLogger(__name__)
 
 
-class ReactiveContainer[TKey, TContent]:
-    def __init__(self) -> None:
+class ReactiveContainer[TContainer, TKey, TContent]:
+    def __init__(self, container: TContainer) -> None:
         self.Changed: Event[[TKey, TContent, TContent]] = Event()
         """Event(index: int, old: T, new: T)"""
-
-
-class ReactiveList[TContent](ReactiveContainer):
-    def __init__(self, list: list[TContent]) -> None:
-        super().__init__()
-        self.__container = list
-        for name in dir(dict):
-            if name.startswith("__"):
+        self._container = container
+        
+        for name in dir(self._container):
+            if name.startswith("_"):
                 continue
 
             def a(name):
                 setattr(
                     self,
                     name,
-                    lambda *args, **kwargs: getattr(self.__container, name)(
+                    lambda *args, **kwargs: getattr(self._container, name)(
                         *args, **kwargs
                     ),
                 )
 
             a(name)
 
+    def __contains__(self, v):
+        return v in self._container
+
+    def __str__(self) -> str:
+        return str(self._container)
+
+
+class ReactiveSet[TContent](ReactiveContainer):
+    def __init__(self, container: set[TContent]) -> None:
+        super().__init__(container)
+
     def __getitem__(self, index: int) -> TContent:
-        return self.__container[index]
+        return self._container[index]
 
     def __setitem__(self, index: int, value: TContent):
-        old = self.__container[index] if index in self.__container else None
-        self.__container[index] = value
+        old = self._container[index] if index in self._container else None
+        self._container[index] = value
         if old != value:
             self.Changed.fire(index, old, value)
 
-    def __contains__(self, v):
-        return v in self.__container
 
-    def __str__(self) -> str:
-        return str(self.__container)
+class ReactiveList[TContent](ReactiveContainer):
+    def __init__(self, container: list[TContent]) -> None:
+        super().__init__(container)
+
+    def __getitem__(self, index: int) -> TContent:
+        return self._container[index]
+
+    def __setitem__(self, index: int, value: TContent):
+        old = self._container[index] if index in self._container else None
+        self._container[index] = value
+        if old != value:
+            self.Changed.fire(index, old, value)
 
 
 class ReactiveDict[TKey, TContent](ReactiveContainer):
-    def __init__(self, dict: dict[TKey, TContent]) -> None:
-        super().__init__()
-        self.__container = dict
-        for name in dir(dict):
-            if name.startswith("__"):
-                continue
-
-            def a(name):
-                setattr(
-                    self,
-                    name,
-                    lambda *args, **kwargs: getattr(self.__container, name)(
-                        *args, **kwargs
-                    ),
-                )
-
-            a(name)
+    def __init__(self, container: dict[TKey, TContent]) -> None:
+        super().__init__(container)
 
     def __getitem__(self, key: TKey) -> TContent:
-        return self.__container[key]
+        return self._container[key]
 
     def __setitem__(self, key: TKey, value: TContent):
-        old = self.__container[key] if key in self.__container else None
-        self.__container[key] = value
+        old = self._container[key] if key in self._container else None
+        self._container[key] = value
         if old != value:
             self.Changed.fire(key, old, value)
 
-    def __contains__(self, v):
-        return v in self.__container
-
     def __delitem__(self, key: Any):
-        del self.__container[key]
-
-    def __str__(self) -> str:
-        return str(self.__container)
+        del self._container[key]
 
 
 attribute = object()
@@ -109,13 +103,15 @@ class ReactiveClass:
 
     def setupContainerListen(self):
         for name in dir(self):
-            if name.startswith("__"):
+            if name.startswith("_"):
                 continue
             obj = getattr(self, name)
             if type(obj) is list:
                 r = ReactiveList(obj)
             elif type(obj) is dict:
                 r = ReactiveDict(obj)
+            elif type(obj) is set:
+                r = ReactiveSet(obj)
             else:
                 continue
 
