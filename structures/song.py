@@ -41,6 +41,11 @@ class Song(ReactiveClass):
         self.patternMatrix: dict[tuple[int, int], int] = dict()
         """Locational pattern reference. (channel (x), row (y)) -> pattern number"""
 
+        # Pre-pop default patterns
+        for row in range(self.visibleMatrixRows):
+            for channel in range(CHANNEL_COUNT):
+                self.patternMatrix[channel, row] = 0
+
         self.highlightedMatrixRows: set[int] = set()
 
         self.setupContainerListen()
