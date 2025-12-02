@@ -185,10 +185,10 @@ class ReactiveClassView(ttk.Frame):
         fields: set[str] | None = None,
         recursionLevel: int = 0,
     ):
-        super().__init__(parent, height=400)
+        super().__init__(parent)
 
         hf = HeaderFrame(self, title or target.__class__.__qualname__)
-        hf.pack(fill="both")
+        hf.pack(fill="both", expand=True)
 
         if fields is None:
             fields = {

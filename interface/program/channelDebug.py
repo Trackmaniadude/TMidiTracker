@@ -15,24 +15,25 @@ from structures import program
 from utils.constants import CHANNEL_ORDER_INVERSE
 from utils.reactiveClass import ReactiveClassView
 
-DISPLAY_COL = 4
-
 
 class ChannelDebug(ttk.Frame):
     def __init__(self, parent: tk.Misc):
-        super().__init__(parent, relief="raised", width=400, height=200)
+        super().__init__(parent, relief="raised", width=300, height=200)
 
-        sf = DScrollFrame(self, mode="DOUBLE")
+        sf = DScrollFrame(self, mode="VERTICAL")
         sf.pack(fill="both", expand=True)
 
         self.pack_propagate(False)
 
         self.__content = sf.content
+        self.__content.configure(width=280, height=2000)
+
+        self.__content.pack_propagate(False)
 
         for i, channel in enumerate(program.p.currentSong.channels):
-            ii = CHANNEL_ORDER_INVERSE[i]
-            row = ii // DISPLAY_COL
-            col = ii % DISPLAY_COL
+            # ii = CHANNEL_ORDER_INVERSE[i]
+            # row = ii // DISPLAY_COL
+            # col = ii % DISPLAY_COL
 
             view = ReactiveClassView(
                 self.__content,
@@ -41,4 +42,7 @@ class ChannelDebug(ttk.Frame):
                 recursionLevel=1,
             )
             view.config(relief="sunken", borderwidth=2)
-            view.grid(row=row, column=col, sticky="nesw")
+            view.pack(side="top", fill="x")
+            # view.grid(row=row, column=col, sticky="nesw")
+            # view.grid(row=i, column=0, sticky="ew")
+            # view.grid_propagate(False)

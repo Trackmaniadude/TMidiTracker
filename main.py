@@ -76,10 +76,10 @@ root.bind_all("<Button-1>", focus)
 # )
 
 
+ChannelDebug(root).pack(side="right", fill="both")
 PatternViewFrame(root).pack(side="bottom", fill="both", expand=True)
 PatternMatrix(root).pack(side="left", fill="both")
 PatternList(root).pack(side="left", fill="both")
-ChannelDebug(root).pack(side="left", fill="both", expand=True)
 
 
 root.mainloop()
