@@ -91,7 +91,9 @@ class ReactiveDict[TKey, TContent](ReactiveContainer):
             self.Changed.fire(key, old, value)
 
     def __delitem__(self, key: Any):
+        old = self._container[key]
         del self._container[key]
+        self.Changed.fire(key, old, None)
 
 
 attribute = object()
