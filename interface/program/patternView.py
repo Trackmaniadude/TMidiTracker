@@ -97,7 +97,7 @@ class PatternViewLabel(ttk.Label):
     ):
         super().__init__(getattr(parent, mode.value.parentName))
         width = mode.value.width
-        self.config(text="DEF", width=width, relief="solid", borderwidth=2)
+        self.config(text="", width=width, relief="solid", borderwidth=2)
 
         self.view = parent
         self.mode = mode
@@ -109,7 +109,8 @@ class PatternViewLabel(ttk.Label):
         self.entryVar = tk.StringVar(self)
         self.entry = ttk.Entry(self, width=width, textvariable=self.entryVar)
 
-        self.lastStyle = ""
+        self.__style: str = ""
+        self.__text: str = ""
 
         self.bind("<FocusIn>", lambda *_: self.startEntry())
         if mode == PVLM.NOTE:
@@ -201,8 +202,7 @@ class PatternViewLabel(ttk.Label):
             text = ""
         else:
             text = self.mode.value.toView(value, self.view.pattern.channel.channel)
-        self.config(text=text)
-        self.entryVar.set(text)
+        self.text = text
 
         # Highlight
         target = self.view.viewFrame.target
@@ -222,9 +222,28 @@ class PatternViewLabel(ttk.Label):
         else:
             style = Note.DefaultTarget if highlight else Note.Default
 
-        if style != self.lastStyle:
-            self.config(style=cast(str, style))
-            self.lastStyle = style
+        self.style = cast(str, style)
+
+    @property
+    def style(self) -> str:
+        return self.__style
+
+    @style.setter
+    def style(self, newStyle: str):
+        if newStyle != self.__style:
+            self.__style = newStyle
+            self.config(style=self.style)
+
+    @property
+    def text(self) -> str:
+        return self.__text
+
+    @text.setter
+    def text(self, newText: str):
+        if newText != self.__text:
+            self.__text = newText
+            self.config(text=newText)
+            self.entryVar.set(newText)
 
 
 class PatternView(ttk.Frame):
