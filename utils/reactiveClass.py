@@ -197,7 +197,7 @@ class ReactiveClassView(ttk.Frame):
 
         for i, field in enumerate(fields):
 
-            def setup():
+            def setup(field):
                 targetVal = getattr(target, field)
 
                 if isinstance(targetVal, ReactiveClass) and recursionLevel > 0:
@@ -222,4 +222,4 @@ class ReactiveClassView(ttk.Frame):
                     g()
                     target.getAttributeChangedEvent(field).connect(lambda *_: g())
 
-            setup()
+            setup(field)
