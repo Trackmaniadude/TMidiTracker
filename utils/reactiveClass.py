@@ -142,7 +142,9 @@ class ReactiveClass:
         Event args: (key: Any, old: Any, new: Any)
         """
         if not hasattr(self, name):
-            _logger.warning(f"Attempt to bind to non-existant attribute '{name}' in {self}")
+            _logger.warning(
+                f"Attempt to bind to non-existant attribute '{name}' in {self}"
+            )
         if name not in self.__individualChangeEvents:
             _logger.debug(f"Generating attribute change event for {name} ({self})")
             e = Event()

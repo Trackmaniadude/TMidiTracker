@@ -34,6 +34,11 @@ class ChannelDebug(ttk.Frame):
             row = ii // DISPLAY_COL
             col = ii % DISPLAY_COL
 
-            view = ReactiveClassView(self.__content, channel.playbackState, title=f"Channel {i+1}", recursionLevel=1)
+            view = ReactiveClassView(
+                self.__content,
+                channel.playbackState,
+                title=f"Channel {i+1}",
+                recursionLevel=1,
+            )
             view.config(relief="sunken", borderwidth=2)
             view.grid(row=row, column=col, sticky="nesw")

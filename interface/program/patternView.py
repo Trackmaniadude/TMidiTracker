@@ -157,6 +157,8 @@ class PatternViewLabel(ttk.Label):
         else:
             self.entry.bind("<FocusOut>", lambda *_: self.endEntry())
 
+        # program.p.getAttributeChangedEvent("currentPatternRow").connect(lambda *_: self.refresh())
+
     def startEntry(self):
         self.inputing = True
         self.view.viewFrame.setTarget(
