@@ -22,6 +22,8 @@ class ReactiveContainer[TContainer, TKey, TContent]:
         for name in dir(self._container):
             if name.startswith("_"):
                 continue
+            if name in dir(self):
+                continue
 
             def a(name):
                 setattr(
@@ -48,14 +50,17 @@ class ReactiveSet[TContent](ReactiveContainer):
     def __init__(self, container: set[TContent]) -> None:
         super().__init__(container)
 
-    def __getitem__(self, index: int) -> TContent:
-        return self._container[index]
+    def add(self, item):
+        t = item not in self._container
+        self._container.add(item)
+        if t:
+            self.Changed.fire(None, None, item)
 
-    def __setitem__(self, index: int, value: TContent):
-        old = self._container[index] if index in self._container else None
-        self._container[index] = value
-        if old != value:
-            self.Changed.fire(index, old, value)
+    def remove(self, item):
+        t = item in self._container
+        self._container.remove(item)
+        if t:
+            self.Changed.fire(None, item, None)
 
 
 class ReactiveList[TContent](ReactiveContainer):
