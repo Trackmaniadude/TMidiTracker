@@ -7,8 +7,10 @@ import logging
 import tkinter as tk
 from dataclasses import dataclass
 from tkinter import ttk
+from typing import cast
 
 from interface.program.patternView import PVLM, PatternView
+from interface.theme import MatrixLabel
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from structures import program
 from utils.constants import (
@@ -29,6 +31,43 @@ class Target:
     subcolumn: int
 
 
+class RowList(ttk.Frame):
+    def __init__(self, parent: tk.Misc):
+        super().__init__(parent, padding="0 4")
+        self.labels: dict[int, ttk.Label] = dict()
+        self.rebuild()
+
+        self.__highlight: int = -1
+
+        program.p.getAttributeChangedEvent("currentPatternRow").connect(
+            lambda key, old, new: setattr(self, "highlight", new)
+        )
+
+    @property
+    def highlight(self) -> int:
+        return self.__highlight
+
+    @highlight.setter
+    def highlight(self, highlight: int):
+        if self.__highlight != highlight:
+            if self.__highlight in self.labels:
+                self.labels[self.__highlight].configure(
+                    style=cast(str, MatrixLabel.DefaultEven)
+                )
+            if highlight in self.labels:
+                self.labels[highlight].configure(style=cast(str, MatrixLabel.Highlight))
+        self.__highlight = highlight
+
+    def rebuild(self):
+        for i, label in self.labels.items():
+            del self.labels[i]
+            label.destroy()
+        for i in range(program.p.currentSong.patternLength):
+            label = ttk.Label(self, text=i, justify="left")
+            label.grid(row=i, column=0, sticky="nesw")
+            self.labels[i] = label
+
+
 class PatternViewFrame(ttk.Frame):
     def __init__(self, parent: tk.Misc):
         super().__init__(parent, relief="raised", borderwidth=2)
@@ -43,6 +82,7 @@ class PatternViewFrame(ttk.Frame):
 
         self.views: list[PatternView] = list()
 
+        RowList(self.__content).pack(side="left", fill="y")
         self.showChannels()
 
         def matrixChangedEvent(key: tuple[int, int], old: int | None, new: int):
