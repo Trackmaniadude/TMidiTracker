@@ -30,6 +30,7 @@ from utils.constants import (
     NOTE_NAMES_SHARP,
     NOTES_PER_OCTAVE,
 )
+from utils.misc import hex2
 from utils.types import *
 
 _logger = logging.getLogger(__name__)
@@ -44,6 +45,18 @@ class PatternViewLabelMode[T]:
     getter: str
     fromView: Callable[[str], T]
     toView: Callable[[T, int], str]
+
+
+def fromEffectString(s: str) -> tuple[int, ...]:
+    l = list()
+    for i in range(0, len(s), 2):
+        sub = s[i : i + 2]
+        l.append(int(sub, 16))
+    return tuple(l)
+
+
+def toEffectString(t: tuple[int, ...]) -> str:
+    return "".join(hex2(n) for n in t)
 
 
 class PatternViewLabelModes(Enum):
@@ -71,7 +84,7 @@ class PatternViewLabelModes(Enum):
         setter="setVelocity",
         getter="getVelocity",
         fromView=lambda s: int(s, 16),
-        toView=lambda v, _: hex(v)[2:].upper(),
+        toView=lambda v, _: hex2(v),
     )
     EFFECT = PatternViewLabelMode(
         effect,
@@ -79,8 +92,8 @@ class PatternViewLabelModes(Enum):
         width=6,
         setter="setEffect",
         getter="getEffect",
-        fromView=lambda _: _,
-        toView=lambda *_: _,
+        fromView=fromEffectString,
+        toView=lambda v, _: toEffectString(v),
     )
 
 

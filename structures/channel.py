@@ -100,7 +100,10 @@ class Channel(ReactiveClass):
                     velocity = self.playbackState.velocities.get(col, 64)
                     messages.append(
                         mido.Message(
-                            "note_on", channel=self.channel, note=note, velocity=velocity
+                            "note_on",
+                            channel=self.channel,
+                            note=note,
+                            velocity=velocity,
                         )
                     )
 
