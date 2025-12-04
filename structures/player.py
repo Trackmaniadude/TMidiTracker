@@ -67,6 +67,7 @@ class Player:
 
                 for message in messages:
                     program.p.currentPort.send(message)
+                    _logger.debug(message)
 
                 tickLength = 1 / program.p.currentSong.clock
 
