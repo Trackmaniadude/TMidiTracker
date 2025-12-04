@@ -16,6 +16,7 @@ import logging
 import mido
 
 from structures import program
+from structures.effects import runEffect
 from utils.reactiveClass import ReactiveClass
 
 _logger = logging.getLogger(__name__)
@@ -69,7 +70,7 @@ class Channel(ReactiveClass):
             rowData = currentPattern.getRow(program.p.currentPatternRow)
 
             for col, effect in rowData.effects.items():
-                pass
+                runEffect(effect, self)
 
             for col, vel in rowData.velocities.items():
                 self.playbackState.velocities[col] = vel
@@ -106,8 +107,6 @@ class Channel(ReactiveClass):
                             velocity=velocity,
                         )
                     )
-
-                print(col, note)
 
         return messages
 
