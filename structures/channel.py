@@ -70,7 +70,9 @@ class Channel(ReactiveClass):
             rowData = currentPattern.getRow(program.p.currentPatternRow)
 
             for col, effect in rowData.effects.items():
-                runEffect(effect, self)
+                effectMessages = runEffect(effect, self)
+                if effectMessages is not None:
+                    messages.extend(effectMessages)
 
             for col, vel in rowData.velocities.items():
                 self.playbackState.velocities[col] = vel
