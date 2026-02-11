@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, cast
 
 from interface.theme import MatrixLabel
 from interface.utilities.doubleScrollFrame import DScrollFrame
+from interface.utilities.quickRefresh import QuickRefresh
 from utils.constants import CHANNEL_ORDER
 
 if TYPE_CHECKING:
@@ -24,7 +25,7 @@ from structures import program
 _logger = logging.getLogger(__name__)
 
 
-class PatternSelector(ttk.Label):
+class PatternSelector(ttk.Label, QuickRefresh):
     def __init__(self, parent: tk.Misc, list: PatternList, channel: int, pattern: int):
         super().__init__(parent, relief="sunken")
 
@@ -37,14 +38,15 @@ class PatternSelector(ttk.Label):
         # self.bind("<Button-3>", lambda *_: self.decrement())
 
         program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
-            lambda key, *_: self.refresh()
+            lambda key, *_: self.queueRefresh()
         )
-        self.refresh()
+        self.queueRefresh()
 
     # def getPattern(self) -> int:
     #     return program.p.currentSong.getPatternNumberByLocation(self.channel, self.row)
 
     def refresh(self):
+        self.resetRefreshFlag()
         if program.p.currentSong.patternIdExists(self.channel, self.pattern):
             count = program.p.currentSong.getPatternUsage(
                 program.p.currentSong.getPatternById(self.channel, self.pattern)
@@ -64,7 +66,7 @@ class PatternSelector(ttk.Label):
         return super().destroy()
 
 
-class PatternList(ttk.Frame):
+class PatternList(ttk.Frame, QuickRefresh):
     def __init__(self, parent: tk.Misc):
         super().__init__(parent, relief="raised", width=400, height=200)
 
@@ -79,11 +81,12 @@ class PatternList(ttk.Frame):
         """(row, col) -> PatternSelector"""
 
         program.p.currentSong.getAttributeChangedEvent("patternList").connect(
-            lambda key, *_: self.refresh()
+            lambda key, *_: self.queueRefresh()
         )
-        self.refresh()
+        self.queueRefresh()
 
     def refresh(self):
+        self.resetRefreshFlag()
         rows = program.p.currentSong.visibleChannels
         cols = (
             max(

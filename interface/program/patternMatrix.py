@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
+from interface.utilities.quickRefresh import QuickRefresh
+
 if TYPE_CHECKING:
     from structures.song import Song
     from structures.channel import Channel
@@ -23,7 +25,7 @@ from utils.constants import CHANNEL_ORDER
 _logger = logging.getLogger(__name__)
 
 
-class PatternSelector(ttk.Label):
+class PatternSelector(ttk.Label, QuickRefresh):
     def __init__(self, parent: tk.Misc, matrix: PatternMatrix, channel: int, row: int):
         super().__init__(parent, relief="sunken")
 
@@ -40,15 +42,15 @@ class PatternSelector(ttk.Label):
         self.bind("<Button-3>", lambda *_: (self.decrement(), self.setCurrentRow()))
 
         program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
-            lambda key, *_: self.refresh()
+            lambda key, *_: self.queueRefresh()
         )
         program.p.currentSong.getAttributeChangedEvent("highlightedMatrixRows").connect(
-            lambda key, *_: self.refresh()
+            lambda key, *_: self.queueRefresh()
         )
         program.p.getAttributeChangedEvent("currentMatrixRow").connect(
-            lambda key, *_: self.refresh()
+            lambda key, *_: self.queueRefresh()
         )
-        self.refresh()
+        self.queueRefresh()
 
     def setCurrentRow(self):
         program.p.currentMatrixRow = self.row
@@ -78,6 +80,7 @@ class PatternSelector(ttk.Label):
         self.setPattern(p)
 
     def refresh(self):
+        self.resetRefreshFlag()
         if self.row == program.p.currentMatrixRow:
             style = MatrixLabel.Target
         elif self.row in program.p.currentSong.highlightedMatrixRows:
