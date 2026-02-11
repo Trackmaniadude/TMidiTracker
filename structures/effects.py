@@ -26,10 +26,16 @@ _logger = logging.getLogger(__name__)
 
 
 class AbstractEffect:
+    displayName: str
+    """Display name."""
     prefix: tuple[int, ...]
+    """Effect prefix. This identifies the effect."""
     color: str = "#000000"
+    """Effect display color."""
     params: list[str] = [""]
+    """Effect parameters. Should be a string list of the format [parameter layout, [parameter identifier, parameter name]]"""
     help: str = "DEFAULT HELP"
+    """Help message."""
 
     @classmethod
     def actuate(
@@ -40,13 +46,32 @@ class AbstractEffect:
             f"UNIMPLEMENTED EFFECT: {cls.__qualname__}, Channel {channel.channel}, Data {data}"
         )
 
+    @classmethod
+    def prefixString(cls) -> str:
+        out = ""
+        for n in cls.prefix:
+            if n < 16:
+                out += "0" + hex(n)[2:]
+            else:
+                out += hex(n)[2:]
+        return out.upper()
+
+
+# class EffectCategories:
+#     MISC = ("Misc", "#000000")
+#     PITCH = ("Pitch", "#000000")
+#     TIME = ("Time", "#000000")
+#     MISC = ("Misc", "#000000")
+
 
 class Effects:
     class RawMidi(AbstractEffect):
+        displayName = "Raw MIDI Message"
         prefix = (0x00,)
         help = "Send an arbitrary midi message."
 
     class RawControl(AbstractEffect):
+        displayName = "Raw MIDI Control"
         prefix = (0x01,)
         params = ["01xxyy", "x", "Control", "y", "Value"]
         help = "Send an arbitrary control change."
@@ -71,6 +96,7 @@ class Effects:
                 ]
 
     class ChangeInstrument(AbstractEffect):
+        displayName = "Change Instrument"
         prefix = (0x02,)
         params = ["02xx", "x", "Instrument"]
         help = "Change channel instrument."
@@ -96,6 +122,7 @@ class Effects:
                 ]
 
     class Test(AbstractEffect):
+        displayName = "Test"
         prefix = (0x03, 0x03, 0x03)
 
 
