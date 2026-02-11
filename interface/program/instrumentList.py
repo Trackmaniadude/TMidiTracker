@@ -38,6 +38,6 @@ class InstrumentList(ttk.Frame):
             for entry in data:
                 value = entry[0]
                 name = entry[1]
-                ttk.Label(hf.content, text=f"#{value}: {name}").pack(
+                ttk.Label(hf.content, text=f"{hex(value)[2:].upper()}: {name}").pack(
                     side="top", fill="x"
                 )
