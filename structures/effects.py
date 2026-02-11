@@ -61,12 +61,14 @@ class Effects:
             except ValueError:
                 return None
             else:
-                return [Message(
-                    "control_change",
-                    channel=channel.channel,
-                    control=control,
-                    value=value,
-                )]
+                return [
+                    Message(
+                        "control_change",
+                        channel=channel.channel,
+                        control=control,
+                        value=value,
+                    )
+                ]
 
     class ChangeInstrument(AbstractEffect):
         prefix = (0x02,)
@@ -80,10 +82,18 @@ class Effects:
             try:
                 program = data[0]
             except Exception as e:
-                _logger.warning(f"Invalid data for effect {cls.__qualname__}; got {data}, expected form {cls.params}")
+                _logger.warning(
+                    f"Invalid data for effect {cls.__qualname__}; got {data}, expected form {cls.params}"
+                )
                 return None
             else:
-                return [Message("program_change", channel=channel.channel, program=program,)]
+                return [
+                    Message(
+                        "program_change",
+                        channel=channel.channel,
+                        program=program,
+                    )
+                ]
 
     class Test(AbstractEffect):
         prefix = (0x03, 0x03, 0x03)
@@ -101,7 +111,9 @@ def getEffect(data: tuple[int, ...]) -> type[AbstractEffect] | None:
     return None
 
 
-def runEffect(data: tuple[int, ...], channel: Channel) -> None | list[Message | MetaMessage]:
+def runEffect(
+    data: tuple[int, ...], channel: Channel
+) -> None | list[Message | MetaMessage]:
     """Get an effect, and call it's actuate if it exists with data - effect prefix."""
     effect = getEffect(data)
     if effect:

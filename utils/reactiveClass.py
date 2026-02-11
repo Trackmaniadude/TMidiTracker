@@ -100,6 +100,10 @@ attribute = object()
 
 
 class ReactiveClass:
+    """
+    Automatically generate changed events for values in a class.
+    """
+
     def __init__(self) -> None:
         self.Changed: Event[[str, Any, Any, Any]] = Event()
         """
@@ -174,6 +178,10 @@ class ReactiveClass:
 
 
 class ReactiveClassView(ttk.Frame):
+    """
+    Easy view of data in a ReactiveClass instance.
+    """
+
     REMOVE = {"Changed"}
 
     def __init__(
