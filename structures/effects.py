@@ -6,8 +6,6 @@ from __future__ import annotations
 
 from mido import Message, MetaMessage
 
-from structures.channel import Channel
-
 if __name__ == "__main__":
     import sys
 
@@ -30,6 +28,7 @@ _logger = logging.getLogger(__name__)
 class AbstractEffect:
     prefix: tuple[int, ...]
     color: str = "#000000"
+    params: list[str] = [""]
     help: str = "DEFAULT HELP"
 
     @classmethod
@@ -49,17 +48,42 @@ class Effects:
 
     class RawControl(AbstractEffect):
         prefix = (0x01,)
+        params = ["01xxyy", "x", "Control", "y", "Value"]
         help = "Send an arbitrary control change."
+
+        @classmethod
+        def actuate(
+            cls, channel: Channel, data: tuple[int, ...]
+        ) -> None | list[Message | MetaMessage]:
+            try:
+                control = data[0]
+                value = data[1]
+            except ValueError:
+                return None
+            else:
+                return [Message(
+                    "control_change",
+                    channel=channel.channel,
+                    control=control,
+                    value=value,
+                )]
 
     class ChangeInstrument(AbstractEffect):
         prefix = (0x02,)
+        params = ["02xx", "x", "Instrument"]
         help = "Change channel instrument."
 
         @classmethod
         def actuate(
             cls, channel: Channel, data: tuple[int, ...]
         ) -> None | list[Message | MetaMessage]:
-            pass
+            try:
+                program = data[0]
+            except Exception as e:
+                _logger.warning(f"Invalid data for effect {cls.__qualname__}; got {data}, expected form {cls.params}")
+                return None
+            else:
+                return [Message("program_change", channel=channel.channel, program=program,)]
 
     class Test(AbstractEffect):
         prefix = (0x03, 0x03, 0x03)
@@ -77,11 +101,11 @@ def getEffect(data: tuple[int, ...]) -> type[AbstractEffect] | None:
     return None
 
 
-def runEffect(data: tuple[int, ...], channel: Channel):
+def runEffect(data: tuple[int, ...], channel: Channel) -> None | list[Message | MetaMessage]:
     """Get an effect, and call it's actuate if it exists with data - effect prefix."""
     effect = getEffect(data)
     if effect:
-        effect.actuate(channel, data[len(effect.prefix) :])
+        return effect.actuate(channel, data[len(effect.prefix) :])
 
 
 if __name__ == "__main__":
