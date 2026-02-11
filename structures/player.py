@@ -94,6 +94,12 @@ class Player:
             patternRow if patternRow is not None else program.p.currentPatternRow
         )
 
+    def allOff(self):
+        for channel in range(16):
+            for note in range(128):
+                message = Message("note_off", channel=channel, note=note)
+                program.p.currentPort.send(message)
+
     def play(self):
         self.resume.set()
         self.lastMatrixRow = program.p.currentMatrixRow
@@ -101,6 +107,7 @@ class Player:
 
     def pause(self):
         self.resume.clear()
+        self.allOff()
 
     def togglePlayback(self):
         if self.playing:
