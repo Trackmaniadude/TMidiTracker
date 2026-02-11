@@ -71,10 +71,6 @@ def focus(event):
 
 
 root.bind_all("<Button-1>", focus)
-# root.bind_all(
-#     "<Space>",
-#     lambda *_: setattr(program, "allowEditingPattern", not program.allowEditingPattern),
-# )
 
 
 if args.debug:
@@ -83,6 +79,38 @@ EffectList(root).pack(side="right", fill="both")
 PatternViewFrame(root).pack(side="bottom", fill="both", expand=True)
 PatternMatrix(root).pack(side="left", fill="both")
 PatternList(root).pack(side="left", fill="both")
+
+
+# Global Keyboard Shortcuts
+# TODO: rebindable shortcuts
+def makeKeybinds():
+    # I wish I could make anonymous scopes.
+
+    # Pause/Play
+    root.bind_all("<space>", lambda *_: program.p.songPlayer.togglePlayback())
+
+    # Jump to start of pattern
+    def jumpToStartOfPattern():
+        program.p.songPlayer.setPlaybackCursor(None, 0)
+
+    root.bind_all("<Control-space>", lambda *_: jumpToStartOfPattern())
+
+    # Jump to last playback position
+    def jumpToLastPlaybackPosition():
+        program.p.songPlayer.setPlaybackCursor(
+            program.p.songPlayer.lastMatrixRow, program.p.songPlayer.lastPatternRow
+        )
+
+    root.bind_all("<Shift-space>", lambda *_: jumpToLastPlaybackPosition())
+
+    # Jump to start of song
+    def jumpToStartOfSong():
+        program.p.songPlayer.setPlaybackCursor(0, 0)
+
+    root.bind_all("<Control-Shift-space>", lambda *_: jumpToStartOfSong())
+
+
+makeKeybinds()
 
 
 root.mainloop()

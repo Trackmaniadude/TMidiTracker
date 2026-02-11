@@ -172,6 +172,8 @@ class PatternViewLabel(ttk.Label):
             self.entry.bind("<FocusOut>", lambda *_: self.endEntry())
 
     def startEntry(self):
+        program.p.songPlayer.setPlaybackCursor(None, self.row)
+
         self.inputing = True
         self.view.viewFrame.setTarget(
             self.view.pattern.channel.channel,

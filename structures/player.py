@@ -22,16 +22,16 @@ class Player:
 
         self.resume = Event()
 
-        self.matrixRow: int = 0
-        """Current row in pattern matrix."""
-        self.patternRow: int = 0
-        """Current row within pattern."""
+        self.lastMatrixRow: int = 0
+        self.lastPatternRow: int = 0
 
         self.grooveIndex: int = 0
         self.grooveTimer: int = 0
 
         self.expectedTime: float = 0
         self.actualTime: float = 0
+
+        self.playing: bool = False
 
         def playbackDaemon():
             while True:
@@ -82,14 +82,30 @@ class Player:
 
         Thread(name="PlaybackDaemon", target=playbackDaemon, daemon=True).start()
 
-    def setPlaybackCursor(self, matrixRow: int, patternRow: int):
-        self.matrixRow = matrixRow
-        self.patternRow = patternRow
-
-    def play(self):
+    def setPlaybackCursor(
+        self, matrixRow: int | None = None, patternRow: int | None = None
+    ):
         self.grooveIndex = 0
         self.grooveTimer = 0
+        program.p.currentMatrixRow = (
+            matrixRow if matrixRow is not None else program.p.currentMatrixRow
+        )
+        program.p.currentPatternRow = (
+            patternRow if patternRow is not None else program.p.currentPatternRow
+        )
+
+    def play(self):
         self.resume.set()
+        self.lastMatrixRow = program.p.currentMatrixRow
+        self.lastPatternRow = program.p.currentPatternRow
 
     def pause(self):
         self.resume.clear()
+
+    def togglePlayback(self):
+        if self.playing:
+            self.playing = False
+            self.pause()
+        else:
+            self.playing = True
+            self.play()
