@@ -7,6 +7,7 @@ from typing import cast
 
 from interface.program.channelDebug import ChannelDebug
 from interface.program.effectList import EffectList
+from interface.program.instrumentList import InstrumentList
 from interface.program.patternList import PatternList
 from interface.program.patternMatrix import PatternMatrix
 from interface.program.patternViewFrame import PatternViewFrame
@@ -76,6 +77,7 @@ root.bind_all("<Button-1>", focus)
 if args.debug:
     ChannelDebug(root).pack(side="right", fill="both")
 EffectList(root).pack(side="right", fill="both")
+InstrumentList(root).pack(side="right", fill="both")
 PatternViewFrame(root).pack(side="bottom", fill="both", expand=True)
 PatternMatrix(root).pack(side="left", fill="both")
 PatternList(root).pack(side="left", fill="both")

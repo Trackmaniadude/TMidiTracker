@@ -1,0 +1,43 @@
+import tkinter as tk
+from tkinter import ttk
+
+from interface.utilities.doubleScrollFrame import DScrollFrame
+from interface.utilities.headerFrame import HeaderFrame
+from utils.gm import GMDrumKits, GMEntry, GMPrograms
+
+
+class InstrumentList(ttk.Frame):
+    def __init__(self, parent: tk.Misc):
+        super().__init__(parent)
+        self.config(relief="raised", width=220, height=20, borderwidth=2)
+
+        sf = DScrollFrame(self, mode="VERTICAL")
+        sf.pack(fill="both", expand=True)
+
+        self.pack_propagate(False)
+
+        self.__content = sf.content
+        self.__content.configure(width=20, height=20)
+
+        categories: dict[str, list[tuple[int, str]]] = dict()
+
+        def process(cls: type):
+            for _, v in cls.__dict__.items():
+                if isinstance(v, GMEntry):
+                    if v.category not in categories:
+                        categories[v.category] = list()
+                    categories[v.category].append((v.value, v.name))
+
+        process(GMPrograms)
+        process(GMDrumKits)
+
+        for category, data in categories.items():
+            hf = HeaderFrame(sf.content, category, userCollapsible=True)
+            hf.collapse()
+            hf.pack(side="top", fill="x")
+            for entry in data:
+                value = entry[0]
+                name = entry[1]
+                ttk.Label(hf.content, text=f"#{value}: {name}").pack(
+                    side="top", fill="x"
+                )
