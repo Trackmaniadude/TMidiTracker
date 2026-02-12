@@ -123,6 +123,7 @@ class Effects:
 
     class Test(AbstractEffect):
         displayName = "Test"
+        help = "Extremely long help message. Did you know that this help message is long? \n \n the j #3"
         prefix = (0x03, 0x03, 0x03)
 
 

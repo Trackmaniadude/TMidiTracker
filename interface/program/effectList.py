@@ -21,7 +21,7 @@ class EffectDisplay(ttk.Frame):
             name = effect.params[i + 1]
             ttk.Label(self, text=f"{id} = {name}").pack(side="top", fill="x")
         ttk.Separator(self, orient="horizontal").pack(side="top", fill="x")
-        ttk.Label(self, text=effect.help).pack(side="top", fill="x")
+        ttk.Label(self, text=effect.help, wraplength=260).pack(side="top", fill="x")
 
 
 class EffectList(ttk.Frame):
