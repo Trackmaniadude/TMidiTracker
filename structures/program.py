@@ -21,6 +21,9 @@ class Program(ReactiveClass):
 
         self.songPlayer: Player = Player()
 
+        self.autoStep: int = 1
+        """How many rows to step after making an entry. 0 to disable."""
+
         self.currentSong: Song = Song()
         """Current active song object."""
 
@@ -34,7 +37,9 @@ class Program(ReactiveClass):
         """When entering a note, play it."""
 
         self.currentMatrixRow: int = 0
+        """Current row in pattern matrix."""
         self.currentPatternRow: int = 0
+        """Current row in patterns."""
 
         self.setupContainerListen()
 

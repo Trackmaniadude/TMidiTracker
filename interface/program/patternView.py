@@ -127,65 +127,64 @@ class PatternViewLabel(ttk.Label):
         self.__style: str = ""
         self.__text: str = ""
 
-        def target():
-            self.view.viewFrame.setTarget(
-                self.view.pattern.channel.channel,
-                self.row,
-                self.mode,
-                self.column,
-            )
+        self.bind("<FocusIn>", lambda *_: self.startEntry())
 
-        self.bind("<FocusIn>", lambda *_: target())
+        if mode == PVLM.NOTE:
+            # Setup playback
+            def press(note: int | Literal["stop"] | None):
+                def onEvent(*_):
+                    if type(note) is int:
+                        n = note + (program.p.currentOctave * NOTES_PER_OCTAVE)
+                        if program.p.playbackInEdit:
+                            message = mido.Message(
+                                "note_on",
+                                channel=self.view.pattern.channel.channel,
+                                note=n,
+                                velocity=64,
+                            )
+                            program.p.currentPort.send(message)
+                    else:
+                        n = note
+                    self.view.pattern.setNote(self.row, self.column, n)
+                    self.refresh()
 
-        # self.bind("<FocusIn>", lambda *_: self.startEntry())
-        # if mode == PVLM.NOTE:
+                return onEvent
 
-        #     def press(note: int | Literal["stop"] | None):
-        #         def onEvent(*_):
-        #             if type(note) is int:
-        #                 n = note + (program.p.currentOctave * NOTES_PER_OCTAVE)
-        #                 if program.p.playbackInEdit:
-        #                     message = mido.Message(
-        #                         "note_on",
-        #                         channel=self.view.pattern.channel.channel,
-        #                         note=n,
-        #                         velocity=64,
-        #                     )
-        #                     program.p.currentPort.send(message)
-        #             else:
-        #                 n = note
-        #             self.view.pattern.setNote(self.row, self.column, n)
-        #             self.refresh()
+            def release(note):
+                def onEvent(*_):
+                    if type(note) is int:
+                        n = note + (program.p.currentOctave * NOTES_PER_OCTAVE)
+                        message = mido.Message(
+                            "note_off",
+                            channel=self.view.pattern.channel.channel,
+                            note=n,
+                            velocity=0,
+                        )
+                        program.p.currentPort.send(message)
+                    self.view.viewFrame.stepTarget(program.p.autoStep, focus=True)
 
-        #         return onEvent
+                return onEvent
 
-        #     def release(note):
-        #         def onEvent(*_):
-        #             if type(note) is int:
-        #                 n = note + (program.p.currentOctave * NOTES_PER_OCTAVE)
-        #                 message = mido.Message(
-        #                     "note_off",
-        #                     channel=self.view.pattern.channel.channel,
-        #                     note=n,
-        #                     velocity=0,
-        #                 )
-        #                 program.p.currentPort.send(message)
+            for key, note in KEYBOARD_MAP.items():
+                self.bind(f"<KeyPress-{key}>", press(note))
+                self.bind(f"<KeyRelease-{key}>", release(note))
+            self.bind(f"<Tab>", press("stop"))
+            self.bind(f"<BackSpace>", press(None))
+            self.bind(f"<Delete>", press(None))
+            self.bind("<FocusOut>", lambda *_: self.endEntry())
+        else:
+            self.entry.bind("<FocusOut>", lambda *_: self.endEntry())
 
-        #         return onEvent
-
-        #     for key, note in KEYBOARD_MAP.items():
-        #         self.bind(f"<KeyPress-{key}>", press(note))
-        #         self.bind(f"<KeyRelease-{key}>", release(note))
-        #     self.bind(f"<Tab>", press("stop"))
-        #     self.bind(f"<BackSpace>", press(None))
-        #     self.bind(f"<Delete>", press(None))
-        #     self.bind("<FocusOut>", lambda *_: self.endEntry())
-        # else:
-        #     self.entry.bind("<FocusOut>", lambda *_: self.endEntry())
+        self.entry.bind("<Return>", lambda *_: 1)
 
     def startEntry(self):
-        pass
-        # program.p.songPlayer.setPlaybackCursor(None, self.row)
+        self.view.viewFrame.setTarget(
+            self.view.pattern.channel.channel,
+            self.row,
+            self.mode,
+            self.column,
+        )
+        program.p.songPlayer.setPlaybackCursor(None, self.row)
 
         # self.inputing = True
         # self.view.viewFrame.setTarget(

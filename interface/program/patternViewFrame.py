@@ -110,37 +110,46 @@ class PatternViewFrame(ttk.Frame):
             )
             view.refreshLabels()
 
-    def setFocus(
-        self,
-        channel: int | None = None,
-        row: int | None = None,
-        column: PVLM | None = None,
-        subcolumn: int | None = None,
-    ):
-        channel = channel if channel is not None else self.target.channel
-        row = row if row is not None else self.target.row
-        column = column if column is not None else self.target.column
-        subcolumn = subcolumn if subcolumn is not None else self.target.subcolumn
-
-        self.setTarget(channel, row, column, subcolumn)
-
-        self.views[channel].labelLookup[row, column, subcolumn].focus()
-
     def setTarget(
         self,
         channel: int | None = None,
         row: int | None = None,
         column: PVLM | None = None,
         subcolumn: int | None = None,
+        *,
+        focus: bool = False
     ):
-        self.target = Target(
-            channel if channel is not None else self.target.channel,
-            row if row is not None else self.target.row,
-            column if column is not None else self.target.column,
-            subcolumn if subcolumn is not None else self.target.subcolumn,
-        )
+        channel = channel if channel is not None else self.target.channel
+        row = row if row is not None else self.target.row
+        column = column if column is not None else self.target.column
+        subcolumn = subcolumn if subcolumn is not None else self.target.subcolumn
+
+        self.target = Target(channel, row, column, subcolumn)
+
+        if focus == True:
+            self.views[CHANNEL_ORDER_INVERSE[channel]].labelLookup[
+                row, column, subcolumn
+            ].focus()
         for view in self.views:
             view.refreshLabels()
+
+    def stepTarget(self, step: int, stepPattern: bool = True, *, focus: bool = False):
+        newPatternRow = self.target.row + step
+
+        if newPatternRow >= program.p.currentSong.patternLength:
+            if stepPattern == True:
+                newPatternRow -= program.p.currentSong.patternLength
+                if (
+                    program.p.currentMatrixRow
+                    < program.p.currentSong.visibleMatrixRows - 1
+                ):
+                    program.p.currentMatrixRow += 1
+                else:
+                    newPatternRow = program.p.currentSong.patternLength - 1
+            else:
+                newPatternRow = program.p.currentSong.patternLength - 1
+
+        self.setTarget(row=newPatternRow, focus=focus)
 
     def showChannels(self):
         currentChannelsShown = len(self.views)
