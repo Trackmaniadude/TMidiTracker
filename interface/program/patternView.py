@@ -146,6 +146,7 @@ class PatternViewLabel(ttk.Label):
                     else:
                         n = note
                     self.view.pattern.setNote(self.row, self.column, n)
+                    self.view.viewFrame.stepTarget(program.p.autoStep, focus=True)
                     self.refresh()
 
                 return onEvent
@@ -161,7 +162,6 @@ class PatternViewLabel(ttk.Label):
                             velocity=0,
                         )
                         program.p.currentPort.send(message)
-                    self.view.viewFrame.stepTarget(program.p.autoStep, focus=True)
 
                 return onEvent
 
