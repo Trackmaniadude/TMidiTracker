@@ -173,9 +173,33 @@ class PatternViewLabel(ttk.Label):
             self.bind(f"<Delete>", press(None))
             self.bind("<FocusOut>", lambda *_: self.endEntry())
         else:
-            self.entry.bind("<FocusOut>", lambda *_: self.endEntry())
+            pass
+            # self.entry.bind("<FocusOut>", lambda *_: self.endEntry())
 
-        self.entry.bind("<Return>", lambda *_: 1)
+        self.bind("<Return>", lambda *_: self.endEntry())
+
+        self.bind(
+            "<Up>",
+            lambda *_: self.view.viewFrame.stepTarget(1, focus=True, direction="Up"),
+        )
+        self.bind(
+            "<Down>",
+            lambda *_: self.view.viewFrame.stepTarget(1, focus=True, direction="Down"),
+        )
+        self.bind(
+            "<Left>",
+            lambda *_: self.view.viewFrame.stepTarget(1, focus=True, direction="Left"),
+        )
+        self.bind(
+            "<Right>",
+            lambda *_: self.view.viewFrame.stepTarget(1, focus=True, direction="Right"),
+        )
+
+    def increment(self):
+        pass
+
+    def decrement(self):
+        pass
 
     def startEntry(self):
         self.view.viewFrame.setTarget(
