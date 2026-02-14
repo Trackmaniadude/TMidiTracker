@@ -67,15 +67,17 @@ class PatternViewLabelModes(Enum):
         setter="setNote",
         getter="getNote",
         fromView=lambda _: _,
+        # fmt: off
         toView=lambda v, c: (
             "STP"
             if v == "stop"
             else (
-                NOTE_NAMES_SHARP[v % NOTES_PER_OCTAVE] + str(v // NOTES_PER_OCTAVE)
+                NOTE_NAMES_SHARP[v % NOTES_PER_OCTAVE] + str(v // NOTES_PER_OCTAVE) # type: ignore
                 if c != DRUM_CHANNEL
-                else DRUM_NAMES[v]
+                else DRUM_NAMES[v] # type: ignore
             )
         ),
+        # fmt: on
     )
     VELOCITY = PatternViewLabelMode(
         velocity,
@@ -84,7 +86,7 @@ class PatternViewLabelModes(Enum):
         setter="setVelocity",
         getter="getVelocity",
         fromView=lambda s: int(s, 16),
-        toView=lambda v, _: hex2(v),
+        toView=lambda v, _: hex2(v),  # type: ignore
     )
     EFFECT = PatternViewLabelMode(
         effect,
@@ -93,7 +95,7 @@ class PatternViewLabelModes(Enum):
         setter="setEffect",
         getter="getEffect",
         fromView=fromEffectString,
-        toView=lambda v, _: toEffectString(v),
+        toView=lambda v, _: toEffectString(v),  # type: ignore
     )
 
 
@@ -126,8 +128,9 @@ class PatternViewLabel(ttk.Label):
         self.__text: str = ""
 
         self.bind("<FocusIn>", lambda *_: self.startEntry())
-        if mode == PVLM.NOTE:
 
+        if mode == PVLM.NOTE:
+            # Setup playback
             def press(note: int | Literal["stop"] | None):
                 def onEvent(*_):
                     if type(note) is int:
@@ -143,6 +146,7 @@ class PatternViewLabel(ttk.Label):
                     else:
                         n = note
                     self.view.pattern.setNote(self.row, self.column, n)
+                    self.view.viewFrame.stepTarget(program.p.autoStep, focus=True)
                     self.refresh()
 
                 return onEvent
@@ -169,44 +173,77 @@ class PatternViewLabel(ttk.Label):
             self.bind(f"<Delete>", press(None))
             self.bind("<FocusOut>", lambda *_: self.endEntry())
         else:
-            self.entry.bind("<FocusOut>", lambda *_: self.endEntry())
+            pass
+            # self.entry.bind("<FocusOut>", lambda *_: self.endEntry())
+
+        self.bind("<Return>", lambda *_: self.endEntry())
+
+        self.bind(
+            "<Up>",
+            lambda *_: self.view.viewFrame.stepTarget(1, focus=True, direction="Up"),
+        )
+        self.bind(
+            "<Down>",
+            lambda *_: self.view.viewFrame.stepTarget(1, focus=True, direction="Down"),
+        )
+        self.bind(
+            "<Left>",
+            lambda *_: self.view.viewFrame.stepTarget(1, focus=True, direction="Left"),
+        )
+        self.bind(
+            "<Right>",
+            lambda *_: self.view.viewFrame.stepTarget(1, focus=True, direction="Right"),
+        )
+
+    def increment(self):
+        pass
+
+    def decrement(self):
+        pass
 
     def startEntry(self):
-        program.p.songPlayer.setPlaybackCursor(None, self.row)
-
-        self.inputing = True
         self.view.viewFrame.setTarget(
             self.view.pattern.channel.channel,
             self.row,
             self.mode,
             self.column,
         )
-        if self.mode == PVLM.NOTE:
-            pass
-        else:
-            self.entry.grid(row=0, column=0, sticky="nesw")
-            self.entry.focus()
+        program.p.songPlayer.setPlaybackCursor(None, self.row)
+
+        # self.inputing = True
+        # self.view.viewFrame.setTarget(
+        #     self.view.pattern.channel.channel,
+        #     self.row,
+        #     self.mode,
+        #     self.column,
+        # )
+        # if self.mode == PVLM.NOTE:
+        #     pass
+        # else:
+        #     self.entry.grid(row=0, column=0, sticky="nesw")
+        #     self.entry.focus()
 
     def endEntry(self):
-        self.inputing = False
+        pass
+        # self.inputing = False
 
-        if self.mode == PVLM.NOTE:
-            pass
-        else:
-            self.entry.grid_forget()
+        # if self.mode == PVLM.NOTE:
+        #     pass
+        # else:
+        #     self.entry.grid_forget()
 
-            value = self.entryVar.get()
-            try:
-                if value == "":
-                    value = None
-                else:
-                    value = self.mode.value.fromView(value)
-                    setter = getattr(self.view.pattern, self.mode.value.setter)
-                    setter(self.row, self.column, value)
-            except:
-                pass
+        #     value = self.entryVar.get()
+        #     try:
+        #         if value == "":
+        #             value = None
+        #         else:
+        #             value = self.mode.value.fromView(value)
+        #             setter = getattr(self.view.pattern, self.mode.value.setter)
+        #             setter(self.row, self.column, value)
+        #     except:
+        #         pass
 
-        self.refresh()
+        # self.refresh()
 
     def refresh(self):
         getter = getattr(self.view.pattern, self.mode.value.getter)
@@ -260,6 +297,8 @@ class PatternViewLabel(ttk.Label):
 
 
 class PatternView(ttk.Frame):
+    """Display/edit the data of a single pattern."""
+
     def __init__(
         self, parent: tk.Misc, viewFrame: PatternViewFrame, initialPattern: Pattern
     ):
@@ -269,6 +308,11 @@ class PatternView(ttk.Frame):
         self.viewFrame: PatternViewFrame = viewFrame
 
         self.__labels: set[PatternViewLabel] = set()
+
+        self.labelLookup: dict[
+            tuple[int, PatternViewLabelModes, int], PatternViewLabel
+        ] = dict()
+        """Row (int), Column (PatternViewLabelModes), Subcolumn (int)"""
 
         self.noteFrame = ttk.Frame(self, relief="ridge", borderwidth=2)
         self.effectFrame = ttk.Frame(self, relief="ridge", borderwidth=2)
@@ -285,8 +329,10 @@ class PatternView(ttk.Frame):
     def buildLabels(self):
         # Remove old labels
         for label in self.__labels:
-            self.__labels.remove(label)
+            # self.__labels.remove(label)
             label.destroy()
+        self.__labels = set()
+        self.labelLookup = dict()
 
         # Notes
         rows = program.p.currentSong.patternLength
@@ -299,6 +345,10 @@ class PatternView(ttk.Frame):
                 note.grid(row=row, column=column * 2)
                 velocity = PatternViewLabel(self, PVLM.VELOCITY, row, column)
                 velocity.grid(row=row, column=(column * 2) + 1)
+
+                self.labelLookup[row, PVLM.NOTE, column] = note
+                self.labelLookup[row, PVLM.VELOCITY, column] = velocity
+
                 self.__labels.add(note)
                 self.__labels.add(velocity)
 
@@ -308,6 +358,8 @@ class PatternView(ttk.Frame):
                 effect = PatternViewLabel(self, PVLM.EFFECT, row, column)
                 effect.grid(row=row, column=column)
                 self.__labels.add(effect)
+
+                self.labelLookup[row, PVLM.EFFECT, column] = effect
 
     def refreshLabels(self):
         for label in self.__labels:

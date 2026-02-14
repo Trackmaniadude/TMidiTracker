@@ -7,7 +7,7 @@ import logging
 import tkinter as tk
 from dataclasses import dataclass
 from tkinter import ttk
-from typing import cast
+from typing import Literal, cast
 
 from interface.program.patternView import PVLM, PatternView
 from interface.theme import MatrixLabel
@@ -110,10 +110,115 @@ class PatternViewFrame(ttk.Frame):
             )
             view.refreshLabels()
 
-    def setTarget(self, channel: int, row: int, column: PVLM, subcolumn: int):
+    def setTarget(
+        self,
+        channel: int | None = None,
+        row: int | None = None,
+        column: PVLM | None = None,
+        subcolumn: int | None = None,
+        *,
+        focus: bool = False
+    ):
+        channel = channel if channel is not None else self.target.channel
+        row = row if row is not None else self.target.row
+        column = column if column is not None else self.target.column
+        subcolumn = subcolumn if subcolumn is not None else self.target.subcolumn
+
         self.target = Target(channel, row, column, subcolumn)
+
+        if focus == True:
+            self.views[CHANNEL_ORDER_INVERSE[channel]].labelLookup[
+                row, column, subcolumn
+            ].focus()
         for view in self.views:
             view.refreshLabels()
+
+    def stepTarget(
+        self,
+        step: int,
+        stepPattern: bool = True,
+        *,
+        direction: Literal["Up", "Down", "Left", "Right"] = "Down",
+        focus: bool = False
+    ):
+        if direction == "Up":
+            newPatternRow = self.target.row - step
+            if newPatternRow < 0:
+                if stepPattern == True:
+                    newPatternRow += program.p.currentSong.patternLength
+                    if program.p.currentMatrixRow > 0:
+                        program.p.currentMatrixRow -= 1
+                    else:
+                        newPatternRow = 0
+                else:
+                    newPatternRow = 0
+            self.setTarget(row=newPatternRow, focus=focus)
+
+        elif direction == "Down":
+            newPatternRow = self.target.row + step
+            if newPatternRow >= program.p.currentSong.patternLength:
+                if stepPattern == True:
+                    newPatternRow -= program.p.currentSong.patternLength
+                    if (
+                        program.p.currentMatrixRow
+                        < program.p.currentSong.visibleMatrixRows - 1
+                    ):
+                        program.p.currentMatrixRow += 1
+                    else:
+                        newPatternRow = program.p.currentSong.patternLength - 1
+                else:
+                    newPatternRow = program.p.currentSong.patternLength - 1
+            self.setTarget(row=newPatternRow, focus=focus)
+
+        elif direction == "Left":  # TODO: variable step
+            currentChannel = CHANNEL_ORDER_INVERSE[self.target.channel]
+            currentChannelObj = program.p.currentSong.channels[currentChannel]
+
+            if self.target.column == PVLM.NOTE:
+                if self.target.subcolumn > 0:
+                    self.setTarget(
+                        column=PVLM.VELOCITY, subcolumn=self.target.subcolumn - 1
+                    )
+                else:  # Move to LEFT channel
+                    if currentChannel > 0:
+                        self.setTarget(
+                            channel=CHANNEL_ORDER[currentChannel - 1],
+                            column=PVLM.EFFECT,
+                            subcolumn=currentChannelObj.effectColumns - 1,
+                        )
+            elif self.target.column == PVLM.VELOCITY:
+                self.setTarget(column=PVLM.NOTE)
+            elif self.target.column == PVLM.EFFECT:
+                if self.target.subcolumn > 0:
+                    self.setTarget(subcolumn=self.target.subcolumn - 1)
+                else:
+                    self.setTarget(
+                        column=PVLM.VELOCITY,
+                        subcolumn=currentChannelObj.noteColumns - 1,
+                    )
+
+        elif direction == "Right":  # TODO: variable step
+            currentChannel = CHANNEL_ORDER_INVERSE[self.target.channel]
+            currentChannelObj = program.p.currentSong.channels[currentChannel]
+
+            if self.target.column == PVLM.NOTE:
+                self.setTarget(column=PVLM.VELOCITY)
+            elif self.target.column == PVLM.VELOCITY:
+                if (
+                    self.target.subcolumn >= currentChannelObj.noteColumns - 1
+                ):  # Move to EFFECT column
+                    self.setTarget(column=PVLM.EFFECT, subcolumn=0)
+                else:
+                    self.setTarget(
+                        column=PVLM.NOTE, subcolumn=self.target.subcolumn + 1
+                    )
+            elif self.target.column == PVLM.EFFECT:  # Move to RIGHT channel
+                if currentChannel < program.p.currentSong.visibleChannels:
+                    self.setTarget(
+                        channel=CHANNEL_ORDER[currentChannel + 1],
+                        column=PVLM.NOTE,
+                        subcolumn=0,
+                    )
 
     def showChannels(self):
         currentChannelsShown = len(self.views)
