@@ -246,7 +246,7 @@ class PatternViewLabel(ttk.Label):
                     self.refresh()
                 if mode == PVLM.EFFECT:
                     if len(self.entryTextProxy) % 2 != 0:
-                        self.entryTextProxy = ""
+                        self.entryTextProxy = "0" + self.entryTextProxy
                     nums: list[int] = list()
                     for i in range(0, len(self.entryTextProxy), 2):
                         nums.append(int(self.entryTextProxy[i : i + 2], 16))
