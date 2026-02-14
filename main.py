@@ -72,7 +72,8 @@ def focus(event):
 
 
 root.bind_all("<Button-1>", focus)
-
+root.bind_all("<FocusIn>", lambda e: _logger.debug(f"FOCUS IN: {e.widget}"))
+root.bind_all("<FocusOut>", lambda e: _logger.debug(f"FOCUS OUT: {e.widget}"))
 
 if args.debug:
     ChannelDebug(root).pack(side="right", fill="both")

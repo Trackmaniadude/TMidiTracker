@@ -16,7 +16,7 @@ for i, k in enumerate("q2w3er5t6y7ui9o0p[=]"):
 for i, k in enumerate("zsxdcvgbhnjm,l.;/"):
     KEYBOARD_MAP[k] = i - NOTES_PER_OCTAVE
 
-HEY_KEYMAP = "0123456789abcdef"
+HEX_KEYMAP = "0123456789abcdef"
 """Symbols used for hex numbers."""
 
 NOTE_DELTAS = [1, NOTES_PER_OCTAVE, NOTES_PER_OCTAVE * 2]

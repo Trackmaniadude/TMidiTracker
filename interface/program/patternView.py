@@ -25,6 +25,7 @@ from structures import program
 from utils.constants import (
     DRUM_CHANNEL,
     DRUM_NAMES,
+    HEX_KEYMAP,
     KEYBOARD_MAP,
     NOTE_DELTAS,
     NOTE_NAMES_FLAT,
@@ -122,12 +123,15 @@ class PatternViewLabel(ttk.Label):
 
         self.inputing: bool = False
 
-        self.entryVar = tk.StringVar(self)
-        self.entry = ttk.Entry(self, width=width, textvariable=self.entryVar)
+        # self.entryVar = tk.StringVar(self)
+        # self.entry = ttk.Entry(self, width=width, textvariable=self.entryVar)
 
         self.__style: str = ""
         self.__text: str = ""
+        self.entryTextProxy: str = ""
+        """TODO: not need this because of sequencing issues"""
 
+        # Target this entry on click
         self.bind(
             "<Button-1>",
             lambda *_: self.view.viewFrame.setTarget(
@@ -147,8 +151,8 @@ class PatternViewLabel(ttk.Label):
 
             def backspace():
                 target = max(0, self.row - program.p.stepSize)
-                self.view.viewFrame.setTarget(row=target, focus=True)
                 self.view.pattern.setNote(target, self.column, None)
+                self.view.viewFrame.setTarget(row=target, focus=True)
 
             def stop():
                 self.view.pattern.setNote(self.row, self.column, "stop")
@@ -194,6 +198,70 @@ class PatternViewLabel(ttk.Label):
             self.bind(f"<Tab>", lambda *_: stop())
             self.bind(f"<BackSpace>", lambda *_: backspace())
             self.bind(f"<Delete>", lambda *_: delete())
+
+        else:  # Velocity and Effect
+
+            def keyPress(letter: str):
+                def onEvent(*_):
+                    self.entryTextProxy += letter
+                    self.text = self.entryTextProxy
+
+                return onEvent
+
+            def backspace():
+                # Remove a character. If no characters, remove previous entry and jump to it.
+                if len(self.entryTextProxy) == 0:
+                    target = max(0, self.row - program.p.stepSize)
+                    self.view.viewFrame.setTarget(row=target, focus=True)
+                    if mode == PVLM.VELOCITY:
+                        self.view.pattern.setVelocity(target, self.column, None)
+                    if mode == PVLM.EFFECT:
+                        self.view.pattern.setEffect(target, self.column, None)
+                else:
+                    self.entryTextProxy = self.entryTextProxy[:-1]
+                    self.text = self.entryTextProxy
+
+            def delete():
+                if mode == PVLM.VELOCITY:
+                    self.view.pattern.setVelocity(self.row, self.column, None)
+                if mode == PVLM.EFFECT:
+                    self.view.pattern.setEffect(self.row, self.column, None)
+                self.view.viewFrame.stepTarget(program.p.stepSize, focus=True)
+
+            def enter():
+                self.view.viewFrame.stepTarget(program.p.stepSize, focus=True)
+
+            def focus():
+                self.entryTextProxy = self.getTextValue()
+                self.refresh()
+
+            def finalize():
+                if mode == PVLM.VELOCITY:
+                    if self.entryTextProxy == "":
+                        self.view.pattern.setVelocity(self.row, self.column, None)
+                    else:
+                        self.view.pattern.setVelocity(
+                            self.row, self.column, int(self.entryTextProxy, 16)
+                        )
+                    self.refresh()
+                if mode == PVLM.EFFECT:
+                    if len(self.entryTextProxy) % 2 != 0:
+                        self.entryTextProxy = ""
+                    nums: list[int] = list()
+                    for i in range(0, len(self.entryTextProxy), 2):
+                        nums.append(int(self.entryTextProxy[i : i + 2], 16))
+                    self.view.pattern.setEffect(self.row, self.column, tuple(nums))
+                    print(nums)
+                    self.refresh()
+
+            for letter in HEX_KEYMAP:
+                self.bind(f"{letter}", keyPress(letter))
+            self.bind("<FocusOut>", lambda *_: finalize())
+            self.bind("<FocusIn>", lambda *_: focus())
+            self.bind("<Delete>", lambda *_: delete())
+            self.bind("<BackSpace>", lambda *_: backspace())
+            self.bind("<Return>", lambda *_: enter())
+            # TODO: should clicking clear? YES
 
         # Keyboard Navigation
         self.bind(
@@ -263,14 +331,16 @@ class PatternViewLabel(ttk.Label):
             )
             self.refresh()
 
-    def refresh(self):
+    def getTextValue(self):
         getter = getattr(self.view.pattern, self.mode.value.getter)
         value = getter(self.row, self.column)
         if value is None:
-            text = ""
+            return ""
         else:
-            text = self.mode.value.toView(value, self.view.pattern.channel.channel)
-        self.text = text
+            return self.mode.value.toView(value, self.view.pattern.channel.channel)
+
+    def refresh(self):
+        self.text = self.getTextValue()
 
         # Highlight
         target = self.view.viewFrame.target
@@ -309,9 +379,10 @@ class PatternViewLabel(ttk.Label):
     @text.setter
     def text(self, newText: str):
         if newText != self.__text:
+            self.__lastText = self.__text
             self.__text = newText
             self.config(text=newText)
-            self.entryVar.set(newText)
+            # self.entryVar.set(newText)
 
 
 class PatternView(ttk.Frame):
