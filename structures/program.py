@@ -21,7 +21,7 @@ class Program(ReactiveClass):
 
         self.songPlayer: Player = Player()
 
-        self.autoStep: int = 1
+        self.stepSize: int = 1
         """How many rows to step after making an entry. 0 to disable."""
 
         self.currentSong: Song = Song()

@@ -130,8 +130,22 @@ class PatternViewLabel(ttk.Label):
         self.bind("<FocusIn>", lambda *_: self.startEntry())
 
         if mode == PVLM.NOTE:
-            # Setup playback
-            def press(note: int | Literal["stop"] | None):
+
+            def delete():
+                self.view.pattern.setNote(self.row, self.column, None)
+                self.view.viewFrame.stepTarget(program.p.stepSize, focus=True)
+
+            def backspace():
+                target = max(0, self.row - program.p.stepSize)
+                self.view.viewFrame.setTarget(row=target, focus=True)
+                self.view.pattern.setNote(target, self.column, None)
+
+            def stop():
+                self.view.pattern.setNote(self.row, self.column, "stop")
+                self.view.viewFrame.stepTarget(program.p.stepSize, focus=True)
+
+            def play(note: int | Literal["stop"] | None):
+                # Returns an event func to allow instancing values of the function
                 def onEvent(*_):
                     if type(note) is int:
                         n = note + (program.p.currentOctave * NOTES_PER_OCTAVE)
@@ -143,15 +157,14 @@ class PatternViewLabel(ttk.Label):
                                 velocity=64,
                             )
                             program.p.currentPort.send(message)
-                    else:
-                        n = note
-                    self.view.pattern.setNote(self.row, self.column, n)
-                    self.view.viewFrame.stepTarget(program.p.autoStep, focus=True)
-                    self.refresh()
+                        self.view.pattern.setNote(self.row, self.column, n)
+                        self.view.viewFrame.stepTarget(program.p.stepSize, focus=True)
+                        self.refresh()
 
                 return onEvent
 
             def release(note):
+                # Returns an event func to allow instancing values of the function
                 def onEvent(*_):
                     if type(note) is int:
                         n = note + (program.p.currentOctave * NOTES_PER_OCTAVE)
@@ -166,11 +179,11 @@ class PatternViewLabel(ttk.Label):
                 return onEvent
 
             for key, note in KEYBOARD_MAP.items():
-                self.bind(f"<KeyPress-{key}>", press(note))
+                self.bind(f"<KeyPress-{key}>", play(note))
                 self.bind(f"<KeyRelease-{key}>", release(note))
-            self.bind(f"<Tab>", press("stop"))
-            self.bind(f"<BackSpace>", press(None))
-            self.bind(f"<Delete>", press(None))
+            self.bind(f"<Tab>", lambda *_: stop())
+            self.bind(f"<BackSpace>", lambda *_: backspace())
+            self.bind(f"<Delete>", lambda *_: delete())
             self.bind("<FocusOut>", lambda *_: self.endEntry())
         else:
             pass
