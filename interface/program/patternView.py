@@ -26,6 +26,7 @@ from utils.constants import (
     DRUM_CHANNEL,
     DRUM_NAMES,
     KEYBOARD_MAP,
+    NOTE_DELTAS,
     NOTE_NAMES_FLAT,
     NOTE_NAMES_SHARP,
     NOTES_PER_OCTAVE,
@@ -127,8 +128,17 @@ class PatternViewLabel(ttk.Label):
         self.__style: str = ""
         self.__text: str = ""
 
-        self.bind("<FocusIn>", lambda *_: self.startEntry())
+        self.bind(
+            "<Button-1>",
+            lambda *_: self.view.viewFrame.setTarget(
+                self.view.pattern.channel.channel,
+                self.row,
+                self.mode,
+                self.column,
+            ),
+        )
 
+        # Note inputs have separate behavior to velocity and effect inputs
         if mode == PVLM.NOTE:
 
             def delete():
@@ -184,13 +194,8 @@ class PatternViewLabel(ttk.Label):
             self.bind(f"<Tab>", lambda *_: stop())
             self.bind(f"<BackSpace>", lambda *_: backspace())
             self.bind(f"<Delete>", lambda *_: delete())
-            self.bind("<FocusOut>", lambda *_: self.endEntry())
-        else:
-            pass
-            # self.entry.bind("<FocusOut>", lambda *_: self.endEntry())
 
-        self.bind("<Return>", lambda *_: self.endEntry())
-
+        # Keyboard Navigation
         self.bind(
             "<Up>",
             lambda *_: self.view.viewFrame.stepTarget(1, focus=True, direction="Up"),
@@ -208,55 +213,55 @@ class PatternViewLabel(ttk.Label):
             lambda *_: self.view.viewFrame.stepTarget(1, focus=True, direction="Right"),
         )
 
-    def increment(self):
-        pass
-
-    def decrement(self):
-        pass
-
-    def startEntry(self):
-        self.view.viewFrame.setTarget(
-            self.view.pattern.channel.channel,
-            self.row,
-            self.mode,
-            self.column,
+        # Increment/Decrement
+        self.bind(
+            "<Shift-Up>",
+            lambda *_: self.increment(0),
         )
-        program.p.songPlayer.setPlaybackCursor(None, self.row)
+        self.bind(
+            "<Shift-Down>",
+            lambda *_: self.decrement(0),
+        )
+        self.bind(
+            "<Control-Up>",
+            lambda *_: self.increment(1),
+        )
+        self.bind(
+            "<Control-Down>",
+            lambda *_: self.decrement(1),
+        )
+        self.bind(
+            "<Control-Shift-Up>",
+            lambda *_: self.increment(2),
+        )
+        self.bind(
+            "<Control-Shift-Down>",
+            lambda *_: self.decrement(2),
+        )
 
-        # self.inputing = True
-        # self.view.viewFrame.setTarget(
-        #     self.view.pattern.channel.channel,
-        #     self.row,
-        #     self.mode,
-        #     self.column,
-        # )
-        # if self.mode == PVLM.NOTE:
-        #     pass
-        # else:
-        #     self.entry.grid(row=0, column=0, sticky="nesw")
-        #     self.entry.focus()
+    def increment(self, scale: int):
+        if self.view.viewFrame.target.column == PVLM.NOTE:
+            currentNote = self.view.pattern.getNote(self.row, self.column)
+            if currentNote is None:
+                return
+            if currentNote == "stop":
+                return
+            self.view.pattern.setNote(
+                self.row, self.column, currentNote + NOTE_DELTAS[scale]
+            )
+            self.refresh()
 
-    def endEntry(self):
-        pass
-        # self.inputing = False
-
-        # if self.mode == PVLM.NOTE:
-        #     pass
-        # else:
-        #     self.entry.grid_forget()
-
-        #     value = self.entryVar.get()
-        #     try:
-        #         if value == "":
-        #             value = None
-        #         else:
-        #             value = self.mode.value.fromView(value)
-        #             setter = getattr(self.view.pattern, self.mode.value.setter)
-        #             setter(self.row, self.column, value)
-        #     except:
-        #         pass
-
-        # self.refresh()
+    def decrement(self, scale: int):
+        if self.view.viewFrame.target.column == PVLM.NOTE:
+            currentNote = self.view.pattern.getNote(self.row, self.column)
+            if currentNote is None:
+                return
+            if currentNote == "stop":
+                return
+            self.view.pattern.setNote(
+                self.row, self.column, currentNote - NOTE_DELTAS[scale]
+            )
+            self.refresh()
 
     def refresh(self):
         getter = getattr(self.view.pattern, self.mode.value.getter)
