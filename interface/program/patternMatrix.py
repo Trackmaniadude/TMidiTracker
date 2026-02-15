@@ -129,6 +129,8 @@ class PatternMatrix(ttk.Frame):
         self.pack_propagate(False)
 
         self.__content = sf.content
+        self.__grid = ttk.Frame(self.__content)
+        self.__grid.pack(side="top", fill="x")
 
         self.__labels: dict[tuple[int, int], ttk.Label] = dict()
         """(row, col) -> PatternSelector"""
@@ -159,7 +161,7 @@ class PatternMatrix(ttk.Frame):
         for row in range(rows):
             if (row, -1) in self.__labels:
                 continue
-            label = ttk.Label(self.__content, text=hex(row)[2:].upper(), width=3)
+            label = ttk.Label(self.__grid, text=hex(row)[2:].upper(), width=3)
             label.grid(row=row + 1, column=0)
             self.__labels[row, -1] = label
 
@@ -171,7 +173,7 @@ class PatternMatrix(ttk.Frame):
         for col in range(cols):
             if (-1, col) in self.__labels:
                 continue
-            label = ttk.Label(self.__content, text=CHANNEL_ORDER[col] + 1, width=3)
+            label = ttk.Label(self.__grid, text=CHANNEL_ORDER[col] + 1, width=3)
             label.grid(row=0, column=col + 1)
             self.__labels[-1, col] = label
 
@@ -180,6 +182,6 @@ class PatternMatrix(ttk.Frame):
             for col in range(cols):
                 if (row, col) in self.__labels:
                     continue
-                label = PatternSelector(self.__content, self, CHANNEL_ORDER[col], row)
+                label = PatternSelector(self.__grid, self, CHANNEL_ORDER[col], row)
                 label.grid(row=row + 1, column=col + 1, sticky="nesw")
                 self.__labels[row, col] = label
