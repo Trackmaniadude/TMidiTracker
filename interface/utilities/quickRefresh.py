@@ -15,7 +15,6 @@ class QuickRefresh(ABC):
         try:
             if not self._refreshQueueFlag:
                 self._refreshQueueFlag = True
-                print(f"TEST {random.randint(1, 100)}")
                 self.after_idle(self.refresh)  # type: ignore
         except AttributeError:
             # TODO: figure out how to properly initialize the data (why isnt it working?)

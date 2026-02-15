@@ -1,3 +1,7 @@
+"""Constants used by the program."""
+
+# Try to avoid importing things here. Except maybe data types.
+
 CHANNEL_COUNT = 16
 
 DRUM_CHANNEL = 9
