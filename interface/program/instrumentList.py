@@ -19,10 +19,8 @@ class InstrumentList(ttk.Frame):
         super().__init__(parent)
         self.config(relief="raised", width=280, height=20, borderwidth=2)
 
-        sf = DScrollFrame(self, mode="VERTICAL")
+        sf = DScrollFrame(self, mode="VERTICAL", propagationMode="contentDrivesFrame")
         sf.pack(fill="both", expand=True)
-
-        self.pack_propagate(False)
 
         self.__content = sf.content
         self.__content.configure(width=20, height=20)

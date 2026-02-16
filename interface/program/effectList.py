@@ -27,12 +27,10 @@ class EffectDisplay(ttk.Frame):
 class EffectList(ttk.Frame):
     def __init__(self, parent: tk.Misc):
         super().__init__(parent)
-        self.config(relief="raised", width=300, height=200, borderwidth=2)
+        self.config(relief="raised", width=10, height=200, borderwidth=2)
 
-        sf = DScrollFrame(self, mode="VERTICAL")
+        sf = DScrollFrame(self, mode="VERTICAL", propagationMode="contentDrivesFrame")
         sf.pack(fill="both", expand=True)
-
-        self.pack_propagate(False)
 
         self.__content = sf.content
         self.__content.configure(width=280, height=2000)
