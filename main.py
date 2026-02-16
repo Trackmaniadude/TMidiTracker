@@ -11,6 +11,7 @@ from interface.program.instrumentList import InstrumentList
 from interface.program.patternList import PatternList
 from interface.program.patternMatrix import PatternMatrix
 from interface.program.patternViewFrame import PatternViewFrame
+from interface.program.songDataView import SongDataView
 from structures import program
 
 PROGRAM_NAME = "TMidiTracker"
@@ -82,6 +83,7 @@ InstrumentList(root).pack(side="right", fill="both")
 PatternViewFrame(root).pack(side="bottom", fill="both", expand=True)
 PatternMatrix(root).pack(side="left", fill="both")
 PatternList(root).pack(side="left", fill="both")
+SongDataView(root).pack(side="left", fill="both")
 
 
 # Global Keyboard Shortcuts
