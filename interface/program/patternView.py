@@ -251,7 +251,6 @@ class PatternViewLabel(ttk.Label):
                     for i in range(0, len(self.entryTextProxy), 2):
                         nums.append(int(self.entryTextProxy[i : i + 2], 16))
                     self.view.pattern.setEffect(self.row, self.column, tuple(nums))
-                    print(nums)
                     self.refresh()
 
             for letter in HEX_KEYMAP:
