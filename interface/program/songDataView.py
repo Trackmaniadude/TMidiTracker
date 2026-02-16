@@ -6,5 +6,5 @@ from tkinter import ttk
 
 class SongDataView(ttk.Frame):
     def __init__(self, parent: tk.Misc):
-        super().__init__(parent)
+        super().__init__(parent, relief="raised", borderwidth=2)
         ttk.Label(self, text="SONG DATA VIEWER").pack()

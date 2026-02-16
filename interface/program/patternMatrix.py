@@ -147,7 +147,7 @@ class PatternSelector(ttk.Label, QuickRefresh):
 
 class PatternMatrix(ttk.Frame):
     def __init__(self, parent: tk.Misc):
-        super().__init__(parent, relief="raised", width=300, height=200)
+        super().__init__(parent, relief="raised", width=300, height=200, borderwidth=2)
 
         sf = DScrollFrame(self, mode="DOUBLE")
         sf.pack(fill="both", expand=True)

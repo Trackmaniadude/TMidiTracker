@@ -82,8 +82,8 @@ EffectList(root).pack(side="right", fill="both")
 InstrumentList(root).pack(side="right", fill="both")
 PatternViewFrame(root).pack(side="bottom", fill="both", expand=True)
 PatternMatrix(root).pack(side="left", fill="both")
-PatternList(root).pack(side="left", fill="both")
 SongDataView(root).pack(side="left", fill="both")
+PatternList(root).pack(side="left", fill="both", expand=True)
 
 
 # Global Keyboard Shortcuts
