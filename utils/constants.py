@@ -27,6 +27,8 @@ NOTE_DELTAS = [1, NOTES_PER_OCTAVE, NOTES_PER_OCTAVE * 2]
 """Deltas for increment/decrement of notes."""
 VALUE_DELTAS = [1, 4, 16]
 """Deltas for increment/decrement of values."""
+PATTERN_DELTAS = [1, 4, 16, 64]
+"""Deltas for increment/decrement of values."""
 
 NOTE_NAMES_SHARP = [
     "C",

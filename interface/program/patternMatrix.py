@@ -20,7 +20,7 @@ from tkinter import ttk
 from interface.theme import MatrixLabel
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from structures import program
-from utils.constants import CHANNEL_ORDER
+from utils.constants import CHANNEL_ORDER, PATTERN_DELTAS
 
 _logger = logging.getLogger(__name__)
 
@@ -37,9 +37,30 @@ class PatternSelector(ttk.Label, QuickRefresh):
         self.__style: str = ""
         self.__text: str = ""
 
-        self.bind("<Button-1>", lambda *_: (self.increment(), self.setCurrentRow()))
         self.bind("<Button-2>", lambda *_: (self.copyAbove(), self.setCurrentRow()))
-        self.bind("<Button-3>", lambda *_: (self.decrement(), self.setCurrentRow()))
+
+        self.bind("<Button-1>", lambda *_: (self.increment(0), self.setCurrentRow()))
+        self.bind("<Button-3>", lambda *_: (self.decrement(0), self.setCurrentRow()))
+        self.bind(
+            "<Shift-Button-1>", lambda *_: (self.increment(1), self.setCurrentRow())
+        )
+        self.bind(
+            "<Shift-Button-3>", lambda *_: (self.decrement(1), self.setCurrentRow())
+        )
+        self.bind(
+            "<Control-Button-1>", lambda *_: (self.increment(2), self.setCurrentRow())
+        )
+        self.bind(
+            "<Control-Button-3>", lambda *_: (self.decrement(2), self.setCurrentRow())
+        )
+        self.bind(
+            "<Shift-Control-Button-1>",
+            lambda *_: (self.increment(3), self.setCurrentRow()),
+        )
+        self.bind(
+            "<Shift-Control-Button-3>",
+            lambda *_: (self.decrement(3), self.setCurrentRow()),
+        )
 
         program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
             lambda key, *_: self.queueRefresh()
@@ -64,11 +85,11 @@ class PatternSelector(ttk.Label, QuickRefresh):
         """Set the pattern id this selector references."""
         program.p.currentSong.setPatternNumber(self.channel, self.row, pattern)
 
-    def increment(self):
-        self.setPatternId(self.getPatternId() + 1)
+    def increment(self, scale: int = 0):
+        self.setPatternId(self.getPatternId() + PATTERN_DELTAS[scale])
 
-    def decrement(self):
-        self.setPatternId(max(0, self.getPatternId() - 1))
+    def decrement(self, scale: int = 0):
+        self.setPatternId(max(0, self.getPatternId() - PATTERN_DELTAS[scale]))
 
     # def beginSet(self): TODO: what was this for?
     #     pass
@@ -97,7 +118,7 @@ class PatternSelector(ttk.Label, QuickRefresh):
                 else MatrixLabel.DefaultOdd
             )
 
-        self.text = str(self.getPatternId())
+        self.text = str(hex(self.getPatternId())[2:].upper())
         self.style = cast(str, style)
 
     def destroy(self) -> None:
