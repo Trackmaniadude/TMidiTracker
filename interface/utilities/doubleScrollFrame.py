@@ -2,10 +2,13 @@
 Multi axis scrolling frame
 """
 
+import logging
 import tkinter as tk
 from collections import namedtuple
 from tkinter import ttk
 from typing import Literal
+
+_logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     import sys
@@ -102,16 +105,23 @@ class DScrollFrame(ttk.Frame):
 
             if not self.isVertical:
                 if self.propagationMode == "contentDrivesFrame":
+                    # TODO: this probably shouldn't be here
                     self.pack_propagate(False)
                     self.grid_propagate(False)
                     self.config(
-                        width=self.content.winfo_height() + self.SCROLLBAR_HEIGHT
+                        height=self.content.winfo_height() + self.SCROLLBAR_HEIGHT
                     )
                 elif self.propagationMode == "frameDrivesContent":
-                    # self.pack_propagate(False)
-                    # self.grid_propagate(False)
-                    # self.content.config(width=50)
-                    pass
+                    # TODO: this probably shouldn't be here
+                    self.content.pack_propagate(False)
+                    self.content.grid_propagate(False)
+                    width = sum(
+                        child.winfo_width() for child in self.content.winfo_children()
+                    )
+                    self.content.config(
+                        width=width,
+                        height=self.content.winfo_height() - self.SCROLLBAR_HEIGHT,
+                    )
 
         if self.isVertical:
             self.__vertical.set(
@@ -121,14 +131,20 @@ class DScrollFrame(ttk.Frame):
 
             if not self.isHorizontal:
                 if self.propagationMode == "contentDrivesFrame":
+                    # TODO: this probably shouldn't be here
                     self.pack_propagate(False)
                     self.grid_propagate(False)
                     self.config(width=self.content.winfo_width() + self.SCROLLBAR_WIDTH)
                 elif self.propagationMode == "frameDrivesContent":
-                    # self.content.pack_propagate(False)
-                    # self.content.grid_propagate(False)
-                    # self.content.config(width=self.winfo_width() - self.SCROLLBAR_WIDTH)
-                    pass
+                    # TODO: this probably shouldn't be here
+                    self.content.pack_propagate(False)
+                    self.content.grid_propagate(False)
+                    height = sum(
+                        child.winfo_height() for child in self.content.winfo_children()
+                    )
+                    self.content.config(
+                        width=self.winfo_width() - self.SCROLLBAR_WIDTH, height=height
+                    )
 
 
 if __name__ == "__main__":
@@ -144,7 +160,8 @@ if __name__ == "__main__":
         def widen(self):
             self.wide = not self.wide
             self.config(
-                width=50 if self.wide else 10, text="WIDE" if self.wide else "thin"
+                width=50 if self.wide else 10,
+                text="W   I   D   E" if self.wide else "thin",
             )
 
     root = tk.Tk()
