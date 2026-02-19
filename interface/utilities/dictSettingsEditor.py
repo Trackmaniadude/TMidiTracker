@@ -26,6 +26,8 @@ class DSEEntry[T](ttk.Frame, Templateable, ABC):
     @abstractmethod
     def get(self) -> T: ...
 
+    Changed: Event
+
 
 class DSEEntries:
     @template
@@ -47,6 +49,7 @@ class DSEEntries:
                 round=round,
             )
             self.entry.entry.pack(fill="both", expand=True)
+            self.Changed = self.entry.Changed
 
         def set(self, value: float):
             self.entry.value = value
@@ -73,6 +76,7 @@ class DSEEntries:
                 round=round,
             )
             self.entry.entry.pack(fill="both", expand=True)
+            self.Changed = self.entry.Changed
 
         def set(self, value: int):
             self.entry.value = value
@@ -102,6 +106,18 @@ class DictSettingsEditor(HeaderFrame):
         self.__row = 0
 
         self.__subEditors: list[DictSettingsEditor] = list()
+        self.__entries: dict[str, DSEEntry] = dict()
+
+        self.gridFrame = ttk.Frame(self.content)
+        self.gridFrame.pack(side="top", fill="both", expand=True)
+
+        if makeApplyButtons:
+            frame = ttk.Frame(self.content)
+            frame.pack(side="top", fill="both")
+            revert = ttk.Button(frame, text="Revert", command=self.revert)
+            revert.pack(side="left", fill="both", expand=True)
+            apply = ttk.Button(frame, text="Apply", command=self.apply)
+            apply.pack(side="left", fill="both", expand=True)
 
     def getNewRow(self) -> int:
         row = self.__row
@@ -117,36 +133,49 @@ class DictSettingsEditor(HeaderFrame):
 
         row = self.getNewRow()
 
-        tLabel = ttk.Label(self.content, text=label)
+        tLabel = ttk.Label(self.gridFrame, text=label)
         tLabel.grid(row=row, column=0)
 
         if entry is None:
             _logger.warning("DictEdit type inference unimplemented!")
             return
 
-        tEntry = entry.instantiate(self.content)
+        tEntry = entry.instantiate(self.gridFrame)
         tEntry.grid(row=row, column=1)
+
+        self.__entries[key] = tEntry
+
+        def onChange(*a, **kw):
+            self.__internalDict[key] = tEntry.get()
+            if self.__autoApply:
+                self.apply()
+
+        tEntry.Changed.connect(onChange)
 
     def addSubEditor(self, label: str = "", *, dct: dict | None = None):
         sub = DictSettingsEditor(
-            self.content, self.__dct if dct is None else dct, label
+            self.gridFrame, self.__dct if dct is None else dct, label
         )
         sub.config(relief="groove", borderwidth=2)
         # sub.collapse()
         sub.grid(row=self.getNewRow(), column=0, columnspan=2, sticky="ew")
-        print("sib" + label + str(self.content.winfo_children()))
+        print("sib" + label + str(self.gridFrame.winfo_children()))
         self.__subEditors.append(sub)
         return sub
 
     def apply(self):
         """Copy changes to target dict."""
-        changes = self._apply()
         self.Applied.fire(self._apply())
 
     def _apply(self) -> list[str]:
         """Do actual apply, return changed fields."""
         changes: list[str] = list()
         # Apply
+        for key, entry in self.__entries.items():
+            if self.__dct[key] == self.__internalDict[key]:
+                continue
+            self.__dct[key] = self.__internalDict[key]
+            changes.append(key)
 
         # Apply to subs
         for sub in self.__subEditors:
@@ -156,6 +185,10 @@ class DictSettingsEditor(HeaderFrame):
     def revert(self):
         """Reload state from target dict."""
         # Revert
+        for key, entry in self.__entries.items():
+            value = self.__dct[key]
+            self.__internalDict[key] = value
+            entry.set(value)
 
         # Revert subs
         for sub in self.__subEditors:
@@ -190,7 +223,7 @@ if __name__ == "__main__":
     sf = DScrollFrame(root, mode="VERTICAL", propagationMode="contentDrivesFrame")
     sf.pack(fill="both", expand=True)
 
-    set = DictSettingsEditor(sf.content, testDict, "TEST 1")
+    set = DictSettingsEditor(sf.content, testDict, "TEST 1", makeApplyButtons=True)
     set.pack(fill="both", expand=True)
 
     set.addValueEdit(
@@ -204,5 +237,6 @@ if __name__ == "__main__":
     set.addSubEditor("TEST 4")
 
     set.Applied.connect(lambda changes: print(changes))
+    set.Applied.connect(lambda changes: print(testDict))
 
     root.mainloop()
