@@ -14,6 +14,8 @@ _BIG_NUM = (
 class AbstractPrebuilt[T](ABC):
     """Abstract class for prebuilt entries."""
 
+    vEntry: ValidatedEntry
+
     @property
     @abstractmethod
     def value(self) -> T: ...
@@ -74,7 +76,13 @@ class Prebuilts:
     class Enum[T: Enum](AbstractPrebuilt):
         """Select from an enum."""
 
-        def __init__(self, parent: tk.Misc, enum: type[T], *, default: T | None = None):
+        def __init__(
+            self,
+            parent: tk.Misc,
+            enum: type[T],
+            *,
+            default: T | None = None,
+        ):
             values = [item.name for item in enum]
             self.enum = enum
 
@@ -99,7 +107,11 @@ class Prebuilts:
         """Select from a list."""
 
         def __init__(
-            self, parent: tk.Misc, items: list[str], *, default: str | None = None
+            self,
+            parent: tk.Misc,
+            items: list[str],
+            *,
+            default: str | None = None,
         ):
             self.items = items
 
