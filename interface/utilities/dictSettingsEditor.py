@@ -3,6 +3,7 @@
 import logging
 import tkinter as tk
 from abc import ABC, abstractmethod
+from enum import Enum, auto
 from tkinter import ttk
 from typing import Any, Literal
 
@@ -20,6 +21,11 @@ from utils.event import Event
 from utils.template import Templateable, template
 
 
+class DSEShape(Enum):
+    Normal = auto()
+    Large = auto()
+
+
 class DSEEntry[T](ttk.Frame, Templateable, ABC):
     @abstractmethod
     def set(self, value: T): ...
@@ -27,6 +33,7 @@ class DSEEntry[T](ttk.Frame, Templateable, ABC):
     def get(self) -> T: ...
 
     Changed: Event
+    Shape: DSEShape = DSEShape.Normal
 
 
 class DSEEntries:
@@ -83,6 +90,25 @@ class DSEEntries:
 
         def get(self) -> int:
             return int(self.entry.value)
+
+    @template
+    class List(DSEEntry[str]):
+        def __init__(
+            self,
+            parent: tk.Misc | None = None,
+            *,
+            values: list[str],
+        ):
+            super().__init__(parent)
+            self.entry = Prebuilts.List(self, values)
+            self.entry.entry.pack(fill="both", expand=True)
+            self.Changed = self.entry.Changed
+
+        def set(self, value: str):
+            self.entry.value = value
+
+        def get(self) -> str:
+            return str(self.entry.value)
 
 
 class DictSettingsEditor(HeaderFrame):
@@ -153,15 +179,30 @@ class DictSettingsEditor(HeaderFrame):
         tEntry.Changed.connect(onChange)
 
     def addSubEditor(self, label: str = "", *, dct: dict | None = None):
+        """Add a labeled subframe."""
         sub = DictSettingsEditor(
             self.gridFrame, self.__dct if dct is None else dct, label
         )
         sub.config(relief="groove", borderwidth=2)
-        # sub.collapse()
+        # sub.collapse() # TODO: ?
         sub.grid(row=self.getNewRow(), column=0, columnspan=2, sticky="ew")
-        print("sib" + label + str(self.gridFrame.winfo_children()))
         self.__subEditors.append(sub)
         return sub
+
+    def addTextbox(self, text: str, maxWidth: int = 200):
+        """Add a textbox."""
+        box = ttk.Label(self.gridFrame, text=text, width=0)
+        # TODO: proper scaling
+        box.grid(row=self.getNewRow(), column=0, columnspan=2, sticky="nesw")
+        box.bind(
+            "<Configure>",
+            lambda *_: box.config(wraplength=min(maxWidth, box.winfo_width())),
+        )
+
+    def addSeparator(self):
+        ttk.Separator(self.gridFrame, orient="horizontal").grid(
+            row=self.getNewRow(), column=0, columnspan=2, sticky="nesw"
+        )
 
     def apply(self):
         """Copy changes to target dict."""
@@ -203,6 +244,7 @@ if __name__ == "__main__":
         "settingInt": 0,
         "settingFloat": 0.5,
         "settingBool": True,
+        "settingList": "the j",
         "settingSmallText1": "the j",
         "settingSmallText2": "jhe t",
         "settingLargeText": "engineer gaming",
@@ -233,8 +275,19 @@ if __name__ == "__main__":
         "settingFloat", DSEEntries.Float(min=0.5, max=3.5, increment=0.5, round=0.1)
     )
 
+    set.addTextbox(
+        "BIG OL TEXTBOX aelt erjtrht s rthgjkser dhgjksr hgjklreshkgjdd hxkfkghkjhgkheskgrh djkg jkshgjk sgjks \nthej \n\nthej #2"
+    )
+    set.addSeparator()
+    set.addTextbox("the j #3333")
+
     set.addSubEditor("TEST 2").addSubEditor("TEST 3")
-    set.addSubEditor("TEST 4")
+    q = set.addSubEditor("TEST 4")
+
+    q.addValueEdit(
+        "settingList",
+        DSEEntries.List(values=["the j", "bargain bin basement burger", "quenth"]),
+    )
 
     set.Applied.connect(lambda changes: print(changes))
     set.Applied.connect(lambda changes: print(testDict))
