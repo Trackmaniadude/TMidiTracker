@@ -13,6 +13,7 @@ from interface.program.patternView import PVLM, PatternView
 from interface.theme import MatrixLabel
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from structures import program
+from structures.globalEvents import StructureChanged
 from utils.constants import (
     CHANNEL_COUNT,
     CHANNEL_ORDER,
@@ -43,6 +44,8 @@ class RowList(ttk.Frame):
             lambda key, old, new: setattr(self, "highlight", new)
         )
 
+        StructureChanged.connect(lambda *_: self.rebuild())
+
     @property
     def highlight(self) -> int:
         return self.__highlight
@@ -59,7 +62,7 @@ class RowList(ttk.Frame):
         self.__highlight = highlight
 
     def rebuild(self):
-        for i, label in self.labels.items():
+        for i, label in self.labels.copy().items():
             del self.labels[i]
             label.destroy()
         for i in range(program.p.currentSong.patternLength):
@@ -92,6 +95,8 @@ class PatternViewFrame(ttk.Frame):
         program.p.getAttributeChangedEvent("currentMatrixRow").connect(
             lambda *a: self.after(0, self.onMatrixRowChange, *a)
         )
+
+        StructureChanged.connect(lambda *_: self.showChannels())
 
     def matrixChangedEvent(self, key: tuple[int, int], old: int | None, new: int):
         channel, row = key

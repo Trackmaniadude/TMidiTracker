@@ -22,6 +22,7 @@ import mido
 
 from interface.theme import Note
 from structures import program
+from structures.globalEvents import StructureChanged
 from utils.constants import (
     DRUM_CHANNEL,
     DRUM_NAMES,
@@ -306,6 +307,8 @@ class PatternViewLabel(ttk.Label):
             lambda *_: self.decrement(2),
         )
 
+        StructureChanged.connect(lambda *_: self.refresh())
+
     def increment(self, scale: int):
         if self.view.viewFrame.target.column == PVLM.NOTE:
             currentNote = self.view.pattern.getNote(self.row, self.column)
@@ -413,6 +416,8 @@ class PatternView(ttk.Frame):
 
         self.buildLabels()
         self.refreshLabels()
+
+        StructureChanged.connect(lambda *_: (self.buildLabels(), self.refreshLabels()))
 
     def buildLabels(self):
         # Remove old labels

@@ -20,6 +20,7 @@ from tkinter import ttk
 from interface.theme import MatrixLabel
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from structures import program
+from structures.globalEvents import StructureChanged
 from utils.constants import CHANNEL_ORDER, PATTERN_DELTAS
 
 _logger = logging.getLogger(__name__)
@@ -164,6 +165,8 @@ class PatternMatrix(ttk.Frame):
         """(row, col) -> PatternSelector"""
 
         self.refresh()
+
+        StructureChanged.connect(lambda *_: self.refresh())
 
     def setMatrixRow(self, row: int):
         program.p.currentPatternRow = 0

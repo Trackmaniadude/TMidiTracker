@@ -21,6 +21,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from structures import program
+from structures.globalEvents import StructureChanged
 
 _logger = logging.getLogger(__name__)
 
@@ -41,6 +42,8 @@ class PatternSelector(ttk.Label, QuickRefresh):
             lambda key, *_: self.queueRefresh()
         )
         self.queueRefresh()
+
+        StructureChanged.connect(lambda *_: self.refresh())
 
     # def getPattern(self) -> int:
     #     return program.p.currentSong.getPatternNumberByLocation(self.channel, self.row)
