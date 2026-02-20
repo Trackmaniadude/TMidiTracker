@@ -15,7 +15,11 @@ if __name__ == "__main__":
     sys.path.append(".")
 
 from interface.utilities.headerFrame import HeaderFrame
-from interface.utilities.validatedEntry import ValidatedEntry, Validators
+from interface.utilities.validatedEntry import (
+    AbstractValidator,
+    ValidatedEntry,
+    Validators,
+)
 from interface.utilities.validatedEntryPrebuilts import AbstractPrebuilt, Prebuilts
 from utils.event import Event
 from utils.template import Templateable, template
@@ -102,6 +106,7 @@ class DSEEntries:
             super().__init__(parent)
             self.entry = Prebuilts.List(self, values)
             self.entry.entry.pack(fill="both", expand=True)
+            self.entry.entry.config(width=0)
             self.Changed = self.entry.Changed
 
         def set(self, value: str):
@@ -109,6 +114,46 @@ class DSEEntries:
 
         def get(self) -> str:
             return str(self.entry.value)
+
+    @template
+    class SmallTextbox(DSEEntry[str]):
+        def __init__(
+            self,
+            parent: tk.Misc | None = None,
+            *,
+            validator: AbstractValidator = Validators.Through(),
+        ):
+            super().__init__(parent)
+            self.entry = ValidatedEntry(ttk.Entry(self, width=0), validator)
+            self.entry.entry.pack(fill="both", expand=True)
+            self.Changed = self.entry.Changed
+
+        def set(self, value: str):
+            self.entry.value = value
+
+        def get(self) -> str:
+            return str(self.entry.value)
+
+    @template
+    class LargeTextbox(DSEEntry[str]):
+        Shape = DSEShape.Large
+
+        def __init__(self, parent: tk.Misc | None = None, *, height: int = 4):
+            super().__init__(parent)
+            self.entry = tk.Text(self, width=0, height=height)
+            self.entry.pack(fill="both", expand=True)
+
+            self.Changed = Event()
+
+            self.entry.bind("<FocusOut>", lambda *_: self.Changed.fire())
+
+            # TODO: fancier support
+
+        def set(self, value: str):
+            self.entry.replace("0.0", "end", value)
+
+        def get(self) -> str:
+            return self.entry.get("0.0", "end")
 
 
 class DictSettingsEditor(HeaderFrame):
@@ -146,6 +191,7 @@ class DictSettingsEditor(HeaderFrame):
             apply.pack(side="left", fill="both", expand=True)
 
     def getNewRow(self) -> int:
+        """Internal helper to make keeping track of grid rows easier."""
         row = self.__row
         self.__row += 1
         return row
@@ -160,14 +206,24 @@ class DictSettingsEditor(HeaderFrame):
         row = self.getNewRow()
 
         tLabel = ttk.Label(self.gridFrame, text=label)
-        tLabel.grid(row=row, column=0)
 
         if entry is None:
             _logger.warning("DictEdit type inference unimplemented!")
             return
 
         tEntry = entry.instantiate(self.gridFrame)
-        tEntry.grid(row=row, column=1)
+
+        # Place entry items
+        if tEntry.Shape == DSEShape.Normal:
+            tLabel.grid(row=row, column=0, sticky="nesw")
+            tEntry.grid(row=row, column=1, sticky="nesw")
+        elif tEntry.Shape == DSEShape.Large:
+            tLabel.grid(row=row, column=0, columnspan=2, sticky="nesw")
+            tEntry.grid(row=self.getNewRow(), column=0, columnspan=2, sticky="nesw")
+
+        # TODO: put in a better location
+        self.gridFrame.columnconfigure(0, pad=4)
+        self.gridFrame.columnconfigure(1, weight=1)
 
         self.__entries[key] = tEntry
 
@@ -177,6 +233,9 @@ class DictSettingsEditor(HeaderFrame):
                 self.apply()
 
         tEntry.Changed.connect(onChange)
+
+        # Load in value
+        tEntry.set(self.__internalDict[key])
 
     def addSubEditor(self, label: str = "", *, dct: dict | None = None):
         """Add a labeled subframe."""
@@ -189,17 +248,20 @@ class DictSettingsEditor(HeaderFrame):
         self.__subEditors.append(sub)
         return sub
 
-    def addTextbox(self, text: str, maxWidth: int = 200):
+    def addTextbox(self, text: str):
         """Add a textbox."""
         box = ttk.Label(self.gridFrame, text=text, width=0)
         # TODO: proper scaling
-        box.grid(row=self.getNewRow(), column=0, columnspan=2, sticky="nesw")
-        box.bind(
-            "<Configure>",
-            lambda *_: box.config(wraplength=min(maxWidth, box.winfo_width())),
-        )
+        box.grid(row=self.getNewRow(), column=0, columnspan=2, sticky="ew")
+        box.config(wraplength=200)
+        # box.config(wraplength=box.winfo_width())
+        # box.bind(
+        #     "<Configure>",
+        #     lambda *_: box.config(wraplength=min(maxWidth, box.winfo_width())),
+        # )
 
     def addSeparator(self):
+        """Add a horizontal line."""
         ttk.Separator(self.gridFrame, orient="horizontal").grid(
             row=self.getNewRow(), column=0, columnspan=2, sticky="nesw"
         )
@@ -262,7 +324,7 @@ if __name__ == "__main__":
 
     root.bind_all("<Button-1>", focus)
 
-    sf = DScrollFrame(root, mode="VERTICAL", propagationMode="contentDrivesFrame")
+    sf = DScrollFrame(root, mode="VERTICAL", propagationMode="frameDrivesContent")
     sf.pack(fill="both", expand=True)
 
     set = DictSettingsEditor(sf.content, testDict, "TEST 1", makeApplyButtons=True)
@@ -288,6 +350,9 @@ if __name__ == "__main__":
         "settingList",
         DSEEntries.List(values=["the j", "bargain bin basement burger", "quenth"]),
     )
+    q.addValueEdit("settingSmallText1", DSEEntries.SmallTextbox())
+    q.addValueEdit("settingSmallText2", DSEEntries.SmallTextbox())
+    q.addValueEdit("settingLargeText", DSEEntries.LargeTextbox())
 
     set.Applied.connect(lambda changes: print(changes))
     set.Applied.connect(lambda changes: print(testDict))
