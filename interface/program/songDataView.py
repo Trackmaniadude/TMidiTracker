@@ -27,6 +27,7 @@ class SongDataView(ttk.Frame):
             autoApply=True,
             collapsible=True,
         )
+        metadataEdit.collapse()
         metadataEdit.pack(side="top", fill="x", expand=False)
         metadataEdit.addValueEdit("title", DSEEntries.SmallTextbox(), "Title")
         metadataEdit.addValueEdit("author", DSEEntries.SmallTextbox(), "Author")
@@ -40,6 +41,7 @@ class SongDataView(ttk.Frame):
             autoApply=True,
             collapsible=True,
         )
+        timeEdit.collapse()
         timeEdit.pack(side="top", fill="x", expand=False)
         timeEdit.addValueEdit("clock", DSEEntries.Integer(min=1, max=1000), "Clock")
 
@@ -50,6 +52,7 @@ class SongDataView(ttk.Frame):
             autoApply=True,
             collapsible=True,
         )
+        structureEdit.collapse()
         structureEdit.pack(side="top", fill="x", expand=False)
         structureEdit.addValueEdit(
             "visibleChannels", DSEEntries.Integer(min=0, max=14), "Channels"
