@@ -5,6 +5,7 @@ Also contains a grid of pattern references, as well as a pattern table.
 """
 
 import logging
+from dataclasses import dataclass
 
 from structures import program
 from structures.channel import Channel
@@ -15,6 +16,14 @@ from utils.reactiveClass import ReactiveClass
 _logger = logging.getLogger(__name__)
 
 
+@dataclass
+class SongMetadata:
+    title: str = ""
+    author: str = ""
+    genre: str = ""
+    notes: str = ""
+
+
 class Song(ReactiveClass):
     """
     Contains data pertaining to the song itself.
@@ -23,6 +32,8 @@ class Song(ReactiveClass):
 
     def __init__(self) -> None:
         super().__init__()
+
+        self.metadata = SongMetadata()
 
         self.visibleChannels: int = 5
         self.visibleMatrixRows: int = 4
