@@ -157,6 +157,8 @@ class DSEEntries:
 
 
 class DictSettingsEditor(HeaderFrame):
+    """Simple way to construct a settings dialog interfacing with a dictionary."""
+
     def __init__(
         self,
         parent: tk.Misc,
@@ -165,8 +167,9 @@ class DictSettingsEditor(HeaderFrame):
         *,
         autoApply: bool = False,
         makeApplyButtons: bool = False,
+        collapsible: bool = False,
     ):
-        super().__init__(parent, label, userCollapsible=True)
+        super().__init__(parent, label, userCollapsible=collapsible)
         self.__autoApply = autoApply
         self.__dct = dct
         self.__internalDict = self.__dct.copy()
@@ -240,10 +243,14 @@ class DictSettingsEditor(HeaderFrame):
     def addSubEditor(self, label: str = "", *, dct: dict | None = None):
         """Add a labeled subframe."""
         sub = DictSettingsEditor(
-            self.gridFrame, self.__dct if dct is None else dct, label
+            self.gridFrame,
+            self.__dct if dct is None else dct,
+            label,
+            autoApply=self.__autoApply,
+            makeApplyButtons=False,
+            collapsible=True,
         )
         sub.config(relief="groove", borderwidth=2)
-        # sub.collapse() # TODO: ?
         sub.grid(row=self.getNewRow(), column=0, columnspan=2, sticky="ew")
         self.__subEditors.append(sub)
         return sub
@@ -251,14 +258,13 @@ class DictSettingsEditor(HeaderFrame):
     def addTextbox(self, text: str):
         """Add a textbox."""
         box = ttk.Label(self.gridFrame, text=text, width=0)
-        # TODO: proper scaling
         box.grid(row=self.getNewRow(), column=0, columnspan=2, sticky="ew")
-        box.config(wraplength=200)
-        # box.config(wraplength=box.winfo_width())
-        # box.bind(
-        #     "<Configure>",
-        #     lambda *_: box.config(wraplength=min(maxWidth, box.winfo_width())),
-        # )
+        box.config(wraplength=0)
+        # TODO: what conditions causes this to break on startup
+        box.bind(
+            "<Configure>",
+            lambda *_: box.config(wraplength=box.winfo_width() - 5),
+        )
 
     def addSeparator(self):
         """Add a horizontal line."""
@@ -327,7 +333,10 @@ if __name__ == "__main__":
     sf = DScrollFrame(root, mode="VERTICAL", propagationMode="frameDrivesContent")
     sf.pack(fill="both", expand=True)
 
-    set = DictSettingsEditor(sf.content, testDict, "TEST 1", makeApplyButtons=True)
+    # set = DictSettingsEditor(sf.content, testDict, "TEST 1", makeApplyButtons=True)
+    set = DictSettingsEditor(
+        sf.content, testDict, "TEST 1", autoApply=True, makeApplyButtons=True
+    )
     set.pack(fill="both", expand=True)
 
     set.addValueEdit(
