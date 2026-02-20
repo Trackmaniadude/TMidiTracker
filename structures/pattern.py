@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from structures import program
 from utils.misc import clamp
 from utils.reactiveClass import ReactiveClass
-from utils.types import *
+from utils.types_ import *
 
 _logger = logging.getLogger(__name__)
 

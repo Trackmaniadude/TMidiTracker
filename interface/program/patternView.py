@@ -33,7 +33,7 @@ from utils.constants import (
     NOTES_PER_OCTAVE,
 )
 from utils.misc import hex2
-from utils.types import *
+from utils.types_ import *
 
 _logger = logging.getLogger(__name__)
 
