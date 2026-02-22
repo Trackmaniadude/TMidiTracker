@@ -228,6 +228,14 @@ class PatternMatrix(ttk.Frame):
                 pos = self.gridPosition(row, 0, "row label")
                 label.grid(row=pos[0], column=pos[1])
                 self.__rowLabels.append(label)
+
+                def b(row: int):
+                    def c():
+                        program.p.currentMatrixRow = row
+
+                    label.bind("<Button-1>", lambda *_: c())
+
+                b(row)
                 _logger.debug(row)
         elif rows < currentRows:  # Need less
             for row in range(currentRows, rows, -1):
