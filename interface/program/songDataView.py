@@ -49,7 +49,9 @@ class SongDataView(ttk.Frame):
         timeEdit.collapse()
         timeEdit.pack(side="top", fill="x", expand=False)
         timeEdit.addValueEdit("clock", DSEEntries.Integer(min=1, max=1000), "Clock")
-        timeEdit.Applied.connect(lambda *_: TimingChanged.fire(), self.connections)
+        timeEdit.Applied.connect(
+            lambda changes: TimingChanged.fire(changes), self.connections
+        )
 
         ### Structure
         structureEdit = DictSettingsEditor(
@@ -76,7 +78,7 @@ class SongDataView(ttk.Frame):
             "Minor Subdivision",
         )
         structureEdit.Applied.connect(
-            lambda *_: StructureChanged.fire(), self.connections
+            lambda changes: StructureChanged.fire(changes), self.connections
         )
 
     def destroy(self) -> None:

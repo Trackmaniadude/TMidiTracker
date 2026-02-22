@@ -314,6 +314,7 @@ class PatternViewLabel(ttk.Label):
         StructureChanged.connect(lambda *_: self.refresh(), self.connections)
 
     def destroy(self) -> None:
+        _logger.debug(f"{self} DESTROY")
         for connection in self.connections:
             connection.disconnect()
         return super().destroy()
@@ -429,7 +430,12 @@ class PatternView(ttk.Frame):
         self.refreshLabels()
 
         StructureChanged.connect(
-            lambda *_: (self.buildLabels(), self.refreshLabels()), self.connections
+            lambda changes: (
+                (self.buildLabels(), self.refreshLabels())
+                if "patternLength" in changes
+                else None
+            ),
+            self.connections,
         )
 
     def destroy(self) -> None:

@@ -47,7 +47,10 @@ class RowList(ttk.Frame):
             lambda key, old, new: setattr(self, "highlight", new), self.connections
         )
 
-        StructureChanged.connect(lambda *_: self.rebuild(), self.connections)
+        StructureChanged.connect(
+            lambda changes: self.rebuild() if "visibleChannels" in changes else None,
+            self.connections,
+        )
 
     def destroy(self) -> None:
         for connection in self.connections:
