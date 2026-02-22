@@ -10,6 +10,7 @@ from interface.theme import MatrixLabel
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from interface.utilities.quickRefresh import QuickRefresh
 from utils.constants import CHANNEL_ORDER
+from utils.event import Connection
 
 if TYPE_CHECKING:
     from structures.song import Song
@@ -27,23 +28,25 @@ _logger = logging.getLogger(__name__)
 
 
 class PatternSelector(ttk.Label, QuickRefresh):
-    def __init__(self, parent: tk.Misc, list: PatternList, channel: int, pattern: int):
+    def __init__(self, parent: tk.Misc, lst: PatternList, channel: int, pattern: int):
         super().__init__(parent, relief="sunken")
 
-        self.list = list
+        self.list = lst
 
         self.channel = channel
         self.pattern = pattern
+
+        self.connections: list[Connection] = list()
 
         # self.bind("<Button-1>", lambda *_: self.increment())
         # self.bind("<Button-3>", lambda *_: self.decrement())
 
         program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
-            lambda key, *_: self.queueRefresh()
+            lambda key, *_: self.queueRefresh(), self.connections
         )
         self.queueRefresh()
 
-        StructureChanged.connect(lambda *_: self.refresh())
+        StructureChanged.connect(lambda *_: self.refresh(), self.connections)
 
     # def getPattern(self) -> int:
     #     return program.p.currentSong.getPatternNumberByLocation(self.channel, self.row)
@@ -66,6 +69,8 @@ class PatternSelector(ttk.Label, QuickRefresh):
         )
 
     def destroy(self) -> None:
+        for connection in self.connections:
+            connection.disconnect()
         return super().destroy()
 
 
@@ -76,6 +81,8 @@ class PatternList(ttk.Frame, QuickRefresh):
         sf = DScrollFrame(self, mode="DOUBLE")
         sf.pack(fill="both", expand=True)
 
+        self.connections: list[Connection] = list()
+
         self.pack_propagate(False)
 
         self.__content = sf.content
@@ -84,9 +91,14 @@ class PatternList(ttk.Frame, QuickRefresh):
         """(row, col) -> PatternSelector"""
 
         program.p.currentSong.getAttributeChangedEvent("patternList").connect(
-            lambda key, *_: self.queueRefresh()
+            lambda key, *_: self.queueRefresh(), self.connections
         )
         self.queueRefresh()
+
+    def destroy(self) -> None:
+        for connection in self.connections:
+            connection.disconnect()
+        return super().destroy()
 
     def refresh(self):
         self.resetRefreshFlag()

@@ -33,10 +33,12 @@ class Event[**P]:
     def __init__(self) -> None:
         self.__connections: set[Connection[P]] = set()
 
-    def connect(self, callback: Callable[P]):
-        """Register a callback with the event."""
+    def connect(self, callback: Callable[P], conList: list[Connection] | None = None):
+        """Register a callback with the event. A list can be provided to automatically put this connection in."""
         con = Connection(self, callback)
         self.__connections.add(con)
+        if conList is not None:
+            conList.append(con)
         return con
 
     def disconnect(self, con: Connection[P]):

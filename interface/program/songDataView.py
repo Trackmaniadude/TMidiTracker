@@ -10,6 +10,7 @@ from interface.utilities.headerFrame import HeaderFrame
 from interface.utilities.validatedEntryPrebuilts import Prebuilts
 from structures import program
 from structures.globalEvents import StructureChanged, TimingChanged
+from utils.event import Connection
 
 
 class SongDataView(ttk.Frame):
@@ -19,6 +20,8 @@ class SongDataView(ttk.Frame):
         sf = DScrollFrame(self, mode="VERTICAL", propagationMode="contentDrivesFrame")
         sf.pack(fill="both", expand=True)
         self.content = sf.content
+
+        self.connections: list[Connection] = list()
 
         ### Metadata
         metadataEdit = DictSettingsEditor(
@@ -46,7 +49,7 @@ class SongDataView(ttk.Frame):
         timeEdit.collapse()
         timeEdit.pack(side="top", fill="x", expand=False)
         timeEdit.addValueEdit("clock", DSEEntries.Integer(min=1, max=1000), "Clock")
-        timeEdit.Applied.connect(lambda *_: TimingChanged.fire())
+        timeEdit.Applied.connect(lambda *_: TimingChanged.fire(), self.connections)
 
         ### Structure
         structureEdit = DictSettingsEditor(
@@ -72,4 +75,11 @@ class SongDataView(ttk.Frame):
             DSEEntries.Integer(min=1, max=10000),
             "Minor Subdivision",
         )
-        structureEdit.Applied.connect(lambda *_: StructureChanged.fire())
+        structureEdit.Applied.connect(
+            lambda *_: StructureChanged.fire(), self.connections
+        )
+
+    def destroy(self) -> None:
+        for connection in self.connections:
+            connection.disconnect()
+        return super().destroy()

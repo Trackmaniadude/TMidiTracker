@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Callable, Literal, cast
 
+from utils.event import Connection
+
 if TYPE_CHECKING:
     from structures.song import Song
     from structures.channel import Channel
@@ -123,6 +125,8 @@ class PatternViewLabel(ttk.Label):
         self.column = column
 
         self.inputing: bool = False
+
+        self.connections: list[Connection] = list()
 
         # self.entryVar = tk.StringVar(self)
         # self.entry = ttk.Entry(self, width=width, textvariable=self.entryVar)
@@ -307,7 +311,12 @@ class PatternViewLabel(ttk.Label):
             lambda *_: self.decrement(2),
         )
 
-        StructureChanged.connect(lambda *_: self.refresh())
+        StructureChanged.connect(lambda *_: self.refresh(), self.connections)
+
+    def destroy(self) -> None:
+        for connection in self.connections:
+            connection.disconnect()
+        return super().destroy()
 
     def increment(self, scale: int):
         if self.view.viewFrame.target.column == PVLM.NOTE:
@@ -398,6 +407,8 @@ class PatternView(ttk.Frame):
         self.pattern: Pattern = initialPattern
         self.viewFrame: PatternViewFrame = viewFrame
 
+        self.connections: list[Connection] = list()
+
         self.__labels: set[PatternViewLabel] = set()
 
         self.labelLookup: dict[
@@ -417,7 +428,14 @@ class PatternView(ttk.Frame):
         self.buildLabels()
         self.refreshLabels()
 
-        StructureChanged.connect(lambda *_: (self.buildLabels(), self.refreshLabels()))
+        StructureChanged.connect(
+            lambda *_: (self.buildLabels(), self.refreshLabels()), self.connections
+        )
+
+    def destroy(self) -> None:
+        for connection in self.connections:
+            connection.disconnect()
+        return super().destroy()
 
     def buildLabels(self):
         # Remove old labels

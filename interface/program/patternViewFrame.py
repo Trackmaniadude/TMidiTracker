@@ -20,6 +20,7 @@ from utils.constants import (
     CHANNEL_ORDER_INVERSE,
     DRUM_CHANNEL,
 )
+from utils.event import Connection
 
 _logger = logging.getLogger(__name__)
 
@@ -40,11 +41,18 @@ class RowList(ttk.Frame):
 
         self.__highlight: int = -1
 
+        self.connections: list[Connection] = list()
+
         program.p.getAttributeChangedEvent("currentPatternRow").connect(
-            lambda key, old, new: setattr(self, "highlight", new)
+            lambda key, old, new: setattr(self, "highlight", new), self.connections
         )
 
-        StructureChanged.connect(lambda *_: self.rebuild())
+        StructureChanged.connect(lambda *_: self.rebuild(), self.connections)
+
+    def destroy(self) -> None:
+        for connection in self.connections:
+            connection.disconnect()
+        return super().destroy()
 
     @property
     def highlight(self) -> int:
@@ -78,6 +86,8 @@ class PatternViewFrame(ttk.Frame):
         sf = DScrollFrame(self, mode="DOUBLE")
         sf.pack(fill="both", expand=True)
 
+        self.connections: list[Connection] = list()
+
         self.__content = sf.content
         self.row = 0
 
@@ -89,14 +99,19 @@ class PatternViewFrame(ttk.Frame):
         self.showChannels()
 
         program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
-            lambda *a: self.after(0, self.matrixChangedEvent, *a)
+            lambda *a: self.after(0, self.matrixChangedEvent, *a), self.connections
         )
 
         program.p.getAttributeChangedEvent("currentMatrixRow").connect(
-            lambda *a: self.after(0, self.onMatrixRowChange, *a)
+            lambda *a: self.after(0, self.onMatrixRowChange, *a), self.connections
         )
 
-        StructureChanged.connect(lambda *_: self.showChannels())
+        StructureChanged.connect(lambda *_: self.showChannels(), self.connections)
+
+    def destroy(self) -> None:
+        for connection in self.connections:
+            connection.disconnect()
+        return super().destroy()
 
     def matrixChangedEvent(self, key: tuple[int, int], old: int | None, new: int):
         channel, row = key

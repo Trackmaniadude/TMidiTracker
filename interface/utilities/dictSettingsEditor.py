@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
 from interface.utilities.dictSettingsEditorEntries import DSEEntry, DSEShape
 from interface.utilities.headerFrame import HeaderFrame
-from utils.event import Event
+from utils.event import Connection, Event
 
 
 class DictSettingsEditor(HeaderFrame):
@@ -34,6 +34,8 @@ class DictSettingsEditor(HeaderFrame):
         self.__dct = dct
         self.__internalDict = self.__dct.copy()
 
+        self.connections: list[Connection] = list()
+
         self.Applied: Event[list[str]] = Event()
         """Fired when changes are applied. Contains a list of all keys that changed."""
 
@@ -52,6 +54,11 @@ class DictSettingsEditor(HeaderFrame):
             revert.pack(side="left", fill="both", expand=True)
             apply = ttk.Button(frame, text="Apply", command=self.apply)
             apply.pack(side="left", fill="both", expand=True)
+
+    def destroy(self) -> None:
+        for connection in self.connections:
+            connection.disconnect()
+        return super().destroy()
 
     def getNewRow(self) -> int:
         """Internal helper to make keeping track of grid rows easier."""
@@ -95,7 +102,7 @@ class DictSettingsEditor(HeaderFrame):
             if self.__autoApply:
                 self.apply()
 
-        tEntry.Changed.connect(onChange)
+        tEntry.Changed.connect(onChange, self.connections)
 
         # Load in value
         tEntry.set(self.__internalDict[key])

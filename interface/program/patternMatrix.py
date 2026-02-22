@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal, cast
 
 from interface.utilities.quickRefresh import QuickRefresh
+from utils.event import Connection
 
 if TYPE_CHECKING:
     from structures.song import Song
@@ -35,9 +36,12 @@ class PatternSelector(ttk.Label, QuickRefresh):
         self.channel = channel
         self.row = row
 
+        self.connections: list[Connection] = list()
+
         self.__style: str = ""
         self.__text: str = ""
 
+        # Interaction
         self.bind("<Button-2>", lambda *_: (self.copyAbove(), self.setCurrentRow()))
 
         self.bind("<Button-1>", lambda *_: (self.increment(0), self.setCurrentRow()))
@@ -64,15 +68,20 @@ class PatternSelector(ttk.Label, QuickRefresh):
         )
 
         program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
-            lambda key, *_: self.queueRefresh()
+            lambda key, *_: self.queueRefresh(), self.connections
         )
         program.p.currentSong.getAttributeChangedEvent("highlightedMatrixRows").connect(
-            lambda key, *_: self.queueRefresh()
+            lambda key, *_: self.queueRefresh(), self.connections
         )
         program.p.getAttributeChangedEvent("currentMatrixRow").connect(
-            lambda key, *_: self.queueRefresh()
+            lambda key, *_: self.queueRefresh(), self.connections
         )
         self.queueRefresh()
+
+    def destroy(self) -> None:
+        for connection in self.connections:
+            connection.disconnect()
+        return super().destroy()
 
     def setCurrentRow(self):
         """Set the current matrix row to the row of this selector."""
@@ -122,9 +131,6 @@ class PatternSelector(ttk.Label, QuickRefresh):
         self.text = str(hex(self.getPatternId())[2:].upper())
         self.style = cast(str, style)
 
-    def destroy(self) -> None:
-        return super().destroy()
-
     @property
     def style(self) -> str:
         return self.__style
@@ -153,6 +159,8 @@ class PatternMatrix(ttk.Frame):
         sf = DScrollFrame(self, mode="DOUBLE")
         sf.pack(fill="both", expand=True)
 
+        self.connections: list[Connection] = list()
+
         self.pack_propagate(False)
 
         self.__content = sf.content
@@ -166,7 +174,12 @@ class PatternMatrix(ttk.Frame):
 
         self.refresh()
 
-        StructureChanged.connect(lambda *_: self.refresh())
+        StructureChanged.connect(lambda *_: self.refresh(), self.connections)
+
+    def destroy(self) -> None:
+        for connection in self.connections:
+            connection.disconnect()
+        return super().destroy()
 
     def setMatrixRow(self, row: int):
         program.p.currentPatternRow = 0
