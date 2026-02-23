@@ -76,7 +76,8 @@ class PatternSelector(ttk.Label, QuickRefresh):
         program.p.getAttributeChangedEvent("currentMatrixRow").connect(
             lambda key, *_: self.queueRefresh(), self.connections
         )
-        self.queueRefresh()
+
+        self.refresh()
 
     def destroy(self) -> None:
         for connection in self.connections:
@@ -152,7 +153,7 @@ class PatternSelector(ttk.Label, QuickRefresh):
             self.config(text=self.__text)
 
 
-class PatternMatrix(ttk.Frame):
+class PatternMatrix(ttk.Frame, QuickRefresh):
     def __init__(self, parent: tk.Misc):
         super().__init__(parent, relief="raised", width=300, height=200, borderwidth=2)
 
@@ -173,8 +174,7 @@ class PatternMatrix(ttk.Frame):
         """(row, col) -> PatternSelector"""
 
         self.refresh()
-
-        StructureChanged.connect(lambda *_: self.refresh(), self.connections)
+        StructureChanged.connect(lambda *_: self.queueRefresh(), self.connections)
 
     def destroy(self) -> None:
         for connection in self.connections:
@@ -215,6 +215,8 @@ class PatternMatrix(ttk.Frame):
         return ((row * self.ROW_STEP) + rowOffset, (column * self.COL_STEP) + colOffset)
 
     def refresh(self):
+        self.resetRefreshFlag()
+
         currentRows = len(self.__rowLabels)
         currentCols = len(self.__colLabels)
         rows = program.p.currentSong.visibleMatrixRows

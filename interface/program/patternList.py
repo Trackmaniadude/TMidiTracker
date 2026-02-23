@@ -44,8 +44,7 @@ class PatternSelector(ttk.Label, QuickRefresh):
         program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
             lambda key, *_: self.queueRefresh(), self.connections
         )
-        self.queueRefresh()
-
+        self.refresh()
         StructureChanged.connect(lambda *_: self.refresh(), self.connections)
 
     # def getPattern(self) -> int:
@@ -93,7 +92,7 @@ class PatternList(ttk.Frame, QuickRefresh):
         program.p.currentSong.getAttributeChangedEvent("patternList").connect(
             lambda key, *_: self.queueRefresh(), self.connections
         )
-        self.queueRefresh()
+        self.refresh()
 
     def destroy(self) -> None:
         for connection in self.connections:
