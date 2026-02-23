@@ -125,11 +125,9 @@ class PatternViewLabel(ttk.Label):
         self.column = column
 
         self.inputing: bool = False
+        self.clearOnNextInput: bool = False
 
         self.connections: list[Connection] = list()
-
-        # self.entryVar = tk.StringVar(self)
-        # self.entry = ttk.Entry(self, width=width, textvariable=self.entryVar)
 
         self.__style: str = ""
         self.__text: str = ""
@@ -152,7 +150,9 @@ class PatternViewLabel(ttk.Label):
 
             def delete():
                 self.view.pattern.setNote(self.row, self.column, None)
-                self.view.viewFrame.stepTarget(program.p.stepSize, focus=True)
+                self.view.viewFrame.stepTarget(
+                    program.p.stepSize, focus=True, stepPattern=False
+                )
 
             def backspace():
                 target = max(0, self.row - program.p.stepSize)
@@ -161,7 +161,9 @@ class PatternViewLabel(ttk.Label):
 
             def stop():
                 self.view.pattern.setNote(self.row, self.column, "stop")
-                self.view.viewFrame.stepTarget(program.p.stepSize, focus=True)
+                self.view.viewFrame.stepTarget(
+                    program.p.stepSize, focus=True, stepPattern=False
+                )
 
             def play(note: int | Literal["stop"] | None):
                 # Returns an event func to allow instancing values of the function
@@ -208,6 +210,9 @@ class PatternViewLabel(ttk.Label):
 
             def keyPress(letter: str):
                 def onEvent(*_):
+                    if self.clearOnNextInput:
+                        self.clearOnNextInput = False
+                        self.entryTextProxy = ""
                     self.entryTextProxy += letter
                     self.text = self.entryTextProxy
 
@@ -215,6 +220,7 @@ class PatternViewLabel(ttk.Label):
 
             def backspace():
                 # Remove a character. If no characters, remove previous entry and jump to it.
+                self.clearOnNextInput = False
                 if len(self.entryTextProxy) == 0:
                     target = max(0, self.row - program.p.stepSize)
                     self.view.viewFrame.setTarget(row=target, focus=True)
@@ -231,16 +237,26 @@ class PatternViewLabel(ttk.Label):
                     self.view.pattern.setVelocity(self.row, self.column, None)
                 if mode == PVLM.EFFECT:
                     self.view.pattern.setEffect(self.row, self.column, None)
-                self.view.viewFrame.stepTarget(program.p.stepSize, focus=True)
+                self.refresh()
+                self.view.viewFrame.stepTarget(
+                    program.p.stepSize, focus=True, stepPattern=False
+                )
 
             def enter():
-                self.view.viewFrame.stepTarget(program.p.stepSize, focus=True)
+                self.view.viewFrame.stepTarget(
+                    program.p.stepSize, focus=True, stepPattern=False
+                )
+
+            def setClearOnNext():
+                self.clearOnNextInput = True
 
             def focus():
                 self.entryTextProxy = self.getTextValue()
                 self.refresh()
 
             def finalize():
+                self.clearOnNextInput = False
+
                 if mode == PVLM.VELOCITY:
                     if self.entryTextProxy == "":
                         self.view.pattern.setVelocity(self.row, self.column, None)
@@ -265,7 +281,7 @@ class PatternViewLabel(ttk.Label):
             self.bind("<Delete>", lambda *_: delete())
             self.bind("<BackSpace>", lambda *_: backspace())
             self.bind("<Return>", lambda *_: enter())
-            # TODO: should clicking clear? YES
+            self.bind("<Button-1>", lambda *_: setClearOnNext(), "+")
 
         # Keyboard Navigation
         self.bind(
@@ -391,10 +407,8 @@ class PatternViewLabel(ttk.Label):
     @text.setter
     def text(self, newText: str):
         if newText != self.__text:
-            self.__lastText = self.__text
             self.__text = newText
             self.config(text=newText)
-            # self.entryVar.set(newText)
 
 
 class PatternView(ttk.Frame):
