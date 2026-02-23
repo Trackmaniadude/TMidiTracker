@@ -82,7 +82,7 @@ class Pattern(ReactiveClass):
 
     def setVelocity(self, row: int, column: int, velocity: velocity | None):
         if velocity is None and (row, column) in self.velocities:
-            del self.notes[row, column]
+            del self.velocities[row, column]
         if velocity is not None:
             self.velocities[row, column] = clamp(velocity, 0, 127)
 
