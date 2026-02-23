@@ -35,7 +35,7 @@ class Song(ReactiveClass):
 
         self.metadata = SongMetadata()
 
-        self.visibleChannels: int = 5
+        self.visibleChannels: int = 4
         self.visibleMatrixRows: int = 4
 
         self.patternLength: int = 16

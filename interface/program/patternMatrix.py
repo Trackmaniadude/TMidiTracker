@@ -220,7 +220,7 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
         currentRows = len(self.__rowLabels)
         currentCols = len(self.__colLabels)
         rows = program.p.currentSong.visibleMatrixRows
-        cols = program.p.currentSong.visibleChannels
+        cols = program.p.currentSong.visibleChannels + 1
 
         # Row Labels
         if rows > currentRows:  # Need more

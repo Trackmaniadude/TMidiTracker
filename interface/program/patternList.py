@@ -101,7 +101,7 @@ class PatternList(ttk.Frame, QuickRefresh):
 
     def refresh(self):
         self.resetRefreshFlag()
-        rows = program.p.currentSong.visibleChannels
+        rows = program.p.currentSong.visibleChannels + 1
         cols = (
             max(
                 (

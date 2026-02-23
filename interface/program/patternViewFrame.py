@@ -248,12 +248,12 @@ class PatternViewFrame(ttk.Frame):
         newList = list()
         for i in range(CHANNEL_COUNT):
             if i < currentChannelsShown:
-                if i < program.p.currentSong.visibleChannels:
+                if i <= program.p.currentSong.visibleChannels:
                     newList.append(self.views[i])
                 else:
                     self.views[i].destroy()
             else:
-                if i < program.p.currentSong.visibleChannels:
+                if i <= program.p.currentSong.visibleChannels:
                     view = PatternView(
                         self.__content,
                         self,

@@ -64,7 +64,7 @@ class SongDataView(ttk.Frame):
         # structureEdit.collapse()
         structureEdit.pack(side="top", fill="x", expand=False)
         structureEdit.addValueEdit(
-            "visibleChannels", DSEEntries.Integer(min=0, max=14), "Channels"
+            "visibleChannels", DSEEntries.Integer(min=0, max=14), "Pitched Channels"
         )
         structureEdit.addValueEdit(
             "patternLength", DSEEntries.Integer(min=1, max=255), "Pattern Size"
