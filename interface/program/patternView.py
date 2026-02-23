@@ -425,7 +425,7 @@ class PatternView(ttk.Frame):
     def __init__(
         self, parent: tk.Misc, viewFrame: PatternViewFrame, initialPattern: Pattern
     ):
-        super().__init__(parent, borderwidth=1, relief="raised")
+        super().__init__(parent, borderwidth=2, relief="raised")
 
         self.pattern: Pattern = initialPattern
         self.viewFrame: PatternViewFrame = viewFrame
@@ -441,8 +441,8 @@ class PatternView(ttk.Frame):
 
         ### Build Layout
         # Frames
-        self.noteFrame = ttk.Frame(self, relief="ridge", borderwidth=2)
-        self.effectFrame = ttk.Frame(self, relief="ridge", borderwidth=2)
+        self.noteFrame = ttk.Frame(self, relief="sunken", borderwidth=2)
+        self.effectFrame = ttk.Frame(self, relief="sunken", borderwidth=2)
 
         # Labels
         self.noteLabel = ttk.Label(self, text=f"#{self.pattern.channel.channel + 1}")

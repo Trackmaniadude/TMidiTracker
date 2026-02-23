@@ -34,8 +34,10 @@ class Target:
 
 
 class RowList(ttk.Frame):
+    """Vertical list of row numbers on the left side."""
+
     def __init__(self, parent: tk.Misc):
-        super().__init__(parent, padding="0 4")
+        super().__init__(parent)
         self.labels: dict[int, ttk.Label] = dict()
         self.rebuild()
 
@@ -46,6 +48,8 @@ class RowList(ttk.Frame):
         program.p.getAttributeChangedEvent("currentPatternRow").connect(
             lambda key, old, new: setattr(self, "highlight", new), self.connections
         )
+
+        ttk.Frame(self, width=0, height=28).grid(row=0, column=0)  # Spacer
 
         StructureChanged.connect(
             lambda changes: self.rebuild() if "visibleChannels" in changes else None,
@@ -78,7 +82,7 @@ class RowList(ttk.Frame):
             label.destroy()
         for i in range(program.p.currentSong.patternLength):
             label = ttk.Label(self, text=i, justify="left")
-            label.grid(row=i, column=0, sticky="nesw")
+            label.grid(row=i + 1, column=0, sticky="nesw")
             self.labels[i] = label
 
 

@@ -69,14 +69,18 @@ class Channel(ReactiveClass):
         if read:
             rowData = currentPattern.getRow(program.p.currentPatternRow)
 
+            # Apply all effects first
             for col, effect in rowData.effects.items():
+                if col > self.effectColumns: continue
                 effectMessages = runEffect(effect, self)
                 if effectMessages is not None:
                     messages.extend(effectMessages)
 
+            # Determine velocities next
             for col, vel in rowData.velocities.items():
                 self.playbackState.velocities[col] = vel
 
+            # Play notes
             for col, note in rowData.notes.items():
                 prevNote = self.playbackState.columnNotes.get(col)
                 if note == "stop":
