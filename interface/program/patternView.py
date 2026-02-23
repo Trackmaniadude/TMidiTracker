@@ -216,6 +216,11 @@ class PatternViewLabel(ttk.Label):
                     self.entryTextProxy += letter
                     self.text = self.entryTextProxy
 
+                    if mode == PVLM.VELOCITY and len(self.entryTextProxy) == 2:
+                        self.view.viewFrame.stepTarget(
+                            program.p.stepSize, focus=True, stepPattern=False
+                        )
+
                 return onEvent
 
             def backspace():
@@ -265,6 +270,7 @@ class PatternViewLabel(ttk.Label):
                             self.row, self.column, int(self.entryTextProxy, 16)
                         )
                     self.refresh()
+
                 if mode == PVLM.EFFECT:
                     if len(self.entryTextProxy) % 2 != 0:
                         self.entryTextProxy = "0" + self.entryTextProxy
@@ -275,7 +281,7 @@ class PatternViewLabel(ttk.Label):
                     self.refresh()
 
             for letter in HEX_KEYMAP:
-                self.bind(f"{letter}", keyPress(letter))
+                self.bind(f"{letter}", keyPress(letter.upper()))
             self.bind("<FocusOut>", lambda *_: finalize())
             self.bind("<FocusIn>", lambda *_: focus())
             self.bind("<Delete>", lambda *_: delete())
