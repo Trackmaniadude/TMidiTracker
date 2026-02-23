@@ -5,14 +5,12 @@ Interface for editing the message data in a pattern.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum, auto
+from enum import Enum
 from typing import TYPE_CHECKING, Callable, Literal, cast
 
 from utils.event import Connection
 
 if TYPE_CHECKING:
-    from structures.song import Song
-    from structures.channel import Channel
     from structures.pattern import Pattern
     from interface.program.patternViewFrame import PatternViewFrame
 
@@ -23,9 +21,11 @@ from tkinter import ttk
 import mido
 
 from interface.theme import Note
+from interface.utilities.prebuilts import Buttons
 from structures import program
 from structures.globalEvents import StructureChanged
 from utils.constants import (
+    CHANNEL_ORDER_INVERSE,
     DRUM_CHANNEL,
     DRUM_NAMES,
     HEX_KEYMAP,
@@ -335,6 +335,8 @@ class PatternViewLabel(ttk.Label):
 
         StructureChanged.connect(lambda *_: self.refresh(), self.connections)
 
+        self.refresh()
+
     def destroy(self) -> None:
         _logger.debug(f"{self} DESTROY")
         for connection in self.connections:
@@ -437,17 +439,76 @@ class PatternView(ttk.Frame):
         ] = dict()
         """Row (int), Column (PatternViewLabelModes), Subcolumn (int)"""
 
+        ### Build Layout
+        # Frames
         self.noteFrame = ttk.Frame(self, relief="ridge", borderwidth=2)
         self.effectFrame = ttk.Frame(self, relief="ridge", borderwidth=2)
 
-        self.noteFrame.grid(row=0, column=0)
-        self.effectFrame.grid(row=0, column=1)
+        # Labels
+        self.noteLabel = ttk.Label(self, text=f"#{self.pattern.channel.channel + 1}")
+        self.effectLabel = ttk.Label(self, text="")
 
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
+        # Controls
+        self.noteDel = Buttons.Decrement(self)
+        self.noteAdd = Buttons.Increment(self)
+        self.effectDel = Buttons.Decrement(self)
+        self.effectAdd = Buttons.Increment(self)
 
-        self.buildLabels()
-        self.refreshLabels()
+        # Layout
+        self.noteLabel.grid(row=0, column=0, sticky="ew")
+        self.noteDel.grid(row=0, column=1, sticky="ew")
+        self.noteAdd.grid(row=0, column=2, sticky="ew")
+
+        self.effectLabel.grid(row=0, column=3, sticky="ew")
+        self.effectDel.grid(row=0, column=4, sticky="ew")
+        self.effectAdd.grid(row=0, column=5, sticky="ew")
+
+        self.noteFrame.grid(row=1, column=0, columnspan=3)
+        self.effectFrame.grid(row=1, column=3, columnspan=3)
+
+        self.columnconfigure([0, 3], weight=1)
+
+        ### Behavior
+        self.noteDel.config(
+            command=lambda: (
+                setattr(
+                    self.pattern.channel,
+                    "noteColumns",
+                    getattr(self.pattern.channel, "noteColumns") - 1,
+                ),
+                self.buildLabels(),
+            )
+        )
+        self.noteAdd.config(
+            command=lambda: (
+                setattr(
+                    self.pattern.channel,
+                    "noteColumns",
+                    getattr(self.pattern.channel, "noteColumns") + 1,
+                ),
+                self.buildLabels(),
+            )
+        )
+        self.effectDel.config(
+            command=lambda: (
+                setattr(
+                    self.pattern.channel,
+                    "effectColumns",
+                    getattr(self.pattern.channel, "effectColumns") - 1,
+                ),
+                self.buildLabels(),
+            )
+        )
+        self.effectAdd.config(
+            command=lambda: (
+                setattr(
+                    self.pattern.channel,
+                    "effectColumns",
+                    getattr(self.pattern.channel, "effectColumns") + 1,
+                ),
+                self.buildLabels(),
+            )
+        )
 
         StructureChanged.connect(
             lambda changes: (
@@ -457,6 +518,9 @@ class PatternView(ttk.Frame):
             ),
             self.connections,
         )
+
+        ### Finish
+        self.buildLabels()
 
     def destroy(self) -> None:
         for connection in self.connections:

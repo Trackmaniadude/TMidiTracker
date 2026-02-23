@@ -36,8 +36,8 @@ class Pattern(ReactiveClass):
     def __init__(self, song: Song, channel: Channel) -> None:
         super().__init__()
 
-        self.song = song
-        self.channel = channel
+        self.song: Song = song
+        self.channel: Channel = channel
 
         self.notes: dict[tuple[int, int], note] = dict()
         """
