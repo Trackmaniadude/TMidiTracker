@@ -45,8 +45,9 @@ class StyleDC(Style):
 
 
 @dataclass
-class BackgroundStyle(StyleDC):
-    background: str
+class BasicColor(StyleDC):
+    background: str = "white"
+    foreground: str = "black"
 
 
 def StyleBase(base: str):
@@ -69,10 +70,13 @@ class Colors:
         Shade1 = "#EEEEEE"
         Shade2 = "#CCCCCC"
 
-    class Select:
+    class Target:
         Default = "#DDDDFF"
         Shade1 = "#CCCCEE"
         Shade2 = "#AAAACC"
+
+    class Select:
+        Default = "#0044CC"
 
     class Highlight:
         Default = "#FFFFCC"
@@ -81,29 +85,28 @@ class Colors:
 # Styles
 @StyleBase("TLabel")
 class Note:
-    Default = BackgroundStyle(Colors.BG.Default)
-    Minor = BackgroundStyle(Colors.BG.Shade1)
-    Major = BackgroundStyle(Colors.BG.Shade2)
-    DefaultTarget = BackgroundStyle(Colors.Select.Default)
-    MinorTarget = BackgroundStyle(Colors.Select.Shade1)
-    MajorTarget = BackgroundStyle(Colors.Select.Shade2)
+    Default = BasicColor(Colors.BG.Default)
+    Minor = BasicColor(Colors.BG.Shade1)
+    Major = BasicColor(Colors.BG.Shade2)
+    DefaultTarget = BasicColor(Colors.Target.Default)
+    MinorTarget = BasicColor(Colors.Target.Shade1)
+    MajorTarget = BasicColor(Colors.Target.Shade2)
 
 
 @StyleBase("TLabel")
-class MatrixLabel:
-    DefaultEven = BackgroundStyle(Colors.BG.Default)
-    DefaultOdd = BackgroundStyle(Colors.BG.Shade1)
-    Target = BackgroundStyle(Colors.Select.Default)
-    Highlight = BackgroundStyle(Colors.Highlight.Default)
+class MatrixSelector:
+    DefaultEven = BasicColor(Colors.BG.Default)
+    DefaultOdd = BasicColor(Colors.BG.Shade1)
+    Target = BasicColor(Colors.Target.Default)
+    Highlight = BasicColor(Colors.Highlight.Default)
+    Selection = BasicColor(Colors.Select.Default)
 
 
 def generate():
     s = ttk.Style()
     # s.theme_use("clam")
 
-    s.configure("TLabel", font="TkFixedFont")
-    s.configure("TButton", font="TkFixedFont")
-    s.configure("TEntry", font="TkFixedFont")
+    s.configure(".", font=("TkFixedFont", 10))
 
     Style.generateAll(s)
 

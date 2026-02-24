@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from interface.theme import MatrixLabel
+from interface.theme import MatrixSelector
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from interface.utilities.quickRefresh import QuickRefresh
 from utils.constants import CHANNEL_ORDER
@@ -59,7 +59,9 @@ class PatternSelector(ttk.Label, QuickRefresh):
         else:
             count = -1
         style = (
-            MatrixLabel.DefaultEven if self.channel % 2 == 1 else MatrixLabel.DefaultOdd
+            MatrixSelector.DefaultEven
+            if self.channel % 2 == 1
+            else MatrixSelector.DefaultOdd
         )
         self.config(
             text=count,

@@ -57,7 +57,8 @@ class Song(ReactiveClass):
             for channel in range(CHANNEL_COUNT):
                 self.patternMatrix[channel, row] = 0
 
-        self.highlightedMatrixRows: set[int] = set()
+        # Other information
+        self.highlightedMatrixItems: set[tuple[int, int]] = set()
 
         self.setupContainerListen()
 

@@ -71,7 +71,8 @@ class Channel(ReactiveClass):
 
             # Apply all effects first
             for col, effect in rowData.effects.items():
-                if col > self.effectColumns: continue
+                if col > self.effectColumns:
+                    continue
                 effectMessages = runEffect(effect, self)
                 if effectMessages is not None:
                     messages.extend(effectMessages)

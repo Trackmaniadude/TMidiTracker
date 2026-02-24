@@ -18,11 +18,11 @@ import logging
 import tkinter as tk
 from tkinter import ttk
 
-from interface.theme import MatrixLabel
+from interface.theme import MatrixSelector
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from structures import program
 from structures.globalEvents import StructureChanged
-from utils.constants import CHANNEL_ORDER, PATTERN_DELTAS
+from utils.constants import CHANNEL_ORDER, CHANNEL_ORDER_INVERSE, PATTERN_DELTAS
 
 _logger = logging.getLogger(__name__)
 
@@ -42,47 +42,38 @@ class PatternSelector(ttk.Label, QuickRefresh):
         self.__text: str = ""
 
         # Interaction
-        self.bind("<Button-2>", lambda *_: (self.copyAbove(), self.setCurrentRow()))
 
-        self.bind("<Button-1>", lambda *_: (self.increment(0), self.setCurrentRow()))
-        self.bind("<Button-3>", lambda *_: (self.decrement(0), self.setCurrentRow()))
-        self.bind(
-            "<Shift-Button-1>", lambda *_: (self.increment(1), self.setCurrentRow())
-        )
-        self.bind(
-            "<Shift-Button-3>", lambda *_: (self.decrement(1), self.setCurrentRow())
-        )
-        self.bind(
-            "<Control-Button-1>", lambda *_: (self.increment(2), self.setCurrentRow())
-        )
-        self.bind(
-            "<Control-Button-3>", lambda *_: (self.decrement(2), self.setCurrentRow())
-        )
-        self.bind(
-            "<Shift-Control-Button-1>",
-            lambda *_: (self.increment(3), self.setCurrentRow()),
-        )
-        self.bind(
-            "<Shift-Control-Button-3>",
-            lambda *_: (self.decrement(3), self.setCurrentRow()),
-        )
+        def setupLeftClick():
+            self.bind(
+                "<Button-1>",
+                lambda *_: (
+                    self.matrix.selectCell(self.row, self.channel, "set"),
+                    self.setCurrentRow(),
+                ),
+            )
+            self.bind(
+                "<Control-Button-1>",
+                lambda *_: self.matrix.selectCell(self.row, self.channel, "toggle"),
+            )
 
-        program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
-            lambda key, *_: self.queueRefresh(), self.connections
-        )
-        program.p.currentSong.getAttributeChangedEvent("highlightedMatrixRows").connect(
-            lambda key, *_: self.queueRefresh(), self.connections
-        )
-        program.p.getAttributeChangedEvent("currentMatrixRow").connect(
-            lambda key, *_: self.queueRefresh(), self.connections
-        )
+        setupLeftClick()
 
-        self.refresh()
+        # self.refresh()
+
+    # @property
+    # def column(self):
+    #     return CHANNEL_ORDER_INVERSE[self.channel]
+
+    @property
+    def position(self):
+        return (self.row, self.channel)
 
     def destroy(self) -> None:
         for connection in self.connections:
             connection.disconnect()
         return super().destroy()
+
+    ###
 
     def setCurrentRow(self):
         """Set the current matrix row to the row of this selector."""
@@ -102,12 +93,6 @@ class PatternSelector(ttk.Label, QuickRefresh):
     def decrement(self, scale: int = 0):
         self.setPatternId(max(0, self.getPatternId() - PATTERN_DELTAS[scale]))
 
-    # def beginSet(self): TODO: what was this for?
-    #     pass
-
-    # def endSet(self):
-    #     pass
-
     def copyAbove(self):
         """Set this selector to the same value as the one above it."""
         if self.row == 0:
@@ -115,18 +100,24 @@ class PatternSelector(ttk.Label, QuickRefresh):
         p = program.p.currentSong.getPatternIdByLocation(self.channel, self.row - 1)
         self.setPatternId(p)
 
+    ###
+
     def refresh(self):
         """Reload this selector's visual state."""
         self.resetRefreshFlag()
-        if self.row == program.p.currentMatrixRow:
-            style = MatrixLabel.Target
-        elif self.row in program.p.currentSong.highlightedMatrixRows:
-            style = MatrixLabel.Highlight
+
+        ### If chain to determine style to use
+        if self.position in self.matrix.selection:
+            style = MatrixSelector.Target
+        # elif self.row == program.p.currentMatrixRow:
+        #     style = MatrixSelector.Target
+        elif (self.row, self.channel) in program.p.currentSong.highlightedMatrixItems:
+            style = MatrixSelector.Highlight
         else:
             style = (
-                MatrixLabel.DefaultEven
+                MatrixSelector.DefaultEven
                 if self.channel % 2 == 1
-                else MatrixLabel.DefaultOdd
+                else MatrixSelector.DefaultOdd
             )
 
         self.text = str(hex(self.getPatternId())[2:].upper())
@@ -173,6 +164,11 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
         self.__selectors: dict[tuple[int, int], PatternSelector] = dict()
         """(row, col) -> PatternSelector"""
 
+        self.selection: set[tuple[int, int]] = {(0, 0)}
+        """set[row:int, channel:int] - Currently selected cells."""
+        self.selectionAnchor: tuple[int, int] = (0, 0)
+        """(row, channel) - Used for box selections"""
+
         self.refresh()
         StructureChanged.connect(lambda *_: self.queueRefresh(), self.connections)
 
@@ -181,15 +177,55 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
             connection.disconnect()
         return super().destroy()
 
-    def setMatrixRow(self, row: int):
-        program.p.currentPatternRow = 0
-        program.p.currentMatrixRow = row
+    ### Selection
 
-    def toggleRowHighlight(self, row: int):
-        if row in program.p.currentSong.highlightedMatrixRows:
-            program.p.currentSong.highlightedMatrixRows.remove(row)
-        else:
-            program.p.currentSong.highlightedMatrixRows.add(row)
+    def setSelectionAnchor(self, row: int, channel: int):
+        self.selectionAnchor = (row, channel)
+
+    def selectCell(
+        self, row: int, channel: int, mode: Literal["add", "sub", "set", "toggle"]
+    ):
+        """Select a single cell."""
+        t = (row, channel)
+        if mode == "add":
+            self.selection.add(t)
+        elif mode == "sub":
+            if t in self.selection:
+                self.selection.remove(t)
+        elif mode == "set":
+            self.selection = {t}
+        elif mode == "toggle":
+            if t in self.selection:
+                self.selection.remove(t)
+            else:
+                self.selection.add(t)
+        self.refreshSelectors()
+
+    def selectRow(self, row: int, mode: Literal["add", "sub", "set", "toggle"]):
+        """Select a row"""
+        cols = range(program.p.currentSong.visibleChannels + 1)
+        if mode == "add" or mode == "sub":
+            for col in cols:
+                self.selectCell(row, col, mode)
+        elif mode == "set":
+            self.selection = {(row, col) for col in cols}
+        elif mode == "toggle":
+            _logger.warning("TOGGLE ROW UNIMPLEMENTED")
+        self.refreshSelectors()
+
+    # def boxSelect(self, row: int)
+
+    # def setMatrixRow(self, row: int):
+    #     program.p.currentPatternRow = 0
+    #     program.p.currentMatrixRow = row
+
+    # def toggleRowHighlight(self, row: int):
+    #     if row in program.p.currentSong.highlightedMatrixRows:
+    #         program.p.currentSong.highlightedMatrixRows.remove(row)
+    #     else:
+    #         program.p.currentSong.highlightedMatrixRows.add(row)
+
+    ### Construction
 
     GRID_POSITIONS = {
         #             col label
@@ -216,6 +252,15 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
 
     def refresh(self):
         self.resetRefreshFlag()
+        self.rebuild()
+        self.refreshSelectors()
+
+    def refreshSelectors(self):
+        for sel in self.__selectors.values():
+            sel.refresh()
+
+    def rebuild(self):
+        """Add/remove labels as needed."""
 
         currentRows = len(self.__rowLabels)
         currentCols = len(self.__colLabels)

@@ -10,7 +10,7 @@ from tkinter import ttk
 from typing import Literal, cast
 
 from interface.program.patternView import PVLM, PatternView
-from interface.theme import MatrixLabel
+from interface.theme import MatrixSelector
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from structures import program
 from structures.globalEvents import StructureChanged
@@ -70,10 +70,12 @@ class RowList(ttk.Frame):
         if self.__highlight != highlight:
             if self.__highlight in self.labels:
                 self.labels[self.__highlight].configure(
-                    style=cast(str, MatrixLabel.DefaultEven)
+                    style=cast(str, MatrixSelector.DefaultEven)
                 )
             if highlight in self.labels:
-                self.labels[highlight].configure(style=cast(str, MatrixLabel.Highlight))
+                self.labels[highlight].configure(
+                    style=cast(str, MatrixSelector.Highlight)
+                )
         self.__highlight = highlight
 
     def rebuild(self):
