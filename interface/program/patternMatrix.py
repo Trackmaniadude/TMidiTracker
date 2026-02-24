@@ -43,6 +43,37 @@ class PatternSelector(ttk.Label, QuickRefresh):
 
         # Interaction
 
+        def setupScroll():
+            # Linux
+            self.bind("<Button-4>", lambda *_: self.increment(0))
+            self.bind("<Button-5>", lambda *_: self.decrement(0))
+            self.bind("<Shift-Button-4>", lambda *_: self.increment(1))
+            self.bind("<Shift-Button-5>", lambda *_: self.decrement(1))
+            self.bind("<Control-Button-4>", lambda *_: self.increment(2))
+            self.bind("<Control-Button-5>", lambda *_: self.decrement(2))
+            self.bind("<Control-Shift-Button-4>", lambda *_: self.increment(3))
+            self.bind("<Control-Shift-Button-5>", lambda *_: self.decrement(3))
+
+            # Not Linux
+            self.bind(
+                "<MouseWheel>",
+                lambda e: self.increment(0) if e.delta > 0 else self.decrement(0),
+            )
+            self.bind(
+                "<Shift-MouseWheel>",
+                lambda e: self.increment(1) if e.delta > 0 else self.decrement(1),
+            )
+            self.bind(
+                "<Control-MouseWheel>",
+                lambda e: self.increment(2) if e.delta > 0 else self.decrement(2),
+            )
+            self.bind(
+                "<Control-Shift-MouseWheel>",
+                lambda e: self.increment(3) if e.delta > 0 else self.decrement(3),
+            )
+
+        setupScroll()
+
         def setupLeftClick():
             self.bind(
                 "<Button-1>",
@@ -89,9 +120,11 @@ class PatternSelector(ttk.Label, QuickRefresh):
 
     def increment(self, scale: int = 0):
         self.setPatternId(self.getPatternId() + PATTERN_DELTAS[scale])
+        self.queueRefresh()
 
     def decrement(self, scale: int = 0):
         self.setPatternId(max(0, self.getPatternId() - PATTERN_DELTAS[scale]))
+        self.queueRefresh()
 
     def copyAbove(self):
         """Set this selector to the same value as the one above it."""
