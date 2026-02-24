@@ -15,8 +15,7 @@ if __name__ == "__main__":
 
     sys.path.append(".")
 
-from utils.event import Event
-from utils.misc import mapRange
+from utils.misc import clamp, mapRange
 
 BBox = namedtuple("BBox", ["x1", "y1", "x2", "y2"])
 
@@ -30,12 +29,15 @@ class DScrollFrame(ttk.Frame):
         propagationMode: Literal[
             "off", "contentDrivesFrame", "frameDrivesContent"
         ] = "off",
+        createScrollBindings: bool = True,
     ):
         super().__init__(parent, width=0, height=0)
 
         self.isHorizontal = mode == "DOUBLE" or mode == "HORIZONTAL"
         self.isVertical = mode == "DOUBLE" or mode == "VERTICAL"
         self.propagationMode = propagationMode
+
+        self.inWindow: bool = False
 
         # Create elements
         self.__canvas = tk.Canvas(self, highlightthickness=0, width=0, height=0)
@@ -74,18 +76,78 @@ class DScrollFrame(ttk.Frame):
             0, 0, window=self.content, anchor="nw"
         )
 
+        # Bindings
+        if createScrollBindings:
+            self.bind("<Enter>", lambda *_: setattr(self, "inWindow", True))
+            self.bind("<Leave>", lambda *_: setattr(self, "inWindow", False))
+            root = self.winfo_toplevel()
+
+            if self.isVertical:
+                root.bind(
+                    "<MouseWheel>",
+                    lambda e: self.scroll("y", -e.delta) if self.inWindow else None,
+                    "+",
+                )
+                root.bind(
+                    "<Button-4>",
+                    lambda *_: self.scroll("y", -1) if self.inWindow else None,
+                    "+",
+                )
+                root.bind(
+                    "<Button-5>",
+                    lambda *_: self.scroll("y", 1) if self.inWindow else None,
+                    "+",
+                )
+
+            if self.isHorizontal:
+                root.bind(
+                    "<Shift-MouseWheel>",
+                    lambda e: self.scroll("x", -e.delta) if self.inWindow else None,
+                    "+",
+                )
+                root.bind(
+                    "<Shift-Button-4>",
+                    lambda *_: self.scroll("x", -1) if self.inWindow else None,
+                    "+",
+                )
+                root.bind(
+                    "<Shift-Button-5>",
+                    lambda *_: self.scroll("x", 1) if self.inWindow else None,
+                    "+",
+                )
+
+        # Propagation
         if self.propagationMode != "frameDrivesContent":
             self.content.bind("<Configure>", lambda *_: self.moveCanvas())
         self.bind("<Configure>", lambda *_: self.moveCanvas())
 
+    SCROLL_DISTANCE = 8  # TODO: what should this be
     SCROLLBAR_WIDTH = 16
     SCROLLBAR_HEIGHT = SCROLLBAR_WIDTH
+
+    def scroll(self, axis: Literal["x", "y"], direction: int):
+        direction = -1 if direction < 0 else 1
+
+        bbox = BBox(*self.__canvas.bbox(self.__windowId))
+
+        if axis == "x":
+            self.__x += (
+                self.SCROLL_DISTANCE * direction * (self.SCROLL_DISTANCE / bbox.x2)
+            )
+        elif axis == "y":
+            self.__y += (
+                self.SCROLL_DISTANCE * direction * (self.SCROLL_DISTANCE / bbox.y2)
+            )
+
+        self.moveCanvas()
 
     def moveCanvas(self):
         # Move canvas
         bbox = BBox(*self.__canvas.bbox(self.__windowId))
-        newx = max(min(self.__x * bbox.x2, bbox.x2 - self.winfo_width()), 0)
-        newy = max(min(self.__y * bbox.y2, bbox.y2 - self.winfo_height()), 0)
+        newx = clamp(self.__x * bbox.x2, bbox.x2 - self.winfo_width(), 0)
+        newy = clamp(self.__y * bbox.y2, bbox.y2 - self.winfo_height(), 0)
+        self.__x = newx / bbox.x2
+        self.__y = newy / bbox.y2
         self.__canvas.scan_dragto(-int(newx), -int(newy), gain=1)
 
         # Update scrollbars
@@ -223,5 +285,11 @@ if __name__ == "__main__":
     root.rowconfigure(0, weight=1)
     root.rowconfigure(1, weight=1)
     root.rowconfigure(2, weight=1)
+
+    big = DScrollFrame(root, mode="DOUBLE", propagationMode="off")
+    for r in range(8):
+        for c in range(24):
+            ttk.Label(big.content, text=f"  [ {r}: {c} ]  ").grid(row=r, column=c)
+    big.grid(row=10, column=0, columnspan=2, sticky="nesw")
 
     root.mainloop()
