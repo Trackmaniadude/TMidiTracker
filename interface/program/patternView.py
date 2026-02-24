@@ -242,6 +242,8 @@ class PatternViewLabel(ttk.Label):
                     self.view.pattern.setVelocity(self.row, self.column, None)
                 if mode == PVLM.EFFECT:
                     self.view.pattern.setEffect(self.row, self.column, None)
+                self.entryTextProxy = ""
+                self.text = ""
                 self.refresh()
                 self.view.viewFrame.stepTarget(
                     program.p.stepSize, focus=True, stepPattern=False
