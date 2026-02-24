@@ -86,6 +86,10 @@ class PatternSelector(ttk.Label, QuickRefresh):
                 "<Control-Button-1>",
                 lambda *_: self.matrix.selectCell(self.row, self.channel, "toggle"),
             )
+            self.bind(
+                "<Shift-Button-1>",
+                lambda *_: self.matrix.gridSelectCells(self.row, self.channel),
+            )
 
         setupLeftClick()
 
@@ -220,6 +224,7 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
     ):
         """Select a single cell."""
         t = (row, channel)
+        self.setSelectionAnchor(row, channel)
         if mode == "add":
             self.selection.add(t)
         elif mode == "sub":
@@ -232,6 +237,19 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
                 self.selection.remove(t)
             else:
                 self.selection.add(t)
+        self.refreshSelectors()
+
+    def gridSelectCells(self, row: int, channel: int):
+        self.selection = set()
+        r1 = self.selectionAnchor[0]
+        r2 = row
+        c1 = CHANNEL_ORDER_INVERSE[self.selectionAnchor[1]]
+        c2 = CHANNEL_ORDER_INVERSE[channel]
+
+        # TODO: deal with c10 special casing
+        for r in range(min(r1, r2), max(r1, r2) + 1):
+            for c in range(min(c1, c2), max(c1, c2) + 1):
+                self.selection.add((r, CHANNEL_ORDER[c]))
         self.refreshSelectors()
 
     def selectRow(self, row: int, mode: Literal["add", "sub", "set", "toggle"]):
