@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Literal, cast
 
 from interface.utilities.quickRefresh import QuickRefresh
 from utils.event import Connection
+from utils.misc import clamp
 
 if TYPE_CHECKING:
     from structures.song import Song
@@ -124,11 +125,45 @@ class PatternSelector(ttk.Label, QuickRefresh):
 
         setupRightClick()
 
-        # self.refresh()
+        def setupArrowKeys():
+            def getMove(rows: int = 0, cols: int = 0):
+                nextRow = clamp(
+                    self.row + rows, 0, program.p.currentSong.visibleMatrixRows - 1
+                )
+                nextChannel = CHANNEL_ORDER[
+                    clamp(
+                        CHANNEL_ORDER_INVERSE[self.channel] + cols,
+                        0,
+                        program.p.currentSong.visibleChannels,
+                    )
+                ]
+                return self.matrix.getSelector(nextRow, nextChannel)
 
-    # @property
-    # def column(self):
-    #     return CHANNEL_ORDER_INVERSE[self.channel]
+            def move(rows: int = 0, cols: int = 0):
+                next = getMove(rows, cols)
+                self.matrix.selectCell(next.row, next.channel, "set")
+                next.focus()
+
+            def moveSelect(rows: int = 0, cols: int = 0):
+                next = getMove(rows, cols)
+                self.matrix.gridSelectCells(next.row, next.channel)
+                next.focus()
+
+            self.bind("<Left>", lambda *_: move(0, -1))
+            self.bind("<Right>", lambda *_: move(0, 1))
+            self.bind("<Up>", lambda *_: move(-1, 0))
+            self.bind("<Down>", lambda *_: move(1, 0))
+
+            self.bind("<Shift-Left>", lambda *_: moveSelect(0, -1))
+            self.bind("<Shift-Right>", lambda *_: moveSelect(0, 1))
+            self.bind("<Shift-Up>", lambda *_: moveSelect(-1, 0))
+            self.bind("<Shift-Down>", lambda *_: moveSelect(1, 0))
+
+        setupArrowKeys()
+
+    @property
+    def column(self):
+        return CHANNEL_ORDER_INVERSE[self.channel]
 
     @property
     def position(self):
