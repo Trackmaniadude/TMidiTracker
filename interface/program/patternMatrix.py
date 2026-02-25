@@ -44,6 +44,9 @@ class PatternSelector(ttk.Label, QuickRefresh):
 
         # Interaction
 
+        self.bind("<FocusIn>", lambda *_: self.queueRefresh())
+        self.bind("<FocusOut>", lambda *_: self.queueRefresh())
+
         def setupScroll():
             # Linux
             self.bind("<Button-4>", lambda *_: self.increment(0))
@@ -203,7 +206,7 @@ class PatternSelector(ttk.Label, QuickRefresh):
 
         ### If chain to determine style to use
         if self.position in self.matrix.selection:
-            if self.position == self.matrix.selectionAnchor:
+            if "focus" in self.state():
                 style = MatrixSelector.TargetAnchor
             else:
                 style = (
