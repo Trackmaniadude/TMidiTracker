@@ -42,8 +42,10 @@ class DScrollFrame(ttk.Frame):
 
         self.typeBlockList: set[str] = {"TSpinbox"}
         """Block wheel bindings when over widgets of these types."""
-        self.widgetBlockList: set[str] = set()
+        self.widgetBlockList: set[tk.Widget] = set()
         """Block wheel bindings when over these widgets."""
+        self.widgetNameBlockList: set[str] = set()
+        """Block wheel bindings when over widgets matching the filter."""
 
         # Create elements
         self.__canvas = tk.Canvas(self, highlightthickness=0, width=0, height=0)
@@ -98,6 +100,9 @@ class DScrollFrame(ttk.Frame):
                     return False
                 if w in self.widgetBlockList:
                     return False
+                for s in self.widgetNameBlockList:
+                    if w.winfo_name().find(s) != -1:
+                        return False
                 return True
 
             if self.isVertical:
