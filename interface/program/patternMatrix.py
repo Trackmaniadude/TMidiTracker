@@ -168,9 +168,14 @@ class PatternSelector(ttk.Label, QuickRefresh):
 
         ### If chain to determine style to use
         if self.position in self.matrix.selection:
-            style = MatrixSelector.Target
-        # elif self.row == program.p.currentMatrixRow:
-        #     style = MatrixSelector.Target
+            if self.position == self.matrix.selectionAnchor:
+                style = MatrixSelector.TargetAnchor
+            else:
+                style = (
+                    MatrixSelector.Target1
+                    if self.channel % 2 == 1
+                    else MatrixSelector.Target2
+                )
         elif (self.row, self.channel) in program.p.currentSong.highlightedMatrixItems:
             style = MatrixSelector.Highlight
         else:

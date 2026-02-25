@@ -97,7 +97,9 @@ class Note:
 class MatrixSelector:
     DefaultEven = BasicColor(Colors.BG.Default)
     DefaultOdd = BasicColor(Colors.BG.Shade1)
-    Target = BasicColor(Colors.Target.Default)
+    Target1 = BasicColor(Colors.Target.Default)
+    Target2 = BasicColor(Colors.Target.Shade1)
+    TargetAnchor = BasicColor(Colors.Target.Shade2)
     Highlight = BasicColor(Colors.Highlight.Default)
     Selection = BasicColor(Colors.Select.Default)
 
