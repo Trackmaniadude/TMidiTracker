@@ -94,7 +94,14 @@ class PatternSelector(ttk.Label, QuickRefresh):
         setupLeftClick()
 
         def setupMiddleClick():
-            pass
+            def findNextFreePattern() -> int:
+                id = 0
+                while program.p.currentSong.patternIdExists(self.channel, id):
+                    id += 1
+                return id
+
+            self.bind("<Button-2>", lambda *_: self.setPatternId(findNextFreePattern()))
+            self.bind("<Shift-Button-2>", lambda *_: self.setPatternId(0))
 
         setupMiddleClick()
 
@@ -103,12 +110,17 @@ class PatternSelector(ttk.Label, QuickRefresh):
                 id = self.getPatternId()
                 for sel in self.matrix.getSelectedSelectors():
                     sel.setPatternId(id)
-                    sel.queueRefresh()
+
+            def copyFromAbove():
+                if self.row == 0:
+                    return
+                p = program.p.currentSong.getPatternIdByLocation(
+                    self.channel, self.row - 1
+                )
+                self.setPatternId(p)
 
             self.bind("<Button-3>", lambda *_: copyToAll())
-            self.bind(
-                "<Shift-Button-3>", lambda *_: (self.copyAbove(), self.queueRefresh())
-            )
+            self.bind("<Shift-Button-3>", lambda *_: copyFromAbove())
 
         setupRightClick()
 
@@ -140,21 +152,13 @@ class PatternSelector(ttk.Label, QuickRefresh):
     def setPatternId(self, pattern: int):
         """Set the pattern id this selector references."""
         program.p.currentSong.setPatternNumber(self.channel, self.row, pattern)
+        self.queueRefresh()
 
     def increment(self, scale: int = 0):
         self.setPatternId(self.getPatternId() + PATTERN_DELTAS[scale])
-        self.queueRefresh()
 
     def decrement(self, scale: int = 0):
         self.setPatternId(max(0, self.getPatternId() - PATTERN_DELTAS[scale]))
-        self.queueRefresh()
-
-    def copyAbove(self):
-        """Set this selector to the same value as the one above it."""
-        if self.row == 0:
-            return
-        p = program.p.currentSong.getPatternIdByLocation(self.channel, self.row - 1)
-        self.setPatternId(p)
 
     ###
 
