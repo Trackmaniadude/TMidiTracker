@@ -93,6 +93,25 @@ class PatternSelector(ttk.Label, QuickRefresh):
 
         setupLeftClick()
 
+        def setupMiddleClick():
+            pass
+
+        setupMiddleClick()
+
+        def setupRightClick():
+            def copyToAll():
+                id = self.getPatternId()
+                for sel in self.matrix.getSelectedSelectors():
+                    sel.setPatternId(id)
+                    sel.queueRefresh()
+
+            self.bind("<Button-3>", lambda *_: copyToAll())
+            self.bind(
+                "<Shift-Button-3>", lambda *_: (self.copyAbove(), self.queueRefresh())
+            )
+
+        setupRightClick()
+
         # self.refresh()
 
     # @property
@@ -201,7 +220,7 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
         self.__colLabels: list[ttk.Label] = list()
         self.__rowLabels: list[ttk.Label] = list()
         self.__selectors: dict[tuple[int, int], PatternSelector] = dict()
-        """(row, col) -> PatternSelector"""
+        """set[row, col] -> PatternSelector"""
 
         self.selection: set[tuple[int, int]] = {(0, 0)}
         """set[row:int, channel:int] - Currently selected cells."""
@@ -248,7 +267,6 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
         c1 = CHANNEL_ORDER_INVERSE[self.selectionAnchor[1]]
         c2 = CHANNEL_ORDER_INVERSE[channel]
 
-        # TODO: deal with c10 special casing
         for r in range(min(r1, r2), max(r1, r2) + 1):
             for c in range(min(c1, c2), max(c1, c2) + 1):
                 self.selection.add((r, CHANNEL_ORDER[c]))
@@ -265,18 +283,6 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
         elif mode == "toggle":
             _logger.warning("TOGGLE ROW UNIMPLEMENTED")
         self.refreshSelectors()
-
-    # def boxSelect(self, row: int)
-
-    # def setMatrixRow(self, row: int):
-    #     program.p.currentPatternRow = 0
-    #     program.p.currentMatrixRow = row
-
-    # def toggleRowHighlight(self, row: int):
-    #     if row in program.p.currentSong.highlightedMatrixRows:
-    #         program.p.currentSong.highlightedMatrixRows.remove(row)
-    #     else:
-    #         program.p.currentSong.highlightedMatrixRows.add(row)
 
     ### Construction
 
@@ -302,6 +308,18 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
         rowOffset = self.GRID_POSITIONS[item][0]
         colOffset = self.GRID_POSITIONS[item][1]
         return ((row * self.ROW_STEP) + rowOffset, (column * self.COL_STEP) + colOffset)
+
+    def getSelector(self, row: int, channel: int) -> PatternSelector:
+        return self.__selectors[row, CHANNEL_ORDER_INVERSE[channel]]
+
+    def getSelectors(self) -> dict[tuple[int, int], PatternSelector]:
+        return self.__selectors
+
+    def getSelectedSelectors(self) -> set[PatternSelector]:
+        return {
+            self.__selectors[(row, CHANNEL_ORDER_INVERSE[channel])]
+            for row, channel in self.selection
+        }
 
     def refresh(self):
         self.resetRefreshFlag()
