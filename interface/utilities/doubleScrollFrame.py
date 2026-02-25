@@ -16,6 +16,7 @@ if __name__ == "__main__":
     sys.path.append(".")
 
 from utils.misc import clamp, mapRange
+from utils.tk import widgetUnderCursor
 
 BBox = namedtuple("BBox", ["x1", "y1", "x2", "y2"])
 
@@ -38,6 +39,11 @@ class DScrollFrame(ttk.Frame):
         self.propagationMode = propagationMode
 
         self.inWindow: bool = False
+
+        self.typeBlockList: set[str] = {"TSpinbox"}
+        """Block wheel bindings when over widgets of these types."""
+        self.widgetBlockList: set[str] = set()
+        """Block wheel bindings when over these widgets."""
 
         # Create elements
         self.__canvas = tk.Canvas(self, highlightthickness=0, width=0, height=0)
@@ -82,37 +88,49 @@ class DScrollFrame(ttk.Frame):
             self.bind("<Leave>", lambda *_: setattr(self, "inWindow", False))
             root = self.winfo_toplevel()
 
+            def allowScroll():
+                if not self.inWindow:
+                    return False
+                w = widgetUnderCursor(self)
+                if w is None:
+                    return True
+                if w.winfo_class() in self.typeBlockList:
+                    return False
+                if w in self.widgetBlockList:
+                    return False
+                return True
+
             if self.isVertical:
                 root.bind(
                     "<MouseWheel>",
-                    lambda e: self.scroll("y", -e.delta) if self.inWindow else None,
+                    lambda e: self.scroll("y", -e.delta) if allowScroll() else None,
                     "+",
                 )
                 root.bind(
                     "<Button-4>",
-                    lambda *_: self.scroll("y", -1) if self.inWindow else None,
+                    lambda *_: self.scroll("y", -1) if allowScroll() else None,
                     "+",
                 )
                 root.bind(
                     "<Button-5>",
-                    lambda *_: self.scroll("y", 1) if self.inWindow else None,
+                    lambda *_: self.scroll("y", 1) if allowScroll() else None,
                     "+",
                 )
 
             if self.isHorizontal:
                 root.bind(
                     "<Shift-MouseWheel>",
-                    lambda e: self.scroll("x", -e.delta) if self.inWindow else None,
+                    lambda e: self.scroll("x", -e.delta) if allowScroll() else None,
                     "+",
                 )
                 root.bind(
                     "<Shift-Button-4>",
-                    lambda *_: self.scroll("x", -1) if self.inWindow else None,
+                    lambda *_: self.scroll("x", -1) if allowScroll() else None,
                     "+",
                 )
                 root.bind(
                     "<Shift-Button-5>",
-                    lambda *_: self.scroll("x", 1) if self.inWindow else None,
+                    lambda *_: self.scroll("x", 1) if allowScroll() else None,
                     "+",
                 )
 
@@ -230,6 +248,8 @@ if __name__ == "__main__":
     root.title("TEST")
     root.geometry("400x400")
 
+    root.bind_all("<Button-1>", lambda e: print(e.widget.winfo_class()))
+
     a = ttk.Frame(root, relief="groove", borderwidth=2)
     a.grid(row=0, column=0, sticky="nesw")
 
@@ -289,7 +309,12 @@ if __name__ == "__main__":
     big = DScrollFrame(root, mode="DOUBLE", propagationMode="off")
     for r in range(8):
         for c in range(24):
-            ttk.Label(big.content, text=f"  [ {r}: {c} ]  ").grid(row=r, column=c)
+            if (r == 1 or c == 3) and not (r == 1 and c == 3):
+                ttk.Spinbox(big.content, width=0, to=3000, from_=-3000).grid(
+                    row=r, column=c, sticky="we"
+                )
+            else:
+                ttk.Label(big.content, text=f"  [ {r}: {c} ]  ").grid(row=r, column=c)
     big.grid(row=10, column=0, columnspan=2, sticky="nesw")
 
     root.mainloop()

@@ -22,6 +22,12 @@ class SPECIAL_CHARS:
 DEF_PAD = 2
 
 
+def widgetUnderCursor(widget: tk.Misc):
+    root = widget.winfo_toplevel()
+    x, y = root.winfo_pointerxy()
+    return root.winfo_containing(x, y)
+
+
 def bindOnSizeChange(widget: tk.Misc, callback: Callable[[], None]):
     lastWidth = widget.winfo_width()
     lastHeight = widget.winfo_height()
