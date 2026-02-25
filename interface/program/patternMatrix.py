@@ -188,6 +188,8 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
         sf = DScrollFrame(self, mode="DOUBLE")
         sf.pack(fill="both", expand=True)
 
+        sf.widgetNameBlockList.add("patternselector")
+
         self.connections: list[Connection] = list()
 
         self.pack_propagate(False)
