@@ -247,6 +247,28 @@ class PatternSelector(ttk.Label, QuickRefresh):
             self.config(text=self.__text)
 
 
+class PatternSelectorRowLabel(ttk.Label):
+    def __init__(self, parent: tk.Misc, matrix: PatternMatrix, row: int):
+        super().__init__(parent, text=str(hex(row)[2:].upper()), width=3)
+        self.matrix = matrix
+        self.row = row
+
+        ### Bindings
+
+        def setupLeftClick():
+            self.bind("<Button-1>", lambda *_: (self.matrix.selectRow(self.row, "set")))
+            self.bind(
+                "<Shift-Button-1>",
+                lambda *_: (self.matrix.gridSelectCells(self.row, None)),
+            )
+            self.bind(
+                "<Control-Button-1>",
+                lambda *_: (self.matrix.selectRow(self.row, "toggle")),
+            )
+
+        setupLeftClick()
+
+
 class PatternMatrix(ttk.Frame, QuickRefresh):
     def __init__(self, parent: tk.Misc):
         super().__init__(parent, relief="raised", width=300, height=200, borderwidth=2)
@@ -265,7 +287,7 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
         self.__grid.pack(side="top", fill="x")
 
         self.__colLabels: list[ttk.Label] = list()
-        self.__rowLabels: list[ttk.Label] = list()
+        self.__rowLabels: list[PatternSelectorRowLabel] = list()
         self.__selectors: dict[tuple[int, int], PatternSelector] = dict()
         """set[row, col] -> PatternSelector"""
 
@@ -284,7 +306,11 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
 
     ### Selection
 
-    def setSelectionAnchor(self, row: int, channel: int):
+    def setSelectionAnchor(self, row: int | None = None, channel: int | None = None):
+        if row is None:
+            row = self.selectionAnchor[0]
+        if channel is None:
+            channel = self.selectionAnchor[1]
         self.selectionAnchor = (row, channel)
 
     def selectCell(
@@ -307,12 +333,16 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
                 self.selection.add(t)
         self.refreshSelectors()
 
-    def gridSelectCells(self, row: int, channel: int):
+    def gridSelectCells(self, row: int, channel: int | None):
         self.selection = set()
         r1 = self.selectionAnchor[0]
         r2 = row
-        c1 = CHANNEL_ORDER_INVERSE[self.selectionAnchor[1]]
-        c2 = CHANNEL_ORDER_INVERSE[channel]
+        if channel is None:
+            c1 = 0
+            c2 = program.p.currentSong.visibleMatrixRows
+        else:
+            c1 = CHANNEL_ORDER_INVERSE[self.selectionAnchor[1]]
+            c2 = CHANNEL_ORDER_INVERSE[channel]
 
         for r in range(min(r1, r2), max(r1, r2) + 1):
             for c in range(min(c1, c2), max(c1, c2) + 1):
@@ -321,14 +351,18 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
 
     def selectRow(self, row: int, mode: Literal["add", "sub", "set", "toggle"]):
         """Select a row"""
-        cols = range(program.p.currentSong.visibleChannels + 1)
+        self.setSelectionAnchor(row, 9)
+        cols = [
+            CHANNEL_ORDER[c] for c in range(program.p.currentSong.visibleChannels + 1)
+        ]
         if mode == "add" or mode == "sub":
             for col in cols:
                 self.selectCell(row, col, mode)
         elif mode == "set":
             self.selection = {(row, col) for col in cols}
         elif mode == "toggle":
-            _logger.warning("TOGGLE ROW UNIMPLEMENTED")
+            state = all((row, c) in self.selection for c in cols)
+            self.selectRow(row, "sub" if state else "add")
         self.refreshSelectors()
 
     ### Construction
@@ -389,18 +423,10 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
         if rows > currentRows:  # Need more
             _logger.debug("Need more matrix rows")
             for row in range(currentRows, rows):
-                label = ttk.Label(self.__grid, text=hex(row)[2:].upper(), width=3)
+                label = PatternSelectorRowLabel(self.__grid, self, row)
                 pos = self.gridPosition(row, 0, "row label")
                 label.grid(row=pos[0], column=pos[1])
                 self.__rowLabels.append(label)
-
-                def b(row: int):
-                    def c():
-                        program.p.currentMatrixRow = row
-
-                    label.bind("<Button-1>", lambda *_: c())
-
-                b(row)
                 _logger.debug(row)
         elif rows < currentRows:  # Need less
             for row in range(currentRows, rows, -1):
