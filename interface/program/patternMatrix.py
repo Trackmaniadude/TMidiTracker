@@ -98,13 +98,12 @@ class PatternSelector(ttk.Label, QuickRefresh):
         setupLeftClick()
 
         def setupMiddleClick():
-            def findNextFreePattern() -> int:
-                id = 0
-                while program.p.currentSong.patternIdExists(self.channel, id):
-                    id += 1
-                return id
-
-            self.bind("<Button-2>", lambda *_: self.setPatternId(findNextFreePattern()))
+            self.bind(
+                "<Button-2>",
+                lambda *_: self.setPatternId(
+                    program.p.currentSong.getFreePatternId(self.channel)
+                ),
+            )
             self.bind("<Shift-Button-2>", lambda *_: self.setPatternId(0))
 
         setupMiddleClick()
@@ -294,7 +293,22 @@ class PatternSelectorRowLabel(ttk.Label):
         setupRightClick()
 
         def setupMiddleClick():
-            pass
+            self.bind(
+                "<Button-2>",
+                lambda *_: (
+                    sel.setPatternId(
+                        program.p.currentSong.getFreePatternId(sel.channel)
+                    )
+                    for sel in self.matrix.getSelectorsInRow(self.row)
+                ),
+            )
+            self.bind(
+                "<Shift-Button-2>",
+                lambda *_: (
+                    sel.setPatternId(0)
+                    for sel in self.matrix.getSelectorsInRow(self.row)
+                ),
+            )
 
         setupMiddleClick()
 

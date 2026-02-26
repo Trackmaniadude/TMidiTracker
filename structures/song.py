@@ -106,6 +106,18 @@ class Song(ReactiveClass):
             self.patternMatrix[channel, row] = 0
         return self.getPatternById(channel, self.patternMatrix[channel, row])
 
+    def getFreePatternId(self, channel: int) -> int:
+        """Get the id of the lowest empty pattern."""
+        # TODO: check if pattern is empty, rather than just not existing
+        id = 0
+        while self.patternIdExists(channel, id):
+            id += 1
+        return id
+
+    def getFreePattern(self, channel: int) -> Pattern:
+        """Get the lowest empty pattern."""
+        return self.getPatternById(channel, self.getFreePatternId(channel))
+
     # @property
     # def patternMatrixLength(self) -> int:
     #     return max((y for x, y in self.patternMatrix.keys()), default=0)
