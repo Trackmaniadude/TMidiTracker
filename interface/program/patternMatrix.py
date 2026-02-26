@@ -268,6 +268,36 @@ class PatternSelectorRowLabel(ttk.Label):
 
         setupLeftClick()
 
+        def setupRightClick():
+            def copy():
+                ids = {
+                    sel.channel: program.p.currentSong.getPatternIdByLocation(
+                        sel.channel, sel.row
+                    )
+                    for sel in self.matrix.getSelectorsInRow(self.row)
+                }
+                for sel in self.matrix.getSelectedSelectors():
+                    sel.setPatternId(ids[sel.channel])
+
+            def copyFromAbove():
+                if self.row == 0:
+                    return
+                for sel in self.matrix.getSelectorsInRow(self.row):
+                    p = program.p.currentSong.getPatternIdByLocation(
+                        sel.channel, sel.row - 1
+                    )
+                    sel.setPatternId(p)
+
+            self.bind("<Button-3>", lambda *_: copy())
+            self.bind("<Shift-Button-3>", lambda *_: copyFromAbove())
+
+        setupRightClick()
+
+        def setupMiddleClick():
+            pass
+
+        setupMiddleClick()
+
 
 class PatternMatrix(ttk.Frame, QuickRefresh):
     def __init__(self, parent: tk.Misc):
@@ -352,9 +382,7 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
     def selectRow(self, row: int, mode: Literal["add", "sub", "set", "toggle"]):
         """Select a row"""
         self.setSelectionAnchor(row, 9)
-        cols = [
-            CHANNEL_ORDER[c] for c in range(program.p.currentSong.visibleChannels + 1)
-        ]
+        cols = CHANNEL_ORDER[: program.p.currentSong.visibleChannels + 1]
         if mode == "add" or mode == "sub":
             for col in cols:
                 self.selectCell(row, col, mode)
@@ -392,6 +420,12 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
 
     def getSelector(self, row: int, channel: int) -> PatternSelector:
         return self.__selectors[row, CHANNEL_ORDER_INVERSE[channel]]
+
+    def getSelectorsInRow(self, row: int) -> set[PatternSelector]:
+        return {
+            self.__selectors[row, col]
+            for col in range(program.p.currentSong.visibleChannels + 1)
+        }
 
     def getSelectors(self) -> dict[tuple[int, int], PatternSelector]:
         return self.__selectors
