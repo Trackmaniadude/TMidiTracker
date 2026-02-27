@@ -93,6 +93,8 @@ class PatternSelector(ttk.Label, QuickRefresh):
             self.bind("<space>", lambda *_: (self.select(), self.setCurrentRow()))
             self.bind("<Control-Button-1>", lambda *_: self.toggleSelect())
             self.bind("<Shift-Button-1>", lambda *_: self.boxSelect())
+            self.bind("<Control-a>", lambda *_: self.selectAll())
+            self.bind("<Control-r>", lambda *_: self.selectRow())
 
         setupSelect()
 
@@ -208,6 +210,14 @@ class PatternSelector(ttk.Label, QuickRefresh):
 
     def toggleSelect(self):
         self.matrix.selectCell(self.row, self.channel, "toggle")
+
+    def selectRow(self):
+        for sel in self.matrix.getSelectedSelectors().copy():
+            sel.matrix.selectRow(sel.row, "add")
+
+    def selectAll(self):
+        for sel in self.matrix.getSelectors().values():
+            sel.matrix.selectCell(sel.row, sel.channel, "add")
 
     def setToUnused(self):
         self.setPatternId(program.p.currentSong.getFreePatternId(self.channel))
