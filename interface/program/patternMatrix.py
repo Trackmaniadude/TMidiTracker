@@ -77,14 +77,14 @@ class PatternSelector(ttk.Label, QuickRefresh):
             )
 
             # Keyboard
-            self.bind("<equal>", lambda *_: self.increment(0))
-            self.bind("<minus>", lambda *_: self.decrement(0))
-            self.bind("<plus>", lambda *_: self.increment(1))
-            self.bind("<underscore>", lambda *_: self.decrement(1))
-            self.bind("<Control-equal>", lambda *_: self.increment(2))
-            self.bind("<Control-minus>", lambda *_: self.decrement(2))
-            self.bind("<Control-plus>", lambda *_: self.increment(3))
-            self.bind("<Control-underscore>", lambda *_: self.decrement(3))
+            self.bind("<equal>", lambda *_: self.increment(0, True))
+            self.bind("<minus>", lambda *_: self.decrement(0, True))
+            self.bind("<plus>", lambda *_: self.increment(1, True))
+            self.bind("<underscore>", lambda *_: self.decrement(1, True))
+            self.bind("<Control-equal>", lambda *_: self.increment(2, True))
+            self.bind("<Control-minus>", lambda *_: self.decrement(2, True))
+            self.bind("<Control-plus>", lambda *_: self.increment(3, True))
+            self.bind("<Control-underscore>", lambda *_: self.decrement(3, True))
 
         setupIncrement()
 
@@ -201,11 +201,19 @@ class PatternSelector(ttk.Label, QuickRefresh):
         program.p.currentSong.setPatternNumber(self.channel, self.row, pattern)
         self.queueRefresh()
 
-    def increment(self, scale: int = 0):
-        self.setPatternId(self.getPatternId() + PATTERN_DELTAS[scale])
+    def increment(self, scale: int = 0, useSelection: bool = False):
+        if useSelection:
+            for sel in self.matrix.getSelectedSelectors():
+                sel.setPatternId(sel.getPatternId() + PATTERN_DELTAS[scale])
+        else:
+            self.setPatternId(self.getPatternId() + PATTERN_DELTAS[scale])
 
-    def decrement(self, scale: int = 0):
-        self.setPatternId(max(0, self.getPatternId() - PATTERN_DELTAS[scale]))
+    def decrement(self, scale: int = 0, useSelection: bool = False):
+        if useSelection:
+            for sel in self.matrix.getSelectedSelectors():
+                sel.setPatternId(max(0, sel.getPatternId() - PATTERN_DELTAS[scale]))
+        else:
+            self.setPatternId(max(0, self.getPatternId() - PATTERN_DELTAS[scale]))
 
     ###
 
