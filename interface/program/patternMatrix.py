@@ -88,54 +88,39 @@ class PatternSelector(ttk.Label, QuickRefresh):
 
         setupIncrement()
 
-        def setupLeftClick():
-            self.bind(
-                "<Button-1>",
-                lambda *_: (
-                    self.matrix.selectCell(self.row, self.channel, "set"),
-                    self.setCurrentRow(),
-                ),
-            )
-            self.bind(
-                "<Control-Button-1>",
-                lambda *_: self.matrix.selectCell(self.row, self.channel, "toggle"),
-            )
-            self.bind(
-                "<Shift-Button-1>",
-                lambda *_: self.matrix.gridSelectCells(self.row, self.channel),
-            )
+        def setupSelect():
+            self.bind("<Button-1>", lambda *_: (self.select(), self.setCurrentRow()))
+            self.bind("<space>", lambda *_: (self.select(), self.setCurrentRow()))
+            self.bind("<Control-Button-1>", lambda *_: self.toggleSelect())
+            self.bind("<Shift-Button-1>", lambda *_: self.boxSelect())
 
-        setupLeftClick()
+        setupSelect()
 
         def setupMiddleClick():
-            self.bind(
-                "<Button-2>",
-                lambda *_: self.setPatternId(
-                    program.p.currentSong.getFreePatternId(self.channel)
-                ),
-            )
+            self.bind("<Button-2>", lambda *_: self.setToUnused())
             self.bind("<Shift-Button-2>", lambda *_: self.setPatternId(0))
+            self.bind(
+                "<E>",
+                lambda *_: [
+                    sel.setPatternId(0) for sel in self.matrix.getSelectedSelectors()
+                ],
+            )
+            self.bind(
+                "<e>",
+                lambda *_: [
+                    sel.setToUnused() for sel in self.matrix.getSelectedSelectors()
+                ],
+            )
 
         setupMiddleClick()
 
-        def setupRightClick():
-            def copyToAll():
-                id = self.getPatternId()
-                for sel in self.matrix.getSelectedSelectors():
-                    sel.setPatternId(id)
+        def setupCopy():
 
-            def copyFromAbove():
-                if self.row == 0:
-                    return
-                p = program.p.currentSong.getPatternIdByLocation(
-                    self.channel, self.row - 1
-                )
-                self.setPatternId(p)
+            self.bind("<Button-3>", lambda *_: self.copyToSelected())
+            self.bind("<Shift-Button-3>", lambda *_: self.copyFromAbove())
+            self.bind("<Shift-c>", lambda *_: self.copyFromAbove())
 
-            self.bind("<Button-3>", lambda *_: copyToAll())
-            self.bind("<Shift-Button-3>", lambda *_: copyFromAbove())
-
-        setupRightClick()
+        setupCopy()
 
         def setupArrowKeys():
             def getMove(rows: int = 0, cols: int = 0):
@@ -186,7 +171,7 @@ class PatternSelector(ttk.Label, QuickRefresh):
             connection.disconnect()
         return super().destroy()
 
-    ###
+    ### Actions
 
     def setCurrentRow(self):
         """Set the current matrix row to the row of this selector."""
@@ -214,6 +199,29 @@ class PatternSelector(ttk.Label, QuickRefresh):
                 sel.setPatternId(max(0, sel.getPatternId() - PATTERN_DELTAS[scale]))
         else:
             self.setPatternId(max(0, self.getPatternId() - PATTERN_DELTAS[scale]))
+
+    def select(self):
+        self.matrix.selectCell(self.row, self.channel, "set")
+
+    def boxSelect(self):
+        self.matrix.gridSelectCells(self.row, self.channel)
+
+    def toggleSelect(self):
+        self.matrix.selectCell(self.row, self.channel, "toggle")
+
+    def setToUnused(self):
+        self.setPatternId(program.p.currentSong.getFreePatternId(self.channel))
+
+    def copyToSelected(self):
+        id = self.getPatternId()
+        for sel in self.matrix.getSelectedSelectors():
+            sel.setPatternId(id)
+
+    def copyFromAbove(self):
+        if self.row == 0:
+            return
+        p = program.p.currentSong.getPatternIdByLocation(self.channel, self.row - 1)
+        self.setPatternId(p)
 
     ###
 
@@ -358,6 +366,9 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
         self.selectionAnchor: tuple[int, int] = (0, 0)
         """(row, channel) - Used for box selections"""
 
+        # self.clipboard: dict[tuple[int, int], int] = dict()
+        # """(row, channel) -> pattern id"""
+
         self.refresh()
         StructureChanged.connect(lambda *_: self.queueRefresh(), self.connections)
 
@@ -424,6 +435,12 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
             state = all((row, c) in self.selection for c in cols)
             self.selectRow(row, "sub" if state else "add")
         self.refreshSelectors()
+
+    # def copy(self):
+    #     pass
+
+    # def paste(self):
+    #     pass
 
     ### Construction
 
