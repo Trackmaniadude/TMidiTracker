@@ -47,8 +47,8 @@ class PatternSelector(ttk.Label, QuickRefresh):
         self.bind("<FocusIn>", lambda *_: self.queueRefresh())
         self.bind("<FocusOut>", lambda *_: self.queueRefresh())
 
-        def setupScroll():
-            # Linux
+        def setupIncrement():
+            # Linux Scroll
             self.bind("<Button-4>", lambda *_: self.increment(0))
             self.bind("<Button-5>", lambda *_: self.decrement(0))
             self.bind("<Shift-Button-4>", lambda *_: self.increment(1))
@@ -58,7 +58,7 @@ class PatternSelector(ttk.Label, QuickRefresh):
             self.bind("<Control-Shift-Button-4>", lambda *_: self.increment(3))
             self.bind("<Control-Shift-Button-5>", lambda *_: self.decrement(3))
 
-            # Not Linux
+            # Not Linux Scroll
             self.bind(
                 "<MouseWheel>",
                 lambda e: self.increment(0) if e.delta > 0 else self.decrement(0),
@@ -76,7 +76,17 @@ class PatternSelector(ttk.Label, QuickRefresh):
                 lambda e: self.increment(3) if e.delta > 0 else self.decrement(3),
             )
 
-        setupScroll()
+            # Keyboard
+            self.bind("<equal>", lambda *_: self.increment(0))
+            self.bind("<minus>", lambda *_: self.decrement(0))
+            self.bind("<plus>", lambda *_: self.increment(1))
+            self.bind("<underscore>", lambda *_: self.decrement(1))
+            self.bind("<Control-equal>", lambda *_: self.increment(2))
+            self.bind("<Control-minus>", lambda *_: self.decrement(2))
+            self.bind("<Control-plus>", lambda *_: self.increment(3))
+            self.bind("<Control-underscore>", lambda *_: self.decrement(3))
+
+        setupIncrement()
 
         def setupLeftClick():
             self.bind(
