@@ -13,6 +13,8 @@ from interface.program.patternMatrix import PatternMatrix
 from interface.program.patternViewFrame import PatternViewFrame
 from interface.program.songDataView import SongDataView
 from structures import program
+from structures.song import Song
+from utils.constants import PROJECT_FILE
 
 PROGRAM_NAME = "TMidiTracker"
 
@@ -59,10 +61,31 @@ theme.generate()
 menubar = tk.Menu(root)
 root["menu"] = menubar
 
-testMenu = tk.Menu(menubar)
-menubar.add_cascade(menu=testMenu, label="Menu")
-testMenu.add_command(label="Play", command=lambda: program.p.songPlayer.play())
-testMenu.add_command(label="Pause", command=lambda: program.p.songPlayer.pause())
+
+def menus():
+    def fileMenu():
+        menu = tk.Menu(menubar)
+        menubar.add_cascade(menu=menu, label="File")
+
+        def open():
+            filename = filedialog.askopenfilename(filetypes=PROJECT_FILE)
+            if filename == "":
+                return
+            program.p.currentSong = Song.fromFile(filename)
+
+        def save():
+            filename = filedialog.asksaveasfilename(filetypes=PROJECT_FILE)
+            if filename == "":
+                return
+            program.p.currentSong.toFile(filename)
+
+        menu.add_command(label="Open", command=open)
+        menu.add_command(label="Save As", command=save)
+
+    fileMenu()
+
+
+menus()
 
 
 def focus(event):

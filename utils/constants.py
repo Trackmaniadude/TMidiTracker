@@ -2,6 +2,8 @@
 
 # Try to avoid importing things here. Except maybe data types.
 
+PROJECT_FILE = [("TMT Project", ".tmt")]
+
 CHANNEL_COUNT = 16
 
 DRUM_CHANNEL = 9

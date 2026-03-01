@@ -4,6 +4,8 @@ Contains song information such as speed, pattern length, and author.
 Also contains a grid of pattern references, as well as a pattern table.
 """
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 
@@ -61,6 +63,19 @@ class Song(ReactiveClass):
         self.highlightedMatrixItems: set[tuple[int, int]] = set()
 
         self.setupContainerListen()
+
+    ### File Management
+
+    def toFile(self, file: str):
+        with open(file, "w") as fp:
+            pass
+
+    @classmethod
+    def fromFile(cls, file: str) -> Song:
+        s = Song()
+        with open(file) as fp:
+            pass
+        return s
 
     ### Pattern Management
 
