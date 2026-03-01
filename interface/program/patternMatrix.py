@@ -240,7 +240,7 @@ class PatternSelector(ttk.Label, QuickRefresh):
         self.resetRefreshFlag()
 
         ### If chain to determine style to use
-        if self.position in self.matrix.selection:
+        if self.position in self.matrix.getSelection():
             if "focus" in self.state():
                 style = MatrixSelector.TargetAnchor
             else:
@@ -349,14 +349,123 @@ class PatternSelectorRowLabel(ttk.Label):
         setupMiddleClick()
 
 
-class PatternMatrix(ttk.Frame, QuickRefresh):
-    def __init__(self, parent: tk.Misc):
-        super().__init__(parent, relief="raised", width=300, height=200, borderwidth=2)
+class MatrixActions(ttk.Frame):
+    def __init__(self, parent: tk.Misc, matrix: PatternMatrix):
+        super().__init__(parent)
+        self.matrix = matrix
 
-        sf = DScrollFrame(self, mode="DOUBLE")
+        sf = DScrollFrame(self, mode="VERTICAL", propagationMode="contentDrivesFrame")
         sf.pack(fill="both", expand=True)
 
+        ttk.Button(
+            sf.content, text="Delete Rows", command=lambda *_: self.removeRows()
+        ).pack(side="top", fill="x", expand=True)
+        ttk.Button(
+            sf.content,
+            text="New Row Before",
+            command=lambda *_: self.addNewRow("before"),
+        ).pack(side="top", fill="x", expand=True)
+        ttk.Button(
+            sf.content, text="New Row After", command=lambda *_: self.addNewRow("after")
+        ).pack(side="top", fill="x", expand=True)
+        ttk.Button(
+            sf.content, text="New Row At End", command=lambda *_: self.addNewRow("end")
+        ).pack(side="top", fill="x", expand=True)
+        # ttk.Button(
+        #     sf.content,
+        #     text="Clone Rows Before",
+        #     command=lambda *_: self.cloneRows("before"),
+        # ).pack(side="top", fill="x", expand=True)
+        # ttk.Button(
+        #     sf.content,
+        #     text="Clone Rows After",
+        #     command=lambda *_: self.cloneRows("after"),
+        # ).pack(side="top", fill="x", expand=True)
+        # ttk.Button(
+        #     sf.content, text="Clone To End", command=lambda *_: self.cloneRows("end")
+        # ).pack(side="top", fill="x", expand=True)
+        # ttk.Button(
+        #     sf.content, text="Move Up", command=lambda *_: self.moveRows("up")
+        # ).pack(side="top", fill="x", expand=True)
+        # ttk.Button(
+        #     sf.content, text="Move Down", command=lambda *_: self.moveRows("down")
+        # ).pack(side="top", fill="x", expand=True)
+
+    def removeRows(self):
+        # For each row, remove it and move the rest backwards
+        song = program.p.currentSong
+
+        for row in self.matrix.getSelectedRows():
+            song.shiftMatrixRows(row + 1, None, row)
+            song.visibleMatrixRows -= 1
+        self.matrix.clearSelection()
+        self.matrix.queueRefresh()
+
+    def addNewRow(self, position: Literal["before", "after", "end"]):
+        song = program.p.currentSong
+
+        if position == "before":
+            row = min(self.matrix.getSelectedRows(), default=0)
+        elif position == "after":
+            row = max(self.matrix.getSelectedRows(), default=0) + 1
+        elif position == "end":
+            row = song.visibleMatrixRows
+
+        song.shiftMatrixRows(row, None, row + 1)
+
+        song.visibleMatrixRows += 1
+        self.matrix.queueRefresh()
+
+    # def cloneRows(self, position: Literal["before", "after", "end"]):
+    #     song = program.p.currentSong
+
+    #     rows = list(self.matrix.getSelectedRows())
+    #     newRows = len(rows)
+    #     if newRows == 0: return
+    #     rows.sort()
+
+    #     if position == "before":
+    #         row0 = min(rows)
+    #         for i in range(newRows):
+    #             rows[i] += newRows
+    #     elif position == "after":
+    #         row0 = max(rows) + 1
+    #     elif position == "end":
+    #         row0 = song.visibleMatrixRows
+
+    #     song.shiftMatrixRows(row0, None, row0 + newRows)
+
+    #     for i, row in enumerate(rows):
+    #         for channel in range(song.visibleChannels):
+    #             song.setPatternNumber(channel, row0 + i, song.getPatternIdByLocation(channel, row))
+
+    #     song.visibleMatrixRows += newRows
+    #     self.matrix.queueRefresh()
+
+    # def moveRows(self, direction: Literal["up", "down"]):
+    #     song = program.p.currentSong
+    #     rows = list(self.matrix.getSelectedRows())
+    #     if len(rows) == 0: return
+
+    #     if direction == "up":
+    #         for
+    #     elif direction == "down":
+    #         pass
+
+    #     self.matrix.queueRefresh()
+
+
+class PatternMatrix(ttk.Frame, QuickRefresh):
+    def __init__(self, parent: tk.Misc):
+        super().__init__(parent, relief="raised", width=400, height=200, borderwidth=2)
+
+        sf = DScrollFrame(self, mode="DOUBLE")
+        sf.pack(side="left", fill="both", expand=True)
+
         sf.widgetNameBlockList.add("patternselector")
+
+        actions = MatrixActions(self, self)
+        actions.pack(side="left", fill="both")
 
         self.connections: list[Connection] = list()
 
@@ -371,7 +480,7 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
         self.__selectors: dict[tuple[int, int], PatternSelector] = dict()
         """set[row, col] -> PatternSelector"""
 
-        self.selection: set[tuple[int, int]] = {(0, 0)}
+        self.__selection: set[tuple[int, int]] = {(0, 0)}
         """set[row:int, channel:int] - Currently selected cells."""
         self.selectionAnchor: tuple[int, int] = (0, 0)
         """(row, channel) - Used for box selections"""
@@ -389,6 +498,12 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
 
     ### Selection
 
+    def getSelection(self) -> set[tuple[int, int]]:
+        return self.__selection
+
+    def clearSelection(self):
+        self.__selection = set()
+
     def setSelectionAnchor(self, row: int | None = None, channel: int | None = None):
         if row is None:
             row = self.selectionAnchor[0]
@@ -403,21 +518,21 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
         t = (row, channel)
         self.setSelectionAnchor(row, channel)
         if mode == "add":
-            self.selection.add(t)
+            self.__selection.add(t)
         elif mode == "sub":
-            if t in self.selection:
-                self.selection.remove(t)
+            if t in self.__selection:
+                self.__selection.remove(t)
         elif mode == "set":
-            self.selection = {t}
+            self.__selection = {t}
         elif mode == "toggle":
-            if t in self.selection:
-                self.selection.remove(t)
+            if t in self.__selection:
+                self.__selection.remove(t)
             else:
-                self.selection.add(t)
+                self.__selection.add(t)
         self.refreshSelectors()
 
     def gridSelectCells(self, row: int, channel: int | None):
-        self.selection = set()
+        self.__selection = set()
         r1 = self.selectionAnchor[0]
         r2 = row
         if channel is None:
@@ -429,7 +544,7 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
 
         for r in range(min(r1, r2), max(r1, r2) + 1):
             for c in range(min(c1, c2), max(c1, c2) + 1):
-                self.selection.add((r, CHANNEL_ORDER[c]))
+                self.__selection.add((r, CHANNEL_ORDER[c]))
         self.refreshSelectors()
 
     def selectRow(self, row: int, mode: Literal["add", "sub", "set", "toggle"]):
@@ -440,9 +555,9 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
             for col in cols:
                 self.selectCell(row, col, mode)
         elif mode == "set":
-            self.selection = {(row, col) for col in cols}
+            self.__selection = {(row, col) for col in cols}
         elif mode == "toggle":
-            state = all((row, c) in self.selection for c in cols)
+            state = all((row, c) in self.__selection for c in cols)
             self.selectRow(row, "sub" if state else "add")
         self.refreshSelectors()
 
@@ -492,8 +607,14 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
     def getSelectedSelectors(self) -> set[PatternSelector]:
         return {
             self.__selectors[(row, CHANNEL_ORDER_INVERSE[channel])]
-            for row, channel in self.selection
+            for row, channel in self.__selection
         }
+
+    def getSelectedRows(self) -> set[int]:
+        out = set()
+        for row, channel in self.__selection:
+            out.add(row)
+        return out
 
     def refresh(self):
         self.resetRefreshFlag()

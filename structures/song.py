@@ -62,6 +62,8 @@ class Song(ReactiveClass):
 
         self.setupContainerListen()
 
+    ### Pattern Management
+
     def getPatternID(self, pattern: Pattern) -> tuple[int, int]:
         """Get the channel and pattern number for a given pattern."""
         for key, testPattern in self.patternList.items():
@@ -118,6 +120,41 @@ class Song(ReactiveClass):
         """Get the lowest empty pattern."""
         return self.getPatternById(channel, self.getFreePatternId(channel))
 
-    # @property
-    # def patternMatrixLength(self) -> int:
-    #     return max((y for x, y in self.patternMatrix.keys()), default=0)
+    ### Matrix Management
+
+    def deleteMatrixRow(self, row: int):
+        """Clear matrix entries for the given row. Does not move rows to fill the space."""
+        # TODO: good way to know which channels exist in the row?
+        for channel in range(0, self.visibleChannels):
+            if (channel, row) in self.patternMatrix:
+                del self.patternMatrix[channel, row]
+
+    def swapMatrixRows(self, row0, row1):
+        """Swap two matrix rows."""
+        # TODO: more pythonic?
+        for channel in range(program.p.currentSong.visibleChannels):
+            i0 = self.getPatternIdByLocation(channel, row0)
+            i1 = self.getPatternIdByLocation(channel, row0)
+            self.setPatternNumber(channel, row0, i1)
+            self.setPatternNumber(channel, row1, i0)
+
+    def shiftMatrixRows(self, row0: int | None, row1: int | None, newRow0: int):
+        """Move rows row0-row1 (inclusive) to start at newRow0. Overwrites old rows and leaves blank space."""
+        source = self.patternMatrix.copy()
+        if row0 is None:
+            row0 = 0
+        if row1 is None:
+            row1 = program.p.currentSong.visibleMatrixRows
+
+        # Remove old rows
+        for offset in range((row1 - row0) + 1):
+            row = row0 + offset
+            self.deleteMatrixRow(row)
+
+        # Replace new rows
+        for offset in range((row1 - row0) + 1):
+            row = row0 + offset
+            newRow = newRow0 + offset
+            for channel in range(0, CHANNEL_COUNT):
+                if (channel, row) in source:
+                    self.patternMatrix[channel, newRow] = source[channel, row]
