@@ -6,8 +6,14 @@ Also contains a grid of pattern references, as well as a pattern table.
 
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass
+
+if __name__ == "__main__":
+    import sys
+
+    sys.path.append(".")
 
 from structures import program
 from structures.channel import Channel
@@ -67,8 +73,11 @@ class Song(ReactiveClass):
     ### File Management
 
     def toFile(self, file: str):
+
+        saveDict = dict()
+
         with open(file, "w") as fp:
-            pass
+            json.dump(saveDict, fp)
 
     @classmethod
     def fromFile(cls, file: str) -> Song:
@@ -173,3 +182,39 @@ class Song(ReactiveClass):
             for channel in range(0, CHANNEL_COUNT):
                 if (channel, row) in source:
                     self.patternMatrix[channel, newRow] = source[channel, row]
+
+
+if __name__ == "__main__":
+    TEST_FILE = "test.json"
+    t1 = Song()
+
+    t1.getPatternById(0, 0).setEffect(3, 0, (16, 24))
+    t1.getPatternById(5, 10).setNote(2, 0, 32)
+    t1.getPatternById(3, 1)
+    t1.getPatternById(3, 2).setVelocity(0, 0, 0)
+    t1.getPatternById(3, 3)
+
+    t1.setPatternNumber(0, 0, 5)
+    t1.setPatternNumber(2, 3, 2)
+    t1.setPatternNumber(10, 2, 1)
+    t1.setPatternNumber(3, 3, 4)
+
+    # print(t1.toJSON())
+    # print(t1.jsonEncode())
+
+    t1.toFile(TEST_FILE)
+    t2 = Song.fromFile(TEST_FILE)
+
+    # TODO: this test needs actual changes to be made cause its just default rn
+
+    # t1r = t1.jsonEncode()
+    # t2r = t2.jsonEncode()
+
+    # print(t1r == t2r)
+
+    # print(t)
+    # print()
+    # print(t.toJSON())
+    # print(t.jsonEncode())
+    # print(t1.jsonEncode())
+    # print(t2.jsonEncode())
