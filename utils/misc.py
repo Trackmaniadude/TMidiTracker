@@ -5,6 +5,30 @@ Random utilities
 from __future__ import annotations
 
 
+def intKey2dToJson(key: tuple[int, int]) -> str:
+    """Take 2d int keys and make them json compatible."""
+    return f"{key[0]}|{key[1]}"
+
+
+def intKey2dFromJson(key: str) -> tuple[int, int]:
+    """Take 2d int keys from json compatible"""
+    l = key.split("|")
+    return (int(l[0]), int(l[1]))
+
+
+def collapse2dDict[
+    T
+](dct: dict[tuple[int, int], T], default: T = None) -> list[list[T]]:
+    """Take a dict using keys of the form (int, int) and convert to a 2d array (list of lists)"""
+    maxRows = max(k[0] for k in dct.keys())
+    maxCols = max(k[1] for k in dct.keys())
+    out = [[default for _ in range(maxCols)] for _ in range(maxRows)]
+    for k, v in dct.items():
+        r, c = k
+        out[r][c] = v
+    return out
+
+
 def formatTime(t: float, alwaysShowHour: bool = False) -> str:
     """Format a number of seconds."""
     sec = int(t % 60)
