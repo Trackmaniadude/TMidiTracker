@@ -19,9 +19,9 @@ def intKey2dFromJson(key: str) -> tuple[int, int]:
 def collapse2dDict[
     T
 ](dct: dict[tuple[int, int], T], default: T = None) -> list[list[T]]:
-    """Take a dict using keys of the form (int, int) and convert to a 2d array (list of lists)"""
-    maxRows = max(k[0] for k in dct.keys())
-    maxCols = max(k[1] for k in dct.keys())
+    """Take a dict using keys of the form (int, int) and convert to a 2d array (list of lists). Makes more sense for dense matrices."""
+    maxRows = max(k[0] for k in dct.keys()) + 1
+    maxCols = max(k[1] for k in dct.keys()) + 1
     out = [[default for _ in range(maxCols)] for _ in range(maxRows)]
     for k, v in dct.items():
         r, c = k
