@@ -4,6 +4,7 @@ Gives a class a Changed event, fired when any value is changed.
 
 import logging
 import tkinter as tk
+from json import JSONEncoder
 from tkinter import ttk
 from typing import Any
 
@@ -11,6 +12,13 @@ from interface.utilities.headerFrame import HeaderFrame
 from utils.event import Event
 
 _logger = logging.getLogger(__name__)
+
+
+class ReactiveContainerJSONEncoder(JSONEncoder):
+    def default(self, o: Any) -> Any:
+        if isinstance(o, ReactiveContainer):
+            return o._container
+        return super().default(o)
 
 
 class ReactiveContainer[TContainer, TKey, TContent]:
