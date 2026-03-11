@@ -152,7 +152,29 @@ class Song(ReactiveClass):
     def fromFile(cls, file: str) -> Song:
         s = Song()
         with open(file) as fp:
-            saveDict = json.load(fp)
+            d = json.load(fp)
+
+        s.metadata.title = d["metadata"]["title"]
+        s.metadata.author = d["metadata"]["author"]
+        s.metadata.genre = d["metadata"]["genre"]
+        s.metadata.notes = d["metadata"]["notes"]
+
+        s.visibleChannels = d["structure"]["visibleChannels"]
+        s.visibleMatrixRows = d["structure"]["visibleMatrixRows"]
+        s.patternLength = d["structure"]["patternLength"]
+        s.majorSubdiv = d["structure"]["majorSubdiv"]
+        s.minorSubdiv = d["structure"]["minorSubdiv"]
+
+        s.clock = d["timing"]["clock"]
+        s.groove = d["timing"]["groove"]
+        s.syncGrooveToPattern = d["timing"]["syncGrooveToPattern"]
+
+        for channelData in d["songData"]["channelData"]:
+            channel = s.channels[channelData["channel"]]
+            channel.noteColumns = channelData["noteColumns"]
+            channel.effectColumns = channelData["effectColumns"]
+
+        s.setupContainerListen()
         return s
 
     ### Pattern Management
@@ -261,6 +283,8 @@ class Song(ReactiveClass):
 
 
 if __name__ == "__main__":
+    from utils.reactiveClass import ReactiveContainer
+
     TEST_FILE = "test{}.json"
     t11 = Song()  # blank
     t21 = Song()  # edited
@@ -285,6 +309,11 @@ if __name__ == "__main__":
     t21.clock = 50
     t21.groove = [3, 5]
     t21.syncGrooveToPattern = False
+
+    # Channels
+
+    t21.channels[9].noteColumns = 4
+    t21.channels[2].effectColumns = 4
 
     # Patterns
 
@@ -318,6 +347,8 @@ if __name__ == "__main__":
     t21.setPatternNumber(9, 2, 3)
     t21.setPatternNumber(9, 3, 4)
 
+    t21.setupContainerListen()
+
     # print(t1.toJSON())
     # print(t1.jsonEncode())
 
@@ -326,17 +357,36 @@ if __name__ == "__main__":
     t21.toFile(TEST_FILE.format(2))
     t22 = Song.fromFile(TEST_FILE.format(2))
 
-    def test(a: Song, b: Song):
+    def test(name: str, a: Song, b: Song):
+        def eq[T](a: T, b: T) -> bool:
+            if isinstance(a, ReactiveContainer) and isinstance(b, ReactiveContainer):
+                return a._container == b._container
+            return a == b
+
+        def p(v: Any) -> str:
+            if isinstance(v, ReactiveContainer):
+                # Get up to four values
+                vals = list()
+                for i, item in enumerate(v._container):
+                    if i >= 4:
+                        vals.append("...")
+                        break
+                    try:
+                        vals.append(f"{item}: {v._container[item]}")
+                    except:
+                        vals.append(str(item))
+                return f"{v.__class__.__name__}[{", ".join(vals)}]"
+            return str(v)
+
         print()
-        print("TEST")
+        print(name)
         for k in a.__dict__.keys():
             aVal = getattr(a, k)
             bVal = getattr(b, k)
-            # print(f"{k}: {aVal} -> {bVal}")
-            print(f"{k}: {aVal == bVal} ({repr(aVal)} -> {repr(bVal)})")
+            print(f"{k}: {eq(aVal, bVal)} ({p(aVal)} -> {p(bVal)})")
 
-    test(t11, t12)
-    test(t21, t22)
+    test("Default", t11, t12)
+    test("Modified", t21, t22)
 
     # TODO: this test needs actual changes to be made cause its just default rn
 
