@@ -24,7 +24,8 @@ class Program(ReactiveClass):
         self.stepSize: int = 1
         """How many rows to step after making an entry. 0 to disable."""
 
-        self.currentSong: Song = Song.fromFile("test2.json")#Song()
+        # self.currentSong: Song = Song()
+        self.currentSong: Song = Song.fromFile("test2.json")
         """Current active song object."""
 
         self.currentOctave: int = 4

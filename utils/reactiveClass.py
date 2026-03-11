@@ -53,6 +53,11 @@ class ReactiveContainer[TContainer, TKey, TContent]:
     def __len__(self) -> int:
         return len(self._container)  # pyright: ignore[reportArgumentType]
 
+    def __iter__(self):
+        return iter(self._container)  # type: ignore
+
+    # TODO: iter
+
 
 class ReactiveSet[TContent](ReactiveContainer):
     def __init__(self, container: set[TContent]) -> None:

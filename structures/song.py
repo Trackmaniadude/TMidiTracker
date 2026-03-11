@@ -20,7 +20,7 @@ from structures import program
 from structures.channel import Channel
 from structures.pattern import Pattern
 from utils.constants import CHANNEL_COUNT, CHANNEL_ORDER, CHANNEL_ORDER_INVERSE
-from utils.misc import collapse2dDict
+from utils.misc import collapse2dDict, intKey2dFromJson, intKey2dToJson
 from utils.reactiveClass import ReactiveClass, ReactiveContainerJSONEncoder
 
 _logger = logging.getLogger(__name__)
@@ -75,6 +75,13 @@ class Song(ReactiveClass):
     ### File Management
 
     def toFile(self, file: str):
+        with open(file, "w") as fp:
+            json.dump(self.toDict(), fp, indent=2, cls=ReactiveContainerJSONEncoder)
+
+    def toJson(self) -> str:
+        return json.dumps(self.toDict(), indent=2, cls=ReactiveContainerJSONEncoder)
+
+    def toDict(self) -> dict[str, Any]:
 
         def getPatternList():
             """Convert the pattern list to a format more sensibly stored in JSON"""
@@ -114,7 +121,7 @@ class Song(ReactiveClass):
 
             return out
 
-        saveDict: dict[str, Any] = {
+        return {
             "format": 0,
             "metadata": {
                 "title": self.metadata.title,
@@ -143,44 +150,62 @@ class Song(ReactiveClass):
                 "patterns": getPatternList(),
                 "patternMatrix": getPatternMatrix(),
             },
+            "interfaceData": {
+                "highlightedMatrixItems": [
+                    intKey2dToJson(v) for v in self.highlightedMatrixItems
+                ]
+            },
         }
-
-        with open(file, "w") as fp:
-            json.dump(saveDict, fp, indent=2, cls=ReactiveContainerJSONEncoder)
 
     @classmethod
     def fromFile(cls, file: str) -> Song:
-        s = Song()
         with open(file) as fp:
             d = json.load(fp)
+        return cls.fromDict(d)
 
-        s.metadata.title = d["metadata"]["title"]
-        s.metadata.author = d["metadata"]["author"]
-        s.metadata.genre = d["metadata"]["genre"]
-        s.metadata.notes = d["metadata"]["notes"]
+    @classmethod
+    def fromDict(cls, dct: dict[str, Any]) -> Song:
+        s = Song()
 
-        s.visibleChannels = d["structure"]["visibleChannels"]
-        s.visibleMatrixRows = d["structure"]["visibleMatrixRows"]
-        s.patternLength = d["structure"]["patternLength"]
-        s.majorSubdiv = d["structure"]["majorSubdiv"]
-        s.minorSubdiv = d["structure"]["minorSubdiv"]
+        s.metadata.title = dct["metadata"]["title"]
+        s.metadata.author = dct["metadata"]["author"]
+        s.metadata.genre = dct["metadata"]["genre"]
+        s.metadata.notes = dct["metadata"]["notes"]
 
-        s.clock = d["timing"]["clock"]
-        s.groove = d["timing"]["groove"]
-        s.syncGrooveToPattern = d["timing"]["syncGrooveToPattern"]
+        s.visibleChannels = dct["structure"]["visibleChannels"]
+        s.visibleMatrixRows = dct["structure"]["visibleMatrixRows"]
+        s.patternLength = dct["structure"]["patternLength"]
+        s.majorSubdiv = dct["structure"]["majorSubdiv"]
+        s.minorSubdiv = dct["structure"]["minorSubdiv"]
 
-        for channelData in d["songData"]["channelData"]:
+        s.clock = dct["timing"]["clock"]
+        s.groove = dct["timing"]["groove"]
+        s.syncGrooveToPattern = dct["timing"]["syncGrooveToPattern"]
+
+        for channelData in dct["songData"]["channelData"]:
             channel = s.channels[channelData["channel"]]
             channel.noteColumns = channelData["noteColumns"]
             channel.effectColumns = channelData["effectColumns"]
 
-        for channel, patternData in d["songData"]["patterns"].items():
-            for row, data in enumerate(patternData):
+        for channel, patternData in dct["songData"]["patterns"].items():
+            channel = int(channel)  # dict int key becomes str in json
+            for id, data in enumerate(patternData):
                 if data is None:
                     continue
-                channel = int(channel)  # dict int key becomes str in json
-                patternObj = s.getPatternByLocation(channel, row)
-                patternObj.updateFromDict(data)
+                s.patternList[channel, id] = Pattern.fromDict(
+                    s, s.channels[channel], data
+                )
+                # TODO: id like this to use internal mechanisms rather than raw
+                # patternObj = s.getPatternByLocation(channel, row)
+                # patternObj.updateFromDict(data)
+
+        for channel, channelData in dct["songData"]["patternMatrix"].items():
+            channel = int(channel)
+            for row, id in enumerate(channelData):
+                s.setPatternNumber(channel, row, id)
+
+        for highlight in dct["interfaceData"]["highlightedMatrixItems"]:
+            s.highlightedMatrixItems.add(intKey2dFromJson(highlight))
 
         s.setupContainerListen()
         return s
@@ -291,6 +316,8 @@ class Song(ReactiveClass):
 
 
 if __name__ == "__main__":
+    import difflib
+
     from utils.reactiveClass import ReactiveContainer
 
     TEST_FILE = "test{}.json"
@@ -330,9 +357,9 @@ if __name__ == "__main__":
     t21.getPatternById(2, 10).setNote(2, 0, 64)
 
     t21.getPatternById(9, 1).setNote(2, 0, 64)
-    t21.getPatternById(9, 2).setNote(2, 0, 64)
-    t21.getPatternById(9, 3).setNote(2, 0, 64)
-    t21.getPatternById(9, 4).setNote(2, 0, 64)
+    t21.getPatternById(9, 2).setNote(3, 0, 64)
+    t21.getPatternById(9, 3).setNote(4, 0, 64)
+    t21.getPatternById(9, 4).setNote(5, 0, 64)
 
     t21.getPatternById(3, 1)
     t21.getPatternById(3, 2).setVelocity(0, 0, 0)
@@ -355,6 +382,13 @@ if __name__ == "__main__":
     t21.setPatternNumber(9, 2, 3)
     t21.setPatternNumber(9, 3, 4)
 
+    # Other
+
+    t21.highlightedMatrixItems.add((1, 1))
+    t21.highlightedMatrixItems.add((3, 3))
+    t21.highlightedMatrixItems.add((2, 4))
+    t21.highlightedMatrixItems.add((4, 2))
+
     t21.setupContainerListen()
 
     # print(t1.toJSON())
@@ -364,6 +398,7 @@ if __name__ == "__main__":
     t12 = Song.fromFile(TEST_FILE.format(1))
     t21.toFile(TEST_FILE.format(2))
     t22 = Song.fromFile(TEST_FILE.format(2))
+    t22.toFile(TEST_FILE.format(3))
 
     def test(name: str, a: Song, b: Song):
         def eq[T](a: T, b: T) -> bool:
@@ -386,14 +421,21 @@ if __name__ == "__main__":
                 return f"{v.__class__.__name__}[{", ".join(vals)}]"
             return str(v)
 
-        print()
-        print(name)
-        for k in a.__dict__.keys():
-            aVal = getattr(a, k)
-            bVal = getattr(b, k)
-            print(f"{k}: {eq(aVal, bVal)} ({p(aVal)} -> {p(bVal)})")
+        # print()
+        # print(name)
+        # for k in a.__dict__.keys():
+        #     aVal = getattr(a, k)
+        #     bVal = getattr(b, k)
+        #     print(f"{k}: {eq(aVal, bVal)} ({p(aVal)} -> {p(bVal)})")
 
-    test("Default", t11, t12)
+        af = a.toJson().split("\n")
+        bf = b.toJson().split("\n")
+        d = difflib.HtmlDiff().make_file(af, bf, context=True)
+
+        with open(f"test{name}.html", "w") as fp:
+            fp.write(d)
+
+    # test("Default", t11, t12)
     test("Modified", t21, t22)
 
     # TODO: this test needs actual changes to be made cause its just default rn
