@@ -14,7 +14,7 @@ import logging
 from dataclasses import dataclass
 
 from structures import program
-from utils.misc import clamp, intKey2dToJson
+from utils.misc import clamp, intKey2dFromJson, intKey2dToJson
 from utils.reactiveClass import ReactiveClass
 from utils.types_ import *
 
@@ -58,10 +58,10 @@ class Pattern(ReactiveClass):
         self.setupContainerListen()
 
     # def __repr__(self) -> str:
-    #     return f"Channel(channel: {self.channel}, noteColumns: {self.noteColumns}, effectColumns: {self.effectColumns})"
+    #     return f"Pattern(channel: {self.channel}, noteColumns: {self.noteColumns}, effectColumns: {self.effectColumns})"
 
-    # def __str__(self) -> str:
-    #     return f"Channel({self.channel}, {self.noteColumns}, {self.effectColumns})"
+    def __str__(self) -> str:
+        return f"Pattern({self.notes}, {self.velocities}, {self.effects})"
 
     EQ_KEYS = [
         "notes",
@@ -83,10 +83,19 @@ class Pattern(ReactiveClass):
         }
 
     @classmethod
-    def fromDict(cls, song: Song, channel: Channel) -> Pattern:
+    def fromDict(cls, song: Song, channel: Channel, dct: dict[str, Any]) -> Pattern:
         out = Pattern(song, channel)
-        # TODO:
+        out.updateFromDict(dct)
         return out
+
+    def updateFromDict(self, dct: dict[str, Any]):
+        """Update this pattern from a dictionary. (Intended for JSON import.)"""
+        self.notes = {intKey2dFromJson(k): v for k, v in dct["notes"].items()}
+        self.velocities = {intKey2dFromJson(k): v for k, v in dct["velocities"].items()}
+        self.effects = {
+            intKey2dFromJson(k): tuple(v) for k, v in dct["effects"].items()
+        }
+        self.setupContainerListen()
 
     def getRow(self, row: int) -> PatternRow:
         """Get all data from a row."""

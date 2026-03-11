@@ -174,6 +174,14 @@ class Song(ReactiveClass):
             channel.noteColumns = channelData["noteColumns"]
             channel.effectColumns = channelData["effectColumns"]
 
+        for channel, patternData in d["songData"]["patterns"].items():
+            for row, data in enumerate(patternData):
+                if data is None:
+                    continue
+                channel = int(channel)  # dict int key becomes str in json
+                patternObj = s.getPatternByLocation(channel, row)
+                patternObj.updateFromDict(data)
+
         s.setupContainerListen()
         return s
 
