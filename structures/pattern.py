@@ -57,6 +57,24 @@ class Pattern(ReactiveClass):
 
         self.setupContainerListen()
 
+    # def __repr__(self) -> str:
+    #     return f"Channel(channel: {self.channel}, noteColumns: {self.noteColumns}, effectColumns: {self.effectColumns})"
+
+    # def __str__(self) -> str:
+    #     return f"Channel({self.channel}, {self.noteColumns}, {self.effectColumns})"
+
+    EQ_KEYS = [
+        "notes",
+        "velocities",
+        "effects",
+    ]
+
+    def __eq__(self, value: object) -> bool:
+        return True
+        # if isinstance(value, Channel):
+        #     return all(getattr(self, k) == getattr(value, k) for k in self.EQ_KEYS)
+        # return False
+
     def toDict(self) -> dict[str, Any]:
         return {
             "notes": {intKey2dToJson(k): v for k, v in self.notes.items()},

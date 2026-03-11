@@ -67,6 +67,23 @@ class Channel(ReactiveClass):
         # TODO:
         return out
 
+    def __repr__(self) -> str:
+        return f"Channel(channel: {self.channel}, noteColumns: {self.noteColumns}, effectColumns: {self.effectColumns})"
+
+    def __str__(self) -> str:
+        return f"Channel({self.channel}, {self.noteColumns}, {self.effectColumns})"
+
+    EQ_KEYS = [
+        "channel",
+        "noteColumns",
+        "effectColumns",
+    ]
+
+    def __eq__(self, value: object) -> bool:
+        if isinstance(value, Channel):
+            return all(getattr(self, k) == getattr(value, k) for k in self.EQ_KEYS)
+        return False
+
     def tick(self, read: bool) -> list[mido.Message | mido.MetaMessage]:
         """
         Tick the channel, optionally reading commands at the current song playback position.
