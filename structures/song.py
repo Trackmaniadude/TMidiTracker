@@ -261,55 +261,82 @@ class Song(ReactiveClass):
 
 
 if __name__ == "__main__":
-    TEST_FILE = "test.json"
-    t1 = Song()
+    TEST_FILE = "test{}.json"
+    t11 = Song()  # blank
+    t21 = Song()  # edited
 
     # Metadata
 
-    t1.metadata.title = "generated test song"
-    t1.metadata.author = "tractormaniadude"
-    t1.metadata.genre = "who knows"
-    t1.metadata.notes = "a rather large string\n" * 10
+    t21.metadata.title = "generated test song"
+    t21.metadata.author = "tractormaniadude"
+    t21.metadata.genre = "who knows"
+    t21.metadata.notes = "a rather large string\n" * 10
+
+    # Structure
+
+    t21.visibleChannels = 6
+    t21.visibleMatrixRows = 12
+    t21.patternLength = 24
+    t21.majorSubdiv = 12
+    t21.minorSubdiv = 3
+
+    # Timing
+
+    t21.clock = 50
+    t21.groove = [3, 5]
+    t21.syncGrooveToPattern = False
 
     # Patterns
 
-    t1.getPatternById(0, 0).setEffect(3, 0, (16, 24))
+    t21.getPatternById(0, 0).setEffect(3, 0, (16, 24))
 
-    t1.getPatternById(2, 10).setNote(2, 0, 32)
+    t21.getPatternById(2, 10).setNote(2, 0, 32)
 
-    t1.getPatternById(9, 1).setNote(2, 0, 32)
-    t1.getPatternById(9, 2).setNote(2, 0, 32)
-    t1.getPatternById(9, 3).setNote(2, 0, 32)
-    t1.getPatternById(9, 4).setNote(2, 0, 32)
+    t21.getPatternById(9, 1).setNote(2, 0, 32)
+    t21.getPatternById(9, 2).setNote(2, 0, 32)
+    t21.getPatternById(9, 3).setNote(2, 0, 32)
+    t21.getPatternById(9, 4).setNote(2, 0, 32)
 
-    t1.getPatternById(3, 1)
-    t1.getPatternById(3, 2).setVelocity(0, 0, 0)
-    t1.getPatternById(3, 2).setVelocity(1, 0, 0)
-    t1.getPatternById(3, 2).setVelocity(3, 3, 0)
-    t1.getPatternById(3, 3)
+    t21.getPatternById(3, 1)
+    t21.getPatternById(3, 2).setVelocity(0, 0, 0)
+    t21.getPatternById(3, 2).setVelocity(1, 0, 0)
+    t21.getPatternById(3, 2).setVelocity(3, 3, 0)
+    t21.getPatternById(3, 3)
 
     # Pattern Matrix
 
-    t1.setPatternNumber(0, 0, 5)
-    t1.setPatternNumber(0, 1, 5)
-    t1.setPatternNumber(0, 2, 5)
+    t21.setPatternNumber(0, 0, 5)
+    t21.setPatternNumber(0, 1, 5)
+    t21.setPatternNumber(0, 2, 5)
 
-    t1.setPatternNumber(2, 3, 2)
+    t21.setPatternNumber(2, 3, 2)
 
-    t1.setPatternNumber(3, 3, 4)
+    t21.setPatternNumber(3, 3, 4)
 
-    t1.setPatternNumber(9, 0, 1)
-    t1.setPatternNumber(9, 1, 2)
-    t1.setPatternNumber(9, 2, 3)
-    t1.setPatternNumber(9, 3, 4)
+    t21.setPatternNumber(9, 0, 1)
+    t21.setPatternNumber(9, 1, 2)
+    t21.setPatternNumber(9, 2, 3)
+    t21.setPatternNumber(9, 3, 4)
 
     # print(t1.toJSON())
     # print(t1.jsonEncode())
 
-    t1.toFile(TEST_FILE)
-    t2 = Song.fromFile(TEST_FILE)
+    t11.toFile(TEST_FILE.format(1))
+    t12 = Song.fromFile(TEST_FILE.format(1))
+    t21.toFile(TEST_FILE.format(2))
+    t22 = Song.fromFile(TEST_FILE.format(2))
 
-    print(t1 == t2)
+    def test(a: Song, b: Song):
+        print()
+        print("TEST")
+        for k in a.__dict__.keys():
+            aVal = getattr(a, k)
+            bVal = getattr(b, k)
+            # print(f"{k}: {aVal} -> {bVal}")
+            print(f"{k}: {aVal == bVal} ({repr(aVal)} -> {repr(bVal)})")
+
+    test(t11, t12)
+    test(t21, t22)
 
     # TODO: this test needs actual changes to be made cause its just default rn
 
