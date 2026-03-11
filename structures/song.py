@@ -306,7 +306,7 @@ if __name__ == "__main__":
 
     # Structure
 
-    t21.visibleChannels = 6
+    t21.visibleChannels = 5
     t21.visibleMatrixRows = 12
     t21.patternLength = 24
     t21.majorSubdiv = 12
@@ -327,12 +327,12 @@ if __name__ == "__main__":
 
     t21.getPatternById(0, 0).setEffect(3, 0, (16, 24))
 
-    t21.getPatternById(2, 10).setNote(2, 0, 32)
+    t21.getPatternById(2, 10).setNote(2, 0, 64)
 
-    t21.getPatternById(9, 1).setNote(2, 0, 32)
-    t21.getPatternById(9, 2).setNote(2, 0, 32)
-    t21.getPatternById(9, 3).setNote(2, 0, 32)
-    t21.getPatternById(9, 4).setNote(2, 0, 32)
+    t21.getPatternById(9, 1).setNote(2, 0, 64)
+    t21.getPatternById(9, 2).setNote(2, 0, 64)
+    t21.getPatternById(9, 3).setNote(2, 0, 64)
+    t21.getPatternById(9, 4).setNote(2, 0, 64)
 
     t21.getPatternById(3, 1)
     t21.getPatternById(3, 2).setVelocity(0, 0, 0)
