@@ -4,7 +4,7 @@ Pattern object. Contains message data.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from structures.song import Song
@@ -14,7 +14,7 @@ import logging
 from dataclasses import dataclass
 
 from structures import program
-from utils.misc import clamp
+from utils.misc import clamp, intKey2dToJson
 from utils.reactiveClass import ReactiveClass
 from utils.types_ import *
 
@@ -56,6 +56,19 @@ class Pattern(ReactiveClass):
         """
 
         self.setupContainerListen()
+
+    def toDict(self) -> dict[str, Any]:
+        return {
+            "notes": {intKey2dToJson(k): v for k, v in self.notes.items()},
+            "velocities": {intKey2dToJson(k): v for k, v in self.velocities.items()},
+            "effects": {intKey2dToJson(k): v for k, v in self.effects.items()},
+        }
+
+    @classmethod
+    def fromDict(cls, song: Song, channel: Channel) -> Pattern:
+        out = Pattern(song, channel)
+        # TODO:
+        return out
 
     def getRow(self, row: int) -> PatternRow:
         """Get all data from a row."""

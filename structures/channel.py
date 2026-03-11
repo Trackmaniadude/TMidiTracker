@@ -5,7 +5,7 @@ Contains channel information and channel playback state.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from structures.pattern import Pattern
@@ -53,6 +53,19 @@ class Channel(ReactiveClass):
         self.playbackState = ChannelPlaybackState()
 
         self.setupContainerListen()
+
+    def toDict(self) -> dict[str, Any]:
+        return {
+            "channel": self.channel,
+            "noteColumns": self.noteColumns,
+            "effectColumns": self.effectColumns,
+        }
+
+    @classmethod
+    def fromDict(cls, song: Song, channel: int) -> Channel:
+        out = Channel(song, channel)
+        # TODO:
+        return out
 
     def tick(self, read: bool) -> list[mido.Message | mido.MetaMessage]:
         """

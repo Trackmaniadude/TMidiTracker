@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass
+from typing import Any
 
 if __name__ == "__main__":
     import sys
@@ -18,8 +19,9 @@ if __name__ == "__main__":
 from structures import program
 from structures.channel import Channel
 from structures.pattern import Pattern
-from utils.constants import CHANNEL_COUNT
-from utils.reactiveClass import ReactiveClass
+from utils.constants import CHANNEL_COUNT, CHANNEL_ORDER, CHANNEL_ORDER_INVERSE
+from utils.misc import collapse2dDict
+from utils.reactiveClass import ReactiveClass, ReactiveContainerJSONEncoder
 
 _logger = logging.getLogger(__name__)
 
@@ -74,16 +76,83 @@ class Song(ReactiveClass):
 
     def toFile(self, file: str):
 
-        saveDict = dict()
+        def getPatternList():
+            """Convert the pattern list to a format more sensibly stored in JSON"""
+            # return collapse2dDict({k: -1 for k, v in self.patternList.items()}, -1)
+            out: dict[int, list] = {
+                CHANNEL_ORDER[channel]: [
+                    None
+                    for _ in range(self.getMaxPatternId(CHANNEL_ORDER[channel]) + 1)
+                ]
+                for channel in range(self.visibleChannels + 1)
+            }
+
+            for pos, pattern in self.patternList.items():
+                channel, id = pos
+                out[channel][id] = pattern.toDict()
+
+            return out
+
+        def getPatternMatrix():
+            """Convert the pattern matrix to a format more sensibly stored in JSON"""
+            # return collapse2dDict(self.patternMatrix, -1)
+            out = {
+                CHANNEL_ORDER[channel]: [-1 for _ in range(self.visibleMatrixRows)]
+                for channel in range(self.visibleChannels + 1)
+            }
+            # Note: while -1 is not allowed when running the software, it should not actually break things.
+            # It also probably shouldn't ever actually show up since it's a dense matrix.
+            # TODO: famous last words
+
+            for pos, num in self.patternMatrix.items():
+                channel, row = pos
+                if channel not in out:
+                    continue
+                if row >= self.visibleMatrixRows:
+                    continue
+                out[channel][row] = num
+
+            return out
+
+        saveDict: dict[str, Any] = {
+            "format": 0,
+            "metadata": {
+                "title": self.metadata.title,
+                "author": self.metadata.author,
+                "genre": self.metadata.genre,
+                "notes": self.metadata.notes,
+            },
+            "structure": {
+                "visibleChannels": self.visibleChannels,
+                "visibleMatrixRows": self.visibleMatrixRows,
+                "patternLength": self.patternLength,
+                "majorSubdiv": self.majorSubdiv,
+                "minorSubdiv": self.minorSubdiv,
+            },
+            "timing": {
+                "clock": self.clock,
+                "groove": self.groove,
+                "syncGrooveToPattern": self.syncGrooveToPattern,
+            },
+            "songData": {
+                "channelData": [
+                    channel.toDict()
+                    for channel in self.channels
+                    if CHANNEL_ORDER_INVERSE[channel.channel] <= self.visibleChannels
+                ],
+                "patterns": getPatternList(),
+                "patternMatrix": getPatternMatrix(),
+            },
+        }
 
         with open(file, "w") as fp:
-            json.dump(saveDict, fp)
+            json.dump(saveDict, fp, indent=2, cls=ReactiveContainerJSONEncoder)
 
     @classmethod
     def fromFile(cls, file: str) -> Song:
         s = Song()
         with open(file) as fp:
-            pass
+            saveDict = json.load(fp)
         return s
 
     ### Pattern Management
@@ -144,6 +213,13 @@ class Song(ReactiveClass):
         """Get the lowest empty pattern."""
         return self.getPatternById(channel, self.getFreePatternId(channel))
 
+    def getMaxPatternId(self, channel: int) -> int:
+        """Get highest used pattern id for a channel. Returns -1 if there are no patterns."""
+        # TODO: check if pattern is empty, rather than just not existing
+        return max(
+            (pt for ch, pt in self.patternList.keys() if ch == channel), default=-1
+        )
+
     ### Matrix Management
 
     def deleteMatrixRow(self, row: int):
@@ -188,22 +264,52 @@ if __name__ == "__main__":
     TEST_FILE = "test.json"
     t1 = Song()
 
+    # Metadata
+
+    t1.metadata.title = "generated test song"
+    t1.metadata.author = "tractormaniadude"
+    t1.metadata.genre = "who knows"
+    t1.metadata.notes = "a rather large string\n" * 10
+
+    # Patterns
+
     t1.getPatternById(0, 0).setEffect(3, 0, (16, 24))
-    t1.getPatternById(5, 10).setNote(2, 0, 32)
+
+    t1.getPatternById(2, 10).setNote(2, 0, 32)
+
+    t1.getPatternById(9, 1).setNote(2, 0, 32)
+    t1.getPatternById(9, 2).setNote(2, 0, 32)
+    t1.getPatternById(9, 3).setNote(2, 0, 32)
+    t1.getPatternById(9, 4).setNote(2, 0, 32)
+
     t1.getPatternById(3, 1)
     t1.getPatternById(3, 2).setVelocity(0, 0, 0)
+    t1.getPatternById(3, 2).setVelocity(1, 0, 0)
+    t1.getPatternById(3, 2).setVelocity(3, 3, 0)
     t1.getPatternById(3, 3)
 
+    # Pattern Matrix
+
     t1.setPatternNumber(0, 0, 5)
+    t1.setPatternNumber(0, 1, 5)
+    t1.setPatternNumber(0, 2, 5)
+
     t1.setPatternNumber(2, 3, 2)
-    t1.setPatternNumber(10, 2, 1)
+
     t1.setPatternNumber(3, 3, 4)
+
+    t1.setPatternNumber(9, 0, 1)
+    t1.setPatternNumber(9, 1, 2)
+    t1.setPatternNumber(9, 2, 3)
+    t1.setPatternNumber(9, 3, 4)
 
     # print(t1.toJSON())
     # print(t1.jsonEncode())
 
     t1.toFile(TEST_FILE)
     t2 = Song.fromFile(TEST_FILE)
+
+    print(t1 == t2)
 
     # TODO: this test needs actual changes to be made cause its just default rn
 
