@@ -48,7 +48,7 @@ class ReactiveContainer[TContainer, TKey, TContent]:
         return v in self._container
 
     def __str__(self) -> str:
-        return str(self._container)
+        return "r" + str(self._container)
 
     def __len__(self) -> int:
         return len(self._container)  # pyright: ignore[reportArgumentType]
