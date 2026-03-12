@@ -73,6 +73,9 @@ def menus():
                 return
             program.p.currentSong = Song.fromFile(filename)
 
+        def new():
+            program.p.currentSong = Song()
+
         def save():
             filename = filedialog.asksaveasfilename(filetypes=PROJECT_FILE)
             if filename == "":
@@ -80,6 +83,7 @@ def menus():
             program.p.currentSong.toFile(filename)
 
         menu.add_command(label="Open", command=open)
+        menu.add_command(label="New", command=new)
         menu.add_command(label="Save As", command=save)
 
     fileMenu()
