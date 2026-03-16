@@ -94,6 +94,9 @@ class PatternList(ttk.Frame, QuickRefresh):
         program.p.currentSong.getAttributeChangedEvent("patternList").connect(
             lambda key, *_: self.queueRefresh(), self.connections
         )
+        program.p.Events.SongReloaded.connect(
+            lambda *_: self.queueRefresh(), self.connections
+        )
         self.refresh()
 
     def destroy(self) -> None:

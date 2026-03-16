@@ -490,6 +490,9 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
 
         self.refresh()
         StructureChanged.connect(lambda *_: self.queueRefresh(), self.connections)
+        program.p.Events.SongReloaded.connect(
+            lambda *_: self.queueRefresh(), self.connections
+        )
 
     def destroy(self) -> None:
         for connection in self.connections:

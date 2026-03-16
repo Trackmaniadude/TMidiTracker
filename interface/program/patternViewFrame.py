@@ -116,6 +116,9 @@ class PatternViewFrame(ttk.Frame):
         )
 
         StructureChanged.connect(lambda *_: self.showChannels(), self.connections)
+        program.p.Events.SongReloaded.connect(
+            lambda *_: self.showChannels(), self.connections
+        )
 
     def destroy(self) -> None:
         for connection in self.connections:
