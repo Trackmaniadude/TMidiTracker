@@ -115,8 +115,8 @@ class PatternViewFrame(ttk.Frame):
             lambda *a: self.after(0, self.onMatrixRowChange, *a), self.connections
         )
 
-        StructureChanged.connect(lambda *_: self.showChannels(), self.connections)
-        SongReloaded.connect(lambda *_: self.showChannels(), self.connections)
+        StructureChanged.connect(lambda *_: self.showChannels(True), self.connections)
+        SongReloaded.connect(lambda *_: self.showChannels(True), self.connections)
 
     def destroy(self) -> None:
         for connection in self.connections:
@@ -250,16 +250,13 @@ class PatternViewFrame(ttk.Frame):
                         subcolumn=0,
                     )
 
-    def showChannels(self):
+    def showChannels(self, fullRebuild: bool = False):
         currentChannelsShown = len(self.views)
         newList = list()
-        for i in range(CHANNEL_COUNT):
-            if i < currentChannelsShown:
-                if i <= program.p.currentSong.visibleChannels:
-                    newList.append(self.views[i])
-                else:
+        if fullRebuild:
+            for i in range(CHANNEL_COUNT):
+                if i < currentChannelsShown:
                     self.views[i].destroy()
-            else:
                 if i <= program.p.currentSong.visibleChannels:
                     view = PatternView(
                         self.__content,
@@ -268,8 +265,24 @@ class PatternViewFrame(ttk.Frame):
                     )
                     view.pack(side="left", expand=True)
                     newList.append(view)
+        else:
+            for i in range(CHANNEL_COUNT):
+                if i < currentChannelsShown:
+                    if i <= program.p.currentSong.visibleChannels:
+                        newList.append(self.views[i])
+                    else:
+                        self.views[i].destroy()
                 else:
-                    pass
+                    if i <= program.p.currentSong.visibleChannels:
+                        view = PatternView(
+                            self.__content,
+                            self,
+                            program.p.currentSong.getPatternById(CHANNEL_ORDER[i], 0),
+                        )
+                        view.pack(side="left", expand=True)
+                        newList.append(view)
+                    else:
+                        pass
         self.views = newList
 
     def setRow(self, row: int):
