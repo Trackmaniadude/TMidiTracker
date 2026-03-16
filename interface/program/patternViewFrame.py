@@ -13,7 +13,7 @@ from interface.program.patternView import PVLM, PatternView
 from interface.theme import MatrixSelector
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from structures import program
-from structures.globalEvents import StructureChanged
+from structures.globalEvents import SongReloaded, StructureChanged
 from utils.constants import (
     CHANNEL_COUNT,
     CHANNEL_ORDER,
@@ -116,9 +116,7 @@ class PatternViewFrame(ttk.Frame):
         )
 
         StructureChanged.connect(lambda *_: self.showChannels(), self.connections)
-        program.p.Events.SongReloaded.connect(
-            lambda *_: self.showChannels(), self.connections
-        )
+        SongReloaded.connect(lambda *_: self.showChannels(), self.connections)
 
     def destroy(self) -> None:
         for connection in self.connections:

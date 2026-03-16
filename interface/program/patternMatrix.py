@@ -22,7 +22,7 @@ from tkinter import ttk
 from interface.theme import MatrixSelector
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from structures import program
-from structures.globalEvents import StructureChanged
+from structures.globalEvents import SongReloaded, StructureChanged
 from utils.constants import CHANNEL_ORDER, CHANNEL_ORDER_INVERSE, PATTERN_DELTAS
 
 _logger = logging.getLogger(__name__)
@@ -490,9 +490,7 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
 
         self.refresh()
         StructureChanged.connect(lambda *_: self.queueRefresh(), self.connections)
-        program.p.Events.SongReloaded.connect(
-            lambda *_: self.queueRefresh(), self.connections
-        )
+        SongReloaded.connect(lambda *_: self.queueRefresh(), self.connections)
 
     def destroy(self) -> None:
         for connection in self.connections:

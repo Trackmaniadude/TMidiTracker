@@ -71,7 +71,11 @@ def menus():
             filename = filedialog.askopenfilename(filetypes=PROJECT_FILE)
             if filename == "":
                 return
-            program.p.currentSong = Song.fromFile(filename)
+            try:
+                program.p.currentSong = Song.fromFile(filename)
+            except:
+                pass
+                # TODO: tell user
 
         def new():
             program.p.currentSong = Song()

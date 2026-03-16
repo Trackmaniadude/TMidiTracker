@@ -2,6 +2,7 @@ import logging
 
 import mido
 
+from structures.globalEvents import SongReloaded
 from structures.player import Player
 from structures.song import Song
 from utils.event import Event
@@ -14,12 +15,6 @@ class Program(ReactiveClass):
     """
     Singleton class maintaining program state that is not tied to the current project, as well as other program globals.
     """
-
-    class Events:
-        """Program global events."""
-
-        SongReloaded: Event = Event()
-        """Fired when program.currentSong is changed. Intended for reloading the interface."""
 
     def __init__(self):
         super().__init__()
@@ -55,14 +50,16 @@ class Program(ReactiveClass):
         self.currentPatternRow: int = 0
         """Current row in patterns."""
 
+        # Files
+        self.currentFile: str | None = None
+        self.projectModified: bool = False
+
         # Events
         self.setupContainerListen()
         self.Changed.connect(
-            lambda name, *_: (
-                self.Events.SongReloaded.fire() if name == "currentSong" else None
-            )
+            lambda name, *_: (SongReloaded.fire() if name == "currentSong" else None)
         )
-        self.Events.SongReloaded.connect(lambda *_: _logger.debug("Song was reloaded!"))
+        SongReloaded.connect(lambda *_: _logger.debug("Song was reloaded!"))
 
     def close(self):
         self.currentPort.close()
