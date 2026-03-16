@@ -70,6 +70,10 @@ class Song(ReactiveClass):
         # Other information
         self.highlightedMatrixItems: set[tuple[int, int]] = set()
 
+        self.Changed.connect(
+            lambda name, key, old, new: setattr(program.p, "projectModified", True)
+        )
+
         self.setupContainerListen()
 
     ### File Management

@@ -55,6 +55,10 @@ class Pattern(ReactiveClass):
         (row, col) -> (int, ...)
         """
 
+        self.Changed.connect(
+            lambda name, key, old, new: setattr(program.p, "projectModified", True)
+        )
+
         self.setupContainerListen()
 
     # def __repr__(self) -> str:

@@ -2,7 +2,7 @@ import logging
 
 import mido
 
-from structures.globalEvents import SongReloaded
+from structures.globalEvents import ProjectModified, SongReloaded
 from structures.player import Player
 from structures.song import Song
 from utils.event import Event
@@ -30,10 +30,7 @@ class Program(ReactiveClass):
         self.stepSize: int = 1
         """How many rows to step after making an entry. 0 to disable."""
 
-        try:
-            self.currentSong: Song = Song.fromFile("startup.tmt")
-        except:
-            self.currentSong: Song = Song()
+        self.currentSong: Song = Song()
         """Current active song object."""
 
         self.currentOctave: int = 4
@@ -57,7 +54,10 @@ class Program(ReactiveClass):
         # Events
         self.setupContainerListen()
         self.Changed.connect(
-            lambda name, *_: (SongReloaded.fire() if name == "currentSong" else None)
+            lambda name, *_: (
+                SongReloaded.fire() if name == "currentSong" else None,
+                ProjectModified.fire() if name == "projectModified" else None,
+            )
         )
         SongReloaded.connect(lambda *_: _logger.debug("Song was reloaded!"))
 

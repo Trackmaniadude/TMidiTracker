@@ -12,18 +12,21 @@ from interface.program.patternList import PatternList
 from interface.program.patternMatrix import PatternMatrix
 from interface.program.patternViewFrame import PatternViewFrame
 from interface.program.songDataView import SongDataView
-from structures import program
+from structures import program  # This also inits the program object
+from structures.globalEvents import ProjectModified
 from structures.song import Song
 from utils.constants import PROJECT_FILE
 
 PROGRAM_NAME = "TMidiTracker"
+
+# Program args and logging
 
 parser = argparse.ArgumentParser(
     prog=PROGRAM_NAME,
     description="Midi tracker.",
 )
 
-# parser.add_argument("-f", "--file", help="File to open on start.")
+parser.add_argument("-f", "--file", help="File to open on start.")
 
 loggerGroup = parser.add_mutually_exclusive_group()
 loggerGroup.add_argument(
@@ -45,8 +48,9 @@ else:
 _logger = logging.getLogger(__name__)
 
 
+# Setup TK
+
 root = tk.Tk()
-root.title(PROGRAM_NAME)
 root.state("zoomed")
 # root.geometry("800x600")
 root.option_add("*tearOff", False)
@@ -57,6 +61,28 @@ root.unbind_all("<<PrevWindow>>")
 from interface import theme
 
 theme.generate()
+
+
+def formatFileName(fn: str):
+    return fn
+
+
+def updateWindowTitle():
+    title: str
+    if program.p.currentFile is None:
+        title = PROGRAM_NAME
+    else:
+        title = formatFileName(program.p.currentFile) + " - " + PROGRAM_NAME
+    if program.p.projectModified:
+        title += "*"
+    root.title(title)
+
+
+updateWindowTitle()
+ProjectModified.connect(updateWindowTitle)
+
+
+# Setup menus
 
 menubar = tk.Menu(root)
 root["menu"] = menubar
@@ -76,19 +102,44 @@ def menus():
             except:
                 pass
                 # TODO: tell user
+            else:
+                program.p.currentFile = filename
+                program.p.projectModified = False
 
         def new():
             program.p.currentSong = Song()
+            program.p.currentFile = None
+            program.p.projectModified = False
 
-        def save():
+        def saveAs():
             filename = filedialog.asksaveasfilename(filetypes=PROJECT_FILE)
             if filename == "":
                 return
-            program.p.currentSong.toFile(filename)
+            try:
+                program.p.currentSong.toFile(filename)
+            except:
+                pass
+            else:
+                program.p.projectModified = False
+                program.p.currentFile = filename
+
+        def save():
+            if program.p.currentFile is None:
+                saveAs()
+            else:
+                try:
+                    program.p.currentSong.toFile(program.p.currentFile)
+                except:
+                    pass
+                else:
+                    program.p.projectModified = False
 
         menu.add_command(label="Open", command=open)
         menu.add_command(label="New", command=new)
-        menu.add_command(label="Save As", command=save)
+        menu.add_command(label="Save", command=save, accelerator="CTRL-S")
+        menu.add_command(label="Save As", command=saveAs)
+
+        root.bind_all("<Control-S>", lambda *_: save())
 
     fileMenu()
 
@@ -113,6 +164,9 @@ if args.debug:
             f"{e.widget}: {e.widget.winfo_class()}, {e.widget.winfo_name()}"
         ),
     )
+
+
+# Setup interface
 
 if args.debug:
     ChannelDebug(root).pack(side="right", fill="both")
@@ -154,6 +208,17 @@ def makeKeybinds():
 
 
 makeKeybinds()
+
+
+# Load open files
+# openFile = args.file
+# try:
+#     program.p.currentSong = Song.fromFile(openFile)
+# except:
+#     try:
+#         program.p.currentSong = Song.fromFile("startup.tmt")
+#     except:
+#         pass
 
 
 root.mainloop()

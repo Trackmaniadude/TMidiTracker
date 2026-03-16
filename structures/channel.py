@@ -52,6 +52,10 @@ class Channel(ReactiveClass):
 
         self.playbackState = ChannelPlaybackState()
 
+        self.Changed.connect(
+            lambda name, key, old, new: setattr(program.p, "projectModified", True)
+        )
+
         self.setupContainerListen()
 
     def toDict(self) -> dict[str, Any]:
