@@ -2,7 +2,7 @@ import argparse
 import logging
 import os
 import tkinter as tk
-from tkinter import filedialog, ttk
+from tkinter import filedialog, messagebox, ttk
 from typing import cast
 
 from interface.program.channelDebug import ChannelDebug
@@ -68,13 +68,13 @@ def formatFileName(fn: str):
 
 
 def updateWindowTitle():
-    title: str
-    if program.p.currentFile is None:
-        title = PROGRAM_NAME
-    else:
-        title = formatFileName(program.p.currentFile) + " - " + PROGRAM_NAME
-    if program.p.projectModified:
-        title += "*"
+    title = ""
+    if program.p.currentFile is not None:
+        title += formatFileName(program.p.currentFile)
+        if program.p.projectModified:
+            title += "* "
+        title += " - "
+    title += PROGRAM_NAME
     root.title(title)
 
 
@@ -93,7 +93,25 @@ def menus():
         menu = tk.Menu(menubar)
         menubar.add_cascade(menu=menu, label="File")
 
+        def promptSaveFirst() -> bool:
+            """Ask the user if they want to continue due to unsaved work. Returns true if we may continue (user did not select 'cancel')"""
+            # TODO: should this also return false if the user says "yes" but then cancels the save?
+            if not program.p.projectModified:
+                return True
+            result = messagebox.askyesnocancel(
+                "Unsaved Work",
+                "There is currently unsaved work, would you like to save before proceeding?",
+                icon="warning",
+            )
+            if result == True:
+                save()
+            if result is None:
+                return False
+            return True
+
         def open():
+            if not promptSaveFirst():
+                return
             filename = filedialog.askopenfilename(filetypes=PROJECT_FILE)
             if filename == "":
                 return
@@ -107,6 +125,8 @@ def menus():
                 program.p.projectModified = False
 
         def new():
+            if not promptSaveFirst():
+                return
             program.p.currentSong = Song()
             program.p.currentFile = None
             program.p.projectModified = False
@@ -140,6 +160,12 @@ def menus():
         menu.add_command(label="Save As", command=saveAs)
 
         root.bind_all("<Control-S>", lambda *_: save())
+
+        def onClose():
+            if promptSaveFirst():
+                root.destroy()
+
+        root.protocol("WM_DELETE_WINDOW", onClose)
 
     fileMenu()
 
