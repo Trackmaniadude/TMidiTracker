@@ -170,6 +170,13 @@ class DictSettingsEditor(HeaderFrame):
         for sub in self.__subEditors:
             sub.revert()
 
+    def rebind(self, dct: dict):
+        """Change this editor's target dictionary."""
+        self.__dct = dct
+        self.__internalDict = self.__dct.copy()
+        for sub in self.__subEditors:
+            sub.rebind(dct)
+
 
 if __name__ == "__main__":
 

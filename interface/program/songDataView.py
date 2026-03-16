@@ -9,7 +9,7 @@ from interface.utilities.doubleScrollFrame import DScrollFrame
 from interface.utilities.headerFrame import HeaderFrame
 from interface.utilities.validatedEntryPrebuilts import Prebuilts
 from structures import program
-from structures.globalEvents import StructureChanged, TimingChanged
+from structures.globalEvents import SongReloaded, StructureChanged, TimingChanged
 from utils.event import Connection
 
 
@@ -79,6 +79,15 @@ class SongDataView(ttk.Frame):
         )
         structureEdit.Applied.connect(
             lambda changes: StructureChanged.fire(changes), self.connections
+        )
+
+        # Rebinding
+        SongReloaded.connect(
+            lambda *_: metadataEdit.rebind(program.p.currentSong.metadata.__dict__)
+        )
+        SongReloaded.connect(lambda *_: timeEdit.rebind(program.p.currentSong.__dict__))
+        SongReloaded.connect(
+            lambda *_: structureEdit.rebind(program.p.currentSong.__dict__)
         )
 
     def destroy(self) -> None:
