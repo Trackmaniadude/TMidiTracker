@@ -100,7 +100,8 @@ class Song(ReactiveClass):
 
             for pos, pattern in self.patternList.items():
                 channel, id = pos
-                out[channel][id] = pattern.toDict()
+                if channel in out:
+                    out[channel][id] = pattern.toDict()
 
             return out
 
