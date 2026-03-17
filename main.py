@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import tkinter as tk
+import traceback
 from tkinter import filedialog, messagebox, ttk
 from typing import cast
 
@@ -117,9 +118,11 @@ def menus():
                 return
             try:
                 program.p.currentSong = Song.fromFile(filename)
-            except:
-                pass
-                # TODO: tell user
+            except Exception as e:
+                messagebox.showerror(
+                    "File Error",
+                    f"An error occurred while opening {filename}:\n{traceback.format_exception_only(e)}",
+                )
             else:
                 program.p.currentFile = filename
                 program.p.projectModified = False
@@ -137,8 +140,11 @@ def menus():
                 return
             try:
                 program.p.currentSong.toFile(filename)
-            except:
-                pass
+            except Exception as e:
+                messagebox.showerror(
+                    "File Error",
+                    f"An error occurred while saving:\n{traceback.format_exception_only(e)}",
+                )
             else:
                 program.p.projectModified = False
                 program.p.currentFile = filename
@@ -149,8 +155,11 @@ def menus():
             else:
                 try:
                     program.p.currentSong.toFile(program.p.currentFile)
-                except:
-                    pass
+                except Exception as e:
+                    messagebox.showerror(
+                        "File Error",
+                        f"An error occurred while saving:\n{traceback.format_exception_only(e)}",
+                    )
                 else:
                     program.p.projectModified = False
 
