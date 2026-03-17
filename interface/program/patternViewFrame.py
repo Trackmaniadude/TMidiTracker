@@ -12,6 +12,7 @@ from typing import Literal, cast
 from interface.program.patternView import PVLM, PatternView
 from interface.theme import MatrixSelector
 from interface.utilities.doubleScrollFrame import DScrollFrame
+from interface.utilities.validatedEntryPrebuilts import Prebuilts
 from structures import program
 from structures.globalEvents import SongReloaded, StructureChanged
 from utils.constants import (
@@ -31,6 +32,43 @@ class Target:
     row: int
     column: PVLM
     subcolumn: int
+
+
+class InfoBar(ttk.Frame):
+    def __init__(self, parent: tk.Misc):
+        super().__init__(parent)
+
+        ttk.Label(self, text="OCT: ").pack(side="left")
+        octave = Prebuilts.Spinbox(
+            self, default=program.p.currentOctave, range=(1, 10), increment=1, round=1
+        )
+        octave.entry.config(width=3)
+        octave.entry.pack(side="left")
+
+        ttk.Label(self, text="STEP: ").pack(side="left")
+        step = Prebuilts.Spinbox(self, default=1, range=(1, 8), increment=1, round=1)
+        step.entry.config(width=3)
+        step.entry.pack(side="left")
+
+        time = ttk.Label(self)
+        time.pack(side="left")
+
+        # Behavior
+        octave.Changed.connect(
+            lambda *_: setattr(program.p, "currentOctave", int(octave.value))
+        )
+        step.Changed.connect(lambda *_: setattr(program.p, "stepSize", int(step.value)))
+
+        def timeStamp():
+            matrixRow = program.p.currentMatrixRow
+            patternRow = program.p.currentPatternRow
+            text = f"{matrixRow}:{patternRow}"
+            time.config(text=text)
+
+        program.p.getAttributeChangedEvent("currentPatternRow").connect(
+            lambda *_: timeStamp()
+        )
+        timeStamp()
 
 
 class RowList(ttk.Frame):
@@ -89,11 +127,13 @@ class RowList(ttk.Frame):
 
 
 class PatternViewFrame(ttk.Frame):
+    """Main song editing view; contains patternview objects."""
+
     def __init__(self, parent: tk.Misc):
         super().__init__(parent, relief="raised", borderwidth=2)
 
         sf = DScrollFrame(self, mode="DOUBLE")
-        sf.pack(fill="both", expand=True)
+        sf.pack(side="top", fill="both", expand=True)
 
         self.connections: list[Connection] = list()
 
@@ -106,6 +146,11 @@ class PatternViewFrame(ttk.Frame):
 
         RowList(self.__content).pack(side="left", fill="y")
         self.showChannels()
+
+        # Info
+        InfoBar(self).pack(side="bottom", fill="x", expand=False)
+
+        # Events
 
         program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
             lambda *a: self.after(0, self.matrixChangedEvent, *a), self.connections
@@ -147,7 +192,7 @@ class PatternViewFrame(ttk.Frame):
         column: PVLM | None = None,
         subcolumn: int | None = None,
         *,
-        focus: bool = False
+        focus: bool = False,
     ):
         channel = channel if channel is not None else self.target.channel
         row = row if row is not None else self.target.row
@@ -169,7 +214,7 @@ class PatternViewFrame(ttk.Frame):
         stepPattern: bool = True,
         *,
         direction: Literal["Up", "Down", "Left", "Right"] = "Down",
-        focus: bool = False
+        focus: bool = False,
     ):
         if direction == "Up":
             newPatternRow = self.target.row - step
