@@ -371,6 +371,11 @@ class MatrixActions(ttk.Frame):
         ttk.Button(
             sf.content, text="New Row At End", command=lambda *_: self.addNewRow("end")
         ).pack(side="top", fill="x", expand=True)
+        ttk.Button(
+            sf.content,
+            text="Toggle Highlight",
+            command=lambda *_: self.toggleHighlight(),
+        ).pack(side="top", fill="x", expand=True)
         # ttk.Button(
         #     sf.content,
         #     text="Clone Rows Before",
@@ -390,6 +395,20 @@ class MatrixActions(ttk.Frame):
         # ttk.Button(
         #     sf.content, text="Move Down", command=lambda *_: self.moveRows("down")
         # ).pack(side="top", fill="x", expand=True)
+
+    def toggleHighlight(self):
+        # Highlight selected, unless all selected are highlighted, then unhighlight.
+        song = program.p.currentSong
+
+        selection = self.matrix.getSelection()
+        set = not all(pos in song.highlightedMatrixItems for pos in selection)
+        for pos in selection:
+            if set:
+                song.highlightedMatrixItems.add(pos)
+            else:
+                song.highlightedMatrixItems.discard(pos)
+
+        self.matrix.queueRefresh()
 
     def removeRows(self):
         # For each row, remove it and move the rest backwards
