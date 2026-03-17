@@ -34,14 +34,22 @@ class Player:
         self.playing: bool = False
 
         def playbackDaemon():
+            """
+            Handles timing for live playback.
+            Actual message generation occurs in the channel objects.
+            """
             while True:
                 self.resume.wait()
 
+                # Time how long the update takes
                 t0 = time.perf_counter()
 
                 self.grooveTimer += 1
 
+                # Some actions are only meant to occur when we step, rather than every tick.
                 mainTick = False
+                # Step to next row and update groove. Also mark this as a main tick.
+                # It looks kind of complex but it just handles all the cases under "move to next row"
                 if self.grooveTimer >= program.p.currentSong.groove[self.grooveIndex]:
                     self.grooveTimer = 0
                     self.grooveIndex = (self.grooveIndex + 1) % len(
@@ -61,14 +69,17 @@ class Player:
                             program.p.currentMatrixRow = 0
                     mainTick = True
 
+                # Tick all channels and collate generated messages
                 messages: list[Message | MetaMessage] = list()
                 for channel in program.p.currentSong.channels:
                     messages.extend(channel.tick(mainTick))
 
+                # Play messages
                 for message in messages:
                     program.p.currentPort.send(message)
                     _logger.debug(message)
 
+                # Timing. We figure out how long we should wait, then adjust based off how long processing took.
                 tickLength = 1 / program.p.currentSong.clock
 
                 self.expectedTime += tickLength
@@ -80,6 +91,7 @@ class Player:
                 self.actualTime += sleepTime
                 time.sleep(sleepTime)
 
+        # Start playback daemon
         Thread(name="PlaybackDaemon", target=playbackDaemon, daemon=True).start()
 
     def setPlaybackCursor(
