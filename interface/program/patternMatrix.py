@@ -292,7 +292,13 @@ class PatternSelectorRowLabel(ttk.Label, QuickRefresh):
         ### Bindings
 
         def setupLeftClick():
-            self.bind("<Button-1>", lambda *_: (self.matrix.selectRow(self.row, "set")))
+            self.bind(
+                "<Button-1>",
+                lambda *_: (
+                    self.matrix.selectRow(self.row, "set"),
+                    setattr(program.p, "currentMatrixRow", self.row),
+                ),
+            )
             self.bind(
                 "<Shift-Button-1>",
                 lambda *_: (self.matrix.gridSelectCells(self.row, None)),
