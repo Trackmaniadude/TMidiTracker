@@ -80,10 +80,21 @@ class Song(ReactiveClass):
 
     def toFile(self, file: str):
         with open(file, "w") as fp:
-            json.dump(self.toDict(), fp, indent=2, cls=ReactiveContainerJSONEncoder)
+            json.dump(
+                self.toDict(),
+                fp,
+                cls=ReactiveContainerJSONEncoder,
+                indent=None,
+                separators=(",", ":"),
+            )
 
     def toJson(self) -> str:
-        return json.dumps(self.toDict(), indent=2, cls=ReactiveContainerJSONEncoder)
+        return json.dumps(
+            self.toDict(),
+            cls=ReactiveContainerJSONEncoder,
+            indent=None,
+            separators=(",", ":"),
+        )
 
     def toDict(self) -> dict[str, Any]:
 
