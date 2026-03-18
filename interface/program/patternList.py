@@ -41,9 +41,19 @@ class PatternSelector(ttk.Label, QuickRefresh):
         # self.bind("<Button-1>", lambda *_: self.increment())
         # self.bind("<Button-3>", lambda *_: self.decrement())
 
-        program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
-            lambda key, *_: self.queueRefresh(), self.connections
-        )
+        self.songConnections: list[Connection] = list()
+
+        def setupSongEventListeners():
+            for con in self.songConnections:
+                con.disconnect()
+            self.songConnections = list()
+
+            program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
+                lambda key, *_: self.queueRefresh(), self.songConnections
+            )
+
+        SongReloaded.connect(lambda *_: setupSongEventListeners(), self.connections)
+
         self.refresh()
         StructureChanged.connect(lambda *_: self.refresh(), self.connections)
 
@@ -91,9 +101,19 @@ class PatternList(ttk.Frame, QuickRefresh):
         self.__labels: dict[tuple[int, int], ttk.Label] = dict()
         """(row, col) -> PatternSelector"""
 
-        program.p.currentSong.getAttributeChangedEvent("patternList").connect(
-            lambda key, *_: self.queueRefresh(), self.connections
-        )
+        self.songConnections: list[Connection] = list()
+
+        def setupSongEventListeners():
+            for con in self.songConnections:
+                con.disconnect()
+            self.songConnections = list()
+
+            program.p.currentSong.getAttributeChangedEvent("patternList").connect(
+                lambda key, *_: self.queueRefresh(), self.songConnections
+            )
+
+        SongReloaded.connect(lambda *_: setupSongEventListeners(), self.connections)
+
         SongReloaded.connect(lambda *_: self.queueRefresh(), self.connections)
         self.refresh()
 

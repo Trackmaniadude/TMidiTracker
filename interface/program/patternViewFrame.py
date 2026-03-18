@@ -151,10 +151,19 @@ class PatternViewFrame(ttk.Frame):
         InfoBar(self).pack(side="bottom", fill="x", expand=False)
 
         # Events
+        self.songConnections: list[Connection] = list()
 
-        program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
-            lambda *a: self.after(0, self.matrixChangedEvent, *a), self.connections
-        )
+        def setupSongEventListeners():
+            for con in self.songConnections:
+                con.disconnect()
+            self.songConnections = list()
+
+            program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
+                lambda *a: self.after(0, self.matrixChangedEvent, *a),
+                self.songConnections,
+            )
+
+        SongReloaded.connect(lambda *_: setupSongEventListeners(), self.connections)
 
         program.p.getAttributeChangedEvent("currentMatrixRow").connect(
             lambda *a: self.after(0, self.onMatrixRowChange, *a), self.connections

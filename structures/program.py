@@ -53,11 +53,11 @@ class Program(ReactiveClass):
 
         # Events
         self.setupContainerListen()
-        self.Changed.connect(
-            lambda name, *_: (
-                SongReloaded.fire() if name == "currentSong" else None,
-                ProjectModified.fire() if name == "projectModified" else None,
-            )
+        self.getAttributeChangedEvent("currentSong").connect(
+            lambda *_: SongReloaded.fire()
+        )
+        self.getAttributeChangedEvent("projectModified").connect(
+            lambda *_: ProjectModified.fire()
         )
         SongReloaded.connect(lambda *_: _logger.debug("Song was reloaded!"))
 
