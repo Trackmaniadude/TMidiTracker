@@ -50,7 +50,12 @@ class Player:
                 mainTick = False
                 # Step to next row and update groove. Also mark this as a main tick.
                 # It looks kind of complex but it just handles all the cases under "move to next row"
-                if self.grooveTimer >= program.p.currentSong.groove[self.grooveIndex]:
+                if (
+                    self.grooveIndex == -1
+                ):  # Force handling of first row when started. (grooveIndex is never -1 in normal operation)
+                    mainTick = True
+                    self.grooveIndex += 1
+                elif self.grooveTimer >= program.p.currentSong.groove[self.grooveIndex]:
                     self.grooveTimer = 0
                     self.grooveIndex = (self.grooveIndex + 1) % len(
                         program.p.currentSong.groove
@@ -97,7 +102,7 @@ class Player:
     def setPlaybackCursor(
         self, matrixRow: int | None = None, patternRow: int | None = None
     ):
-        self.grooveIndex = 0
+        self.grooveIndex = -1  # Set to -1 to force handling of first row
         self.grooveTimer = 0
         program.p.currentMatrixRow = (
             matrixRow if matrixRow is not None else program.p.currentMatrixRow
