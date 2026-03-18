@@ -145,8 +145,6 @@ class DScrollFrame(ttk.Frame):
         self.bind("<Configure>", lambda *_: self.moveCanvas())
 
     SCROLL_DISTANCE = 8  # TODO: what should this be
-    SCROLLBAR_WIDTH = 16
-    SCROLLBAR_HEIGHT = SCROLLBAR_WIDTH
 
     def scroll(self, axis: Literal["x", "y"], direction: int):
         direction = -1 if direction < 0 else 1
@@ -167,6 +165,13 @@ class DScrollFrame(ttk.Frame):
     def moveCanvas(self):
         # Move canvas
         bbox = BBox(*self.__canvas.bbox(self.__windowId))
+        if self.isHorizontal and self.isVertical:
+            bbox = BBox(
+                bbox.x1, bbox.y1, bbox.x2, bbox.y2 + self.__vertical.winfo_width()
+            )
+            bbox = BBox(
+                bbox.x1, bbox.y1, bbox.x2 + self.__horizontal.winfo_height(), bbox.y2
+            )
         newx = clamp(self.__x * bbox.x2, bbox.x2 - self.winfo_width(), 0)
         newy = clamp(self.__y * bbox.y2, bbox.y2 - self.winfo_height(), 0)
         self.__x = newx / bbox.x2
@@ -194,7 +199,8 @@ class DScrollFrame(ttk.Frame):
                     self.pack_propagate(False)
                     self.grid_propagate(False)
                     self.config(
-                        height=self.content.winfo_height() + self.SCROLLBAR_HEIGHT
+                        height=self.content.winfo_height()
+                        + self.__horizontal.winfo_height()
                     )
                 elif self.propagationMode == "frameDrivesContent":
                     # TODO: this probably shouldn't be here
@@ -205,7 +211,8 @@ class DScrollFrame(ttk.Frame):
                     )
                     self.content.config(
                         width=width,
-                        height=self.content.winfo_height() - self.SCROLLBAR_HEIGHT,
+                        height=self.content.winfo_height()
+                        - self.__horizontal.winfo_height(),
                     )
 
         if self.isVertical:
@@ -219,7 +226,9 @@ class DScrollFrame(ttk.Frame):
                     # TODO: this probably shouldn't be here
                     self.pack_propagate(False)
                     self.grid_propagate(False)
-                    self.config(width=self.content.winfo_width() + self.SCROLLBAR_WIDTH)
+                    self.config(
+                        width=self.content.winfo_width() + self.__vertical.winfo_width()
+                    )
                 elif self.propagationMode == "frameDrivesContent":
                     # TODO: this probably shouldn't be here
                     self.content.pack_propagate(False)
@@ -228,7 +237,8 @@ class DScrollFrame(ttk.Frame):
                         child.winfo_height() for child in self.content.winfo_children()
                     )
                     self.content.config(
-                        width=self.winfo_width() - self.SCROLLBAR_WIDTH, height=height
+                        width=self.winfo_width() - self.__vertical.winfo_width(),
+                        height=height,
                     )
 
 
