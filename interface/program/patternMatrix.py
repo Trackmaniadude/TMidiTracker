@@ -282,11 +282,12 @@ class PatternSelector(ttk.Label, QuickRefresh):
             self.config(text=self.__text)
 
 
-class PatternSelectorRowLabel(ttk.Label):
+class PatternSelectorRowLabel(ttk.Label, QuickRefresh):
     def __init__(self, parent: tk.Misc, matrix: PatternMatrix, row: int):
         super().__init__(parent, text=str(hex(row)[2:].upper()), width=3)
         self.matrix = matrix
         self.row = row
+        self.__style: str = ""
 
         ### Bindings
 
@@ -347,6 +348,34 @@ class PatternSelectorRowLabel(ttk.Label):
             )
 
         setupMiddleClick()
+
+        self.queueRefresh()
+
+    def refresh(self):
+        if self.row == program.p.currentMatrixRow:
+            style = MatrixSelector.Target2
+        else:
+            highlighted = True
+            for channel in range(program.p.currentSong.visibleChannels):
+                i = (self.row, channel) in program.p.currentSong.highlightedMatrixItems
+                if not i:
+                    highlighted = False
+                # print(f"{self.row}: {i}")
+            if highlighted:
+                style = MatrixSelector.Highlight
+            else:
+                style = MatrixSelector.DefaultOdd
+        self.style = cast(str, style)
+
+    @property
+    def style(self) -> str:
+        return self.__style
+
+    @style.setter
+    def style(self, newStyle: str):
+        if newStyle != self.__style:
+            self.__style = newStyle
+            self.config(style=self.style)
 
 
 class MatrixActions(ttk.Frame):
@@ -510,6 +539,11 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
         self.refresh()
         StructureChanged.connect(lambda *_: self.queueRefresh(), self.connections)
         SongReloaded.connect(lambda *_: self.queueRefresh(), self.connections)
+        program.p.Changed.connect(
+            lambda name, key, old, new: (
+                self.queueRefresh() if name == "currentMatrixRow" else None
+            )
+        )
 
     def destroy(self) -> None:
         for connection in self.connections:
@@ -549,7 +583,7 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
                 self.__selection.remove(t)
             else:
                 self.__selection.add(t)
-        self.refreshSelectors()
+        self._refresh()
 
     def gridSelectCells(self, row: int, channel: int | None):
         self.__selection = set()
@@ -565,7 +599,7 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
         for r in range(min(r1, r2), max(r1, r2) + 1):
             for c in range(min(c1, c2), max(c1, c2) + 1):
                 self.__selection.add((r, CHANNEL_ORDER[c]))
-        self.refreshSelectors()
+        self._refresh()
 
     def selectRow(self, row: int, mode: Literal["add", "sub", "set", "toggle"]):
         """Select a row"""
@@ -579,7 +613,7 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
         elif mode == "toggle":
             state = all((row, c) in self.__selection for c in cols)
             self.selectRow(row, "sub" if state else "add")
-        self.refreshSelectors()
+        self._refresh()
 
     # def copy(self):
     #     pass
@@ -639,11 +673,13 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
     def refresh(self):
         self.resetRefreshFlag()
         self.rebuild()
-        self.refreshSelectors()
+        self._refresh()
 
-    def refreshSelectors(self):
+    def _refresh(self):
         for sel in self.__selectors.values():
             sel.refresh()
+        for lab in self.__rowLabels:
+            lab.refresh()
 
     def rebuild(self):
         """Add/remove labels as needed."""
