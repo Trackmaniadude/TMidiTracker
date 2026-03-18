@@ -170,6 +170,8 @@ class PatternViewFrame(ttk.Frame):
 
     def matrixChangedEvent(self, key: tuple[int, int], old: int | None, new: int):
         channel, row = key
+        if row != program.p.currentMatrixRow:
+            return
         viewIndex = CHANNEL_ORDER_INVERSE[channel]
         if viewIndex >= len(self.views):
             return
