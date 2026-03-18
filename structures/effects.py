@@ -83,10 +83,7 @@ class Effects:
             try:
                 control = data[0]
                 value = data[1]
-            except ValueError:
-                return None
-            else:
-                return [
+                r = [
                     Message(
                         "control_change",
                         channel=channel.channel,
@@ -94,12 +91,16 @@ class Effects:
                         value=value,
                     )
                 ]
+            except Exception:
+                return None
+            else:
+                return r  # type: ignore
 
-    class ChangeInstrument(AbstractEffect):
-        displayName = "Change Instrument"
+    class SetInstrument(AbstractEffect):
+        displayName = "Set Instrument"
         prefix = (0x02,)
-        params = ["02xx", "x", "Instrument"]
-        help = "Change channel instrument."
+        params = ["02xx", "x", "Instrument [0-7F]"]
+        help = "Set channel instrument."
 
         @classmethod
         def actuate(
@@ -107,24 +108,53 @@ class Effects:
         ) -> None | list[Message | MetaMessage]:
             try:
                 program = data[0]
-            except Exception as e:
-                _logger.warning(
-                    f"Invalid data for effect {cls.__qualname__}; got {data}, expected form {cls.params}"
-                )
-                return None
-            else:
-                return [
+                r = [
                     Message(
                         "program_change",
                         channel=channel.channel,
                         program=program,
                     )
                 ]
+            except Exception:
+                # _logger.warning(
+                #     f"Invalid data for effect {cls.__qualname__}; got {data}, expected form {cls.params}"
+                # )
+                return None
+            else:
+                return r  # type: ignore
 
-    class Test(AbstractEffect):
-        displayName = "Test"
-        help = "Extremely long help message. Did you know that this help message is long? \n \n the j #3"
-        prefix = (0x03, 0x03, 0x03)
+    class SetVolume(AbstractEffect):
+        displayName = "Set Volume"
+        prefix = (0x03,)
+        params = ["03xx", "x", "Volume [0-7F]"]
+        help = "Set channel volume. Equivalent to 0107xx"
+
+        @classmethod
+        def actuate(
+            cls, channel: Channel, data: tuple[int, ...]
+        ) -> None | list[Message | MetaMessage]:
+            try:
+                value = data[0]
+                r = [
+                    Message(
+                        "control_change",
+                        channel=channel.channel,
+                        control=7,
+                        value=value,
+                    )
+                ]
+            except Exception:
+                # _logger.warning(
+                #     f"Invalid data for effect {cls.__qualname__}; got {data}, expected form {cls.params}"
+                # )
+                return None
+            else:
+                return r  # type: ignore
+
+    # class Test(AbstractEffect):
+    #     displayName = "Test"
+    #     help = "Extremely long help message. Did you know that this help message is long? \n \n the j #3"
+    #     prefix = (0x03, 0x03, 0x03)
 
 
 effectsList: dict[tuple[int, ...], type[AbstractEffect]] = {
