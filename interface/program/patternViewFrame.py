@@ -3,13 +3,16 @@ Horizontal list of each channels' current pattern.
 AKA the main editing window.
 """
 
+from __future__ import annotations
+
 import logging
 import tkinter as tk
 from dataclasses import dataclass
 from tkinter import ttk
 from typing import Literal, cast
 
-from interface.program.patternView import PVLM, PatternView
+from interface.program.patternView import PatternView
+from interface.program.patternViewUtils import PVLM, Target
 from interface.theme import MatrixSelector
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from interface.utilities.validatedEntryPrebuilts import Prebuilts
@@ -24,14 +27,6 @@ from utils.constants import (
 from utils.event import Connection
 
 _logger = logging.getLogger(__name__)
-
-
-@dataclass
-class Target:
-    channel: int
-    row: int
-    column: PVLM
-    subcolumn: int
 
 
 class InfoBar(ttk.Frame):
@@ -141,6 +136,7 @@ class PatternViewFrame(ttk.Frame):
         self.row = 0
 
         self.target: Target = Target(2, 3, PVLM.VELOCITY, 1)
+        self.secondaryTarget: Target | None = None
 
         self.views: list[PatternView] = list()
 
@@ -204,11 +200,18 @@ class PatternViewFrame(ttk.Frame):
         subcolumn: int | None = None,
         *,
         focus: bool = False,
+        setSecondary: bool = False,
     ):
         channel = channel if channel is not None else self.target.channel
         row = row if row is not None else self.target.row
         column = column if column is not None else self.target.column
         subcolumn = subcolumn if subcolumn is not None else self.target.subcolumn
+
+        if setSecondary:
+            if self.secondaryTarget is None:
+                self.secondaryTarget = self.target
+        else:
+            self.secondaryTarget = None
 
         self.target = Target(channel, row, column, subcolumn)
 

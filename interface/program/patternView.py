@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Callable, Literal, cast
 
+from interface.program.patternViewUtils import PVLM, PatternViewLabelModes, Target
 from utils.event import Connection
 
 if TYPE_CHECKING:
@@ -39,72 +40,6 @@ from utils.misc import hex2
 from utils.types_ import *
 
 _logger = logging.getLogger(__name__)
-
-
-@dataclass
-class PatternViewLabelMode[T]:
-    t: T
-    parentName: str
-    width: int
-    setter: str
-    getter: str
-    fromView: Callable[[str], T]
-    toView: Callable[[T, int], str]
-
-
-def fromEffectString(s: str) -> tuple[int, ...]:
-    l = list()
-    for i in range(0, len(s), 2):
-        sub = s[i : i + 2]
-        l.append(int(sub, 16))
-    return tuple(l)
-
-
-def toEffectString(t: tuple[int, ...]) -> str:
-    return "".join(hex2(n) for n in t)
-
-
-class PatternViewLabelModes(Enum):
-    NOTE = PatternViewLabelMode(
-        note,
-        parentName="noteFrame",
-        width=3,
-        setter="setNote",
-        getter="getNote",
-        fromView=lambda _: _,
-        # fmt: off
-        toView=lambda v, c: (
-            "STP"
-            if v == "stop"
-            else (
-                NOTE_NAMES_SHARP[v % NOTES_PER_OCTAVE] + str(v // NOTES_PER_OCTAVE) # type: ignore
-                if c != DRUM_CHANNEL
-                else DRUM_NAMES[v] # type: ignore
-            )
-        ),
-        # fmt: on
-    )
-    VELOCITY = PatternViewLabelMode(
-        velocity,
-        parentName="noteFrame",
-        width=2,
-        setter="setVelocity",
-        getter="getVelocity",
-        fromView=lambda s: int(s, 16),
-        toView=lambda v, _: hex2(v),  # type: ignore
-    )
-    EFFECT = PatternViewLabelMode(
-        effect,
-        parentName="effectFrame",
-        width=6,
-        setter="setEffect",
-        getter="getEffect",
-        fromView=fromEffectString,
-        toView=lambda v, _: toEffectString(v),  # type: ignore
-    )
-
-
-PVLM = PatternViewLabelModes
 
 
 class PatternViewLabel(ttk.Label):
@@ -142,6 +77,16 @@ class PatternViewLabel(ttk.Label):
                 self.row,
                 self.mode,
                 self.column,
+            ),
+        )
+        self.bind(
+            "<Shift-Button-1>",
+            lambda *_: self.view.viewFrame.setTarget(
+                self.view.pattern.channel.channel,
+                self.row,
+                self.mode,
+                self.column,
+                setSecondary=True,
             ),
         )
 
@@ -382,13 +327,28 @@ class PatternViewLabel(ttk.Label):
 
         # Highlight
         target = self.view.viewFrame.target
+        target2 = self.view.viewFrame.secondaryTarget
         highlight = False
 
-        if self.row == target.row:
-            highlight = True
-        elif self.view.pattern.channel.channel == target.channel:
-            if self.mode == target.column:
-                if self.column == target.subcolumn:
+        if target2 is None:
+            if self.row == target.row:
+                highlight = True
+            elif self.channel == target.channel:
+                if self.mode == target.column:
+                    if self.column == target.subcolumn:
+                        highlight = True
+        else:
+            minRow = min(target.row, target2.row)
+            maxRow = max(target.row, target2.row)
+            if self.row >= minRow and self.row <= maxRow:
+                minTarget = min(
+                    target, target2, key=lambda t: t.horizontalComparisonKey
+                )
+                maxTarget = max(
+                    target, target2, key=lambda t: t.horizontalComparisonKey
+                )
+                c = self.channel
+                if c >= minTarget.channel and c <= maxTarget.channel:
                     highlight = True
 
         if self.row % program.p.currentSong.majorSubdiv == 0:
@@ -399,6 +359,14 @@ class PatternViewLabel(ttk.Label):
             style = Note.DefaultTarget if highlight else Note.Default
 
         self.style = cast(str, style)
+
+    @property
+    def positionTarget(self) -> Target:
+        return Target(self.channel, self.row, self.mode, self.column)
+
+    @property
+    def channel(self) -> int:
+        return self.view.pattern.channel.channel
 
     @property
     def style(self) -> str:
