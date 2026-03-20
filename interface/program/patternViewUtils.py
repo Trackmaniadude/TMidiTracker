@@ -5,7 +5,17 @@ from enum import Enum
 from functools import total_ordering
 from typing import Callable
 
-from utils.constants import DRUM_CHANNEL
+from utils.constants import (
+    CHANNEL_ORDER_INVERSE,
+    DRUM_CHANNEL,
+    DRUM_NAMES,
+    HEX_KEYMAP,
+    KEYBOARD_MAP,
+    NOTE_DELTAS,
+    NOTE_NAMES_FLAT,
+    NOTE_NAMES_SHARP,
+    NOTES_PER_OCTAVE,
+)
 from utils.misc import hex2
 from utils.types_ import *
 
