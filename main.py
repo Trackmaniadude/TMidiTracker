@@ -14,7 +14,7 @@ from interface.program.patternMatrix import PatternMatrix
 from interface.program.patternViewFrame import PatternViewFrame
 from interface.program.songDataView import SongDataView
 from structures import program  # This also inits the program object
-from structures.globalEvents import ProjectModified
+from structures.globalEvents import Copy, Paste, ProjectModified
 from structures.song import Song
 from utils.constants import PROJECT_FILE
 
@@ -177,6 +177,28 @@ def menus():
         root.protocol("WM_DELETE_WINDOW", onClose)
 
     fileMenu()
+
+    def editMenu():
+        menu = tk.Menu(menubar)
+        menubar.add_cascade(menu=menu, label="Edit")
+
+        def copy():
+            focus = root.focus_get()
+            if focus is not None:
+                Copy.fire(focus)
+
+        def paste():
+            focus = root.focus_get()
+            if focus is not None:
+                Paste.fire(focus)
+
+        menu.add_command(label="Copy", command=copy)
+        menu.add_command(label="Paste", command=paste)
+
+        root.bind_all("<Control-C>", lambda *_: copy())
+        root.bind_all("<Control-V>", lambda *_: paste())
+
+    editMenu()
 
 
 menus()
