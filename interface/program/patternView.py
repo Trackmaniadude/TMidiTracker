@@ -341,14 +341,16 @@ class PatternViewLabel(ttk.Label):
             minRow = min(target.row, target2.row)
             maxRow = max(target.row, target2.row)
             if self.row >= minRow and self.row <= maxRow:
-                minTarget = min(
-                    target, target2, key=lambda t: t.horizontalComparisonKey
+                mn = min(
+                    target.horizontalComparisonKey, target2.horizontalComparisonKey
                 )
-                maxTarget = max(
-                    target, target2, key=lambda t: t.horizontalComparisonKey
+                mx = max(
+                    target.horizontalComparisonKey, target2.horizontalComparisonKey
                 )
-                c = self.channel
-                if c >= minTarget.channel and c <= maxTarget.channel:
+                c = Target(
+                    self.channel, self.row, self.mode, self.column
+                ).horizontalComparisonKey
+                if c >= mn and c <= mx:
                     highlight = True
 
         if self.row % program.p.currentSong.majorSubdiv == 0:

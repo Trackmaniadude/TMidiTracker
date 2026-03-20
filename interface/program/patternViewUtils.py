@@ -19,7 +19,12 @@ class Target:
 
     @property
     def horizontalComparisonKey(self):
-        return (self.channel, self.column, self.subcolumn)
+        c = self.column
+        return (
+            self.channel,
+            c == PVLM.EFFECT,
+            (self.subcolumn * 2) + (1 if c == PVLM.VELOCITY else 0),
+        )
 
     @staticmethod
     def columnGreaterThan(a: Target, b: Target) -> bool:
