@@ -11,13 +11,14 @@ from dataclasses import dataclass
 from tkinter import ttk
 from typing import Literal, cast
 
+import utils.tk as tkutil
 from interface.program.patternView import PatternView
 from interface.program.patternViewUtils import PVLM, Target
 from interface.theme import MatrixSelector
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from interface.utilities.validatedEntryPrebuilts import Prebuilts
 from structures import program
-from structures.globalEvents import SongReloaded, StructureChanged
+from structures.globalEvents import Copy, Paste, SongReloaded, StructureChanged
 from utils.constants import (
     CHANNEL_COUNT,
     CHANNEL_ORDER,
@@ -167,6 +168,21 @@ class PatternViewFrame(ttk.Frame):
 
         StructureChanged.connect(lambda *_: self.showChannels(True), self.connections)
         SongReloaded.connect(lambda *_: self.showChannels(True), self.connections)
+
+        Copy.connect(
+            lambda focus: self.copy() if tkutil.isDescendantOf(focus, self) else None,
+            self.connections,
+        )
+        Paste.connect(
+            lambda focus: self.paste() if tkutil.isDescendantOf(focus, self) else None,
+            self.connections,
+        )
+
+    def copy(self):
+        _logger.debug("Pattern Editor COPY")
+
+    def paste(self):
+        _logger.debug("Pattern Editor PASTE")
 
     def destroy(self) -> None:
         for connection in self.connections:
