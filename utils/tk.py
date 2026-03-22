@@ -22,6 +22,10 @@ class SPECIAL_CHARS:
 DEF_PAD = 2
 
 
+def isDescendantOf(test: tk.Misc, descendsFrom: tk.Misc) -> bool:
+    return str(test).startswith(str(descendsFrom))
+
+
 def widgetUnderCursor(widget: tk.Misc):
     root = widget.winfo_toplevel()
     x, y = root.winfo_pointerxy()
