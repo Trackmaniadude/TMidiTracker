@@ -8,9 +8,11 @@ CHANNEL_COUNT = 16
 
 DRUM_CHANNEL = 9
 CHANNEL_ORDER = list(range(CHANNEL_COUNT))
+"""Map from internal order (incremental) to display order (perc first)"""
 del CHANNEL_ORDER[DRUM_CHANNEL]
 CHANNEL_ORDER.insert(0, DRUM_CHANNEL)
 CHANNEL_ORDER_INVERSE = list(range(1, CHANNEL_COUNT))
+"""Map from display order (perc first) to internal order (incremental)"""
 CHANNEL_ORDER_INVERSE.insert(DRUM_CHANNEL, 0)
 
 NOTES_PER_OCTAVE = 12

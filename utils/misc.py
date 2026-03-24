@@ -4,6 +4,25 @@ Random utilities
 
 from __future__ import annotations
 
+from typing import overload
+
+
+@overload
+def minmax(a, *, key=None):
+    """Return the minimum and maximum of a container."""
+
+
+@overload
+def minmax[A, B](a: A, b: B, *, key=None) -> tuple[A | B, A | B]:
+    """Return the minimum and maximum of two values. Mostly useful if you're sampling two values but can't otherwise gaurantee their order."""
+
+
+def minmax(a, b=None, *, key=None):
+    """Return the minimum and maximum of some values."""
+    if b is None:
+        return (min(a, key=key), max(a, key=key))
+    return (min(a, b, key=key), max(a, b, key=key))
+
 
 def intKey2dToJson(key: tuple[int, int]) -> str:
     """Take 2d int keys and make them json compatible."""
