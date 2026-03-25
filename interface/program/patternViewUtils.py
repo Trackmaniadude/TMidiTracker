@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from functools import total_ordering
 from typing import Callable
@@ -17,7 +17,15 @@ from utils.constants import (
     NOTES_PER_OCTAVE,
 )
 from utils.misc import hex2
-from utils.types_ import *
+from utils.types_ import effect, note, velocity
+
+
+@dataclass
+class PatternViewClipboardChannel:
+    channelOffset: int
+    notes: dict[tuple[int, int], note] = field(default_factory=lambda: dict())
+    velocities: dict[tuple[int, int], velocity] = field(default_factory=lambda: dict())
+    effects: dict[tuple[int, int], effect] = field(default_factory=lambda: dict())
 
 
 @dataclass
@@ -29,6 +37,7 @@ class Target:
 
     @property
     def horizontalComparisonKey(self):
+        """(Channel #, is in effect column, column # (even is note, odd is velocity))"""
         c = self.column
         return (
             self.channel,
