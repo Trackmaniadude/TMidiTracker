@@ -4,7 +4,8 @@ Random utilities
 
 from __future__ import annotations
 
-from typing import overload
+from itertools import chain
+from typing import Iterable, overload
 
 
 @overload
@@ -46,6 +47,10 @@ def collapse2dDict[
         r, c = k
         out[r][c] = v
     return out
+
+
+def flatten[T](it: Iterable[Iterable[T]]):
+    return chain.from_iterable(it)
 
 
 def formatTime(t: float, alwaysShowHour: bool = False) -> str:
