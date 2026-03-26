@@ -297,16 +297,19 @@ class PatternViewFrame(ttk.Frame):
     @property
     def clipboardSize(self):
         """Return size of clipboard (rows, cols)"""
-        positions = chain(
-            flatten(e.notes.keys() for e in self.clipboard),
-            flatten(e.velocities.keys() for e in self.clipboard),
-            flatten(e.effects.keys() for e in self.clipboard),
+        positions = list(
+            chain(
+                flatten(e.notes.keys() for e in self.clipboard),
+                flatten(e.velocities.keys() for e in self.clipboard),
+                flatten(e.effects.keys() for e in self.clipboard),
+            )
         )
         rows = max((p[0] for p in positions), default=0) + 1
         cols = max((p[1] for p in positions), default=0) + 1
         return rows, cols
 
     def paste(self):
+        # TODO: make this not a mess
         _logger.debug("Pattern Editor PASTE")
 
         s = program.p.currentSong
@@ -316,27 +319,27 @@ class PatternViewFrame(ttk.Frame):
         _logger.debug(f"Clipboard size: {cRows}, {cCols}")
         _logger.debug(self.clipboard)
 
-        t1, t2 = minmax(
-            self.target,
-            self.secondaryTarget if self.secondaryTarget is not None else self.target,
-            key=lambda t: t.horizontalComparisonKey,
-        )
+        t1, t2 = self.target, self.secondaryTarget
+
+        if t2 is None or t1 == t2:
+            t2 = Target(
+                t1.channel + len(self.clipboard) - 1,
+                t1.row + cRows - 1,
+                t1.column,
+                t1.subcolumn + cCols - 1,
+            )
 
         self.target = t1
         self.secondaryTarget = t2
 
-        if t1 == t2:
-            t2.channel = t1.channel + len(self.clipboard) - 1
-            t2.subcolumn = t1.subcolumn + cCols - 1
-            t2.row = t1.row + cRows - 1
-
         ch1, ch2 = minmax(
             CHANNEL_ORDER_INVERSE[t1.channel], CHANNEL_ORDER_INVERSE[t2.channel]
         )
-
-        c1, c2 = t1.subcolumn, t2.subcolumn
-
+        c1, c2 = minmax(t1.subcolumn, t2.subcolumn)
         r1, r2 = minmax(t1.row, t2.row)
+
+        _logger.debug(t1)
+        _logger.debug(t2)
 
         # TODO: limit/set clear area properly
 

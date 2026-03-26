@@ -67,6 +67,12 @@ class PatternViewLabelMode[T]:
             raise TypeError()
         return self.order > other.order
 
+    def __str__(self) -> str:
+        return f"PVLM"
+
+    def __repr__(self) -> str:
+        return f"PVLM"
+
 
 def fromEffectString(s: str) -> tuple[int, ...]:
     l = list()
