@@ -14,7 +14,7 @@ from interface.program.patternMatrix import PatternMatrix
 from interface.program.patternViewFrame import PatternViewFrame
 from interface.program.songDataView import SongDataView
 from structures import program  # This also inits the program object
-from structures.globalEvents import Copy, Paste, ProjectModified
+from structures.globalEvents import Copy, Cut, Paste, ProjectModified
 from structures.song import Song
 from utils.constants import PROJECT_FILE
 
@@ -37,6 +37,8 @@ loggerGroup.add_argument(
     "-q", "--quiet", help="Only print errors.", action="store_true"
 )
 
+parser.add_argument("-w", "--windowed", help="Start in windowed.", action="store_true")
+
 args = parser.parse_args()
 
 if args.debug:
@@ -52,8 +54,10 @@ _logger = logging.getLogger(__name__)
 # Setup TK
 
 root = tk.Tk()
-root.state("zoomed")
-# root.geometry("800x600")
+if args.windowed:
+    root.geometry("1600x800")
+else:
+    root.state("zoomed")
 root.option_add("*tearOff", False)
 root.unbind_all("<Tab>")
 root.unbind_all("<<NextWindow>>")
@@ -182,6 +186,11 @@ def menus():
         menu = tk.Menu(menubar)
         menubar.add_cascade(menu=menu, label="Edit")
 
+        def cut():
+            focus = root.focus_get()
+            if focus is not None:
+                Cut.fire(focus)
+
         def copy():
             focus = root.focus_get()
             if focus is not None:
@@ -192,9 +201,11 @@ def menus():
             if focus is not None:
                 Paste.fire(focus)
 
-        menu.add_command(label="Copy", command=copy)
-        menu.add_command(label="Paste", command=paste)
+        menu.add_command(label="Cut", command=cut, accelerator="CTRL-X")
+        menu.add_command(label="Copy", command=copy, accelerator="CTRL-C")
+        menu.add_command(label="Paste", command=paste, accelerator="CTRL-V")
 
+        root.bind_all("<Control-X>", lambda *_: cut())
         root.bind_all("<Control-C>", lambda *_: copy())
         root.bind_all("<Control-V>", lambda *_: paste())
 

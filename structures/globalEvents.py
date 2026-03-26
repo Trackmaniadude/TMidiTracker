@@ -13,6 +13,8 @@ SongReloaded: Event = Event()
 ProjectModified: Event = Event()
 """Fired on any change that should mark the project as modified."""
 
+Cut: Event[tk.Misc] = Event()
+"""Fired when the cut command is used. Argument is currently focused widget."""
 Copy: Event[tk.Misc] = Event()
 """Fired when the copy command is used. Argument is currently focused widget."""
 Paste: Event[tk.Misc] = Event()
