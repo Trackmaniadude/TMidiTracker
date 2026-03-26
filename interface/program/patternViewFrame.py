@@ -8,6 +8,7 @@ from __future__ import annotations
 import logging
 import tkinter as tk
 from dataclasses import dataclass
+from itertools import chain
 from tkinter import ttk
 from typing import Literal, cast
 
@@ -26,7 +27,7 @@ from utils.constants import (
     DRUM_CHANNEL,
 )
 from utils.event import Connection
-from utils.misc import minmax
+from utils.misc import flatten, minmax
 
 _logger = logging.getLogger(__name__)
 
@@ -184,6 +185,8 @@ class PatternViewFrame(ttk.Frame):
     def copy(self):
         _logger.debug("Pattern Editor COPY")
 
+        # TODO: redo this with the get selected indices thingy
+
         t1, t2 = minmax(
             self.target,
             self.secondaryTarget if self.secondaryTarget is not None else self.target,
@@ -272,41 +275,100 @@ class PatternViewFrame(ttk.Frame):
 
             self.clipboard.append(entry)
 
+        _logger.debug("FINISH COPY")
+
+    def clearSelection(self, *, refresh: bool = True):
+        s = program.p.currentSong
+        notes, vels, effects = self.getUsedIndicesInSelection()
+
+        for channel, row, col in notes:
+            pattern = s.getPatternByLocation(channel, program.p.currentMatrixRow)
+            pattern.setNote(row, col, None)
+        for channel, row, col in vels:
+            pattern = s.getPatternByLocation(channel, program.p.currentMatrixRow)
+            pattern.setVelocity(row, col, None)
+        for channel, row, col in effects:
+            pattern = s.getPatternByLocation(channel, program.p.currentMatrixRow)
+            pattern.setEffect(row, col, None)
+
+        if refresh:
+            self.refreshLabels()
+
+    @property
+    def clipboardSize(self):
+        """Return size of clipboard (rows, cols)"""
+        positions = chain(
+            flatten(e.notes.keys() for e in self.clipboard),
+            flatten(e.velocities.keys() for e in self.clipboard),
+            flatten(e.effects.keys() for e in self.clipboard),
+        )
+        rows = max((p[0] for p in positions), default=0) + 1
+        cols = max((p[1] for p in positions), default=0) + 1
+        return rows, cols
+
     def paste(self):
         _logger.debug("Pattern Editor PASTE")
 
-        print(self.getUsedIndicesInSelection())
+        s = program.p.currentSong
 
-        # t1, t2 = minmax(
-        #     self.target,
-        #     self.secondaryTarget if self.secondaryTarget is not None else self.target,
-        #     key=lambda t: t.horizontalComparisonKey,
-        # )
-        # # ; mwahahahaha evil semicolon >:)
-        # c1, c2 = minmax(
-        #     CHANNEL_ORDER_INVERSE[t1.channel], CHANNEL_ORDER_INVERSE[t2.channel]
-        # )
+        cRows, cCols = self.clipboardSize
 
-        # r1, r2 = minmax(t1.row, t2.row)
+        _logger.debug(f"Clipboard size: {cRows}, {cCols}")
+        _logger.debug(self.clipboard)
 
-        # for offset, entry in enumerate(self.clipboard):
-        #     channel = CHANNEL_ORDER[offset + c1]
-        #     _logger.debug(f"Pasting offset {offset} to pattern {channel}")
+        t1, t2 = minmax(
+            self.target,
+            self.secondaryTarget if self.secondaryTarget is not None else self.target,
+            key=lambda t: t.horizontalComparisonKey,
+        )
 
-        #     first = offset == 0
-        #     last = offset == len(self.clipboard) - 1
+        self.target = t1
+        self.secondaryTarget = t2
 
-        #     # Clear paste area
+        if t1 == t2:
+            t2.channel = t1.channel + len(self.clipboard) - 1
+            t2.subcolumn = t1.subcolumn + cCols - 1
+            t2.row = t1.row + cRows - 1
 
-        #     # Paste
+        ch1, ch2 = minmax(
+            CHANNEL_ORDER_INVERSE[t1.channel], CHANNEL_ORDER_INVERSE[t2.channel]
+        )
 
-        #     pass
+        c1, c2 = t1.subcolumn, t2.subcolumn
+
+        r1, r2 = minmax(t1.row, t2.row)
+
+        # TODO: limit/set clear area properly
+
+        # Clear paste area
+        self.clearSelection(refresh=False)
+
+        for offset, entry in enumerate(self.clipboard):
+            channel = CHANNEL_ORDER[offset + ch1]
+            pattern = s.getPatternByLocation(channel, program.p.currentMatrixRow)
+            _logger.debug(f"Pasting offset {offset} to pattern {channel}")
+
+            first = offset == 0
+            last = offset == len(self.clipboard) - 1
+
+            for (row, col), note in entry.notes.items():
+                row += r1
+                if row > r2:
+                    continue
+                if first:
+                    col += c1
+                if last:
+                    if col > c2:
+                        continue
+                pattern.setNote(row, col, note)
+
+        self.refreshLabels()
 
     def getUsedIndicesInSelection(self):
         """Get all indices currently targeted that have an entry. Returns three lists of (channel, row, col), for notes, velocities, and effects."""
-        notes = list()
-        velocities = list()
-        effects = list()
+        notes: list[tuple[int, int, int]] = list()
+        velocities: list[tuple[int, int, int]] = list()
+        effects: list[tuple[int, int, int]] = list()
 
         t1, t2 = minmax(
             self.target,
@@ -333,17 +395,17 @@ class PatternViewFrame(ttk.Frame):
             last = channel == c2
 
             _notes = {
-                (row - r1, col): v
+                (row, col): v
                 for (row, col), v in pattern.notes.items()
                 if row >= r1 and row <= r2
             }
             _velocities = {
-                (row - r1, col): v
+                (row, col): v
                 for (row, col), v in pattern.velocities.items()
                 if row >= r1 and row <= r2
             }
             _effects = {
-                (row - r1, col): v
+                (row, col): v
                 for (row, col), v in pattern.effects.items()
                 if row >= r1 and row <= r2
             }
@@ -385,9 +447,11 @@ class PatternViewFrame(ttk.Frame):
                         if col >= c
                     }
 
-            notes += [(channel, row, col) for row, col in _notes]
-            velocities += [(channel, row, col) for row, col in _velocities]
-            effects += [(channel, row, col) for row, col in _effects]
+            notes += [(CHANNEL_ORDER[channel], row, col) for row, col in _notes]
+            velocities += [
+                (CHANNEL_ORDER[channel], row, col) for row, col in _velocities
+            ]
+            effects += [(CHANNEL_ORDER[channel], row, col) for row, col in _effects]
 
         return notes, velocities, effects
 
@@ -572,3 +636,7 @@ class PatternViewFrame(ttk.Frame):
 
         for channel, view in enumerate(self.views):
             view.setPattern(program.p.currentSong.getPatternByLocation(channel, row))
+
+    def refreshLabels(self):
+        for view in self.views:
+            view.refreshLabels()
