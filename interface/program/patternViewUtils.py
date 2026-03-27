@@ -23,9 +23,13 @@ from utils.types_ import effect, note, velocity
 @dataclass
 class PatternViewClipboardChannel:
     channelOffset: int
-    notes: dict[tuple[int, int], note] = field(default_factory=lambda: dict())
-    velocities: dict[tuple[int, int], velocity] = field(default_factory=lambda: dict())
-    effects: dict[tuple[int, int], effect] = field(default_factory=lambda: dict())
+    notes: dict[tuple[int, int], note | None] = field(default_factory=lambda: dict())
+    velocities: dict[tuple[int, int], velocity | None] = field(
+        default_factory=lambda: dict()
+    )
+    effects: dict[tuple[int, int], effect | None] = field(
+        default_factory=lambda: dict()
+    )
 
 
 @dataclass

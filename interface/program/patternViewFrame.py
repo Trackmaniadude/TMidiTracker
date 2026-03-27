@@ -183,96 +183,46 @@ class PatternViewFrame(ttk.Frame):
         )
 
     def copy(self):
+        """Copy selection to clipboard."""
+        ### Get all selected indices, and dump them into clipboard entry objects after reformatting to the correct structure.
         _logger.debug("Pattern Editor COPY")
+        s = program.p.currentSong
 
-        # TODO: redo this with the get selected indices thingy
+        notes, vels, effects = self.getUsedIndicesInSelection()
+        all = lambda: chain(notes, vels, effects)
+        ch0, ch1 = minmax(
+            [p[0] for p in all()], default=-1
+        )  # Can't use the chain directly, as minmax needs to iterate twice
 
-        t1, t2 = minmax(
-            self.target,
-            self.secondaryTarget if self.secondaryTarget is not None else self.target,
-            key=lambda t: t.horizontalComparisonKey,
-        )
-
-        c1, c2 = minmax(
-            CHANNEL_ORDER_INVERSE[t1.channel], CHANNEL_ORDER_INVERSE[t2.channel]
-        )
-
-        r1, r2 = minmax(t1.row, t2.row)
+        _logger.debug(f"NOTES: {notes}")
+        _logger.debug(f"VELOCITIES: {vels}")
+        _logger.debug(f"EFFECTS: {effects}")
+        _logger.debug(f"RANGE: {ch0} - {ch1}")
 
         self.clipboard = list()
-        for channel in range(c1, c2 + 1):  # Inclusive
-            offset = c2 - channel
 
-            entry = PatternViewClipboardChannel(offset)
-            pattern = program.p.currentSong.getPatternByLocation(
-                CHANNEL_ORDER[channel], program.p.currentMatrixRow
-            )
+        if ch0 == -1:
+            _logger.debug("FINISH COPY (NOTHING TO COPY)")
+            return
 
-            first = channel == c1
-            last = channel == c2
-
-            # Fill Entry
-            # By copying and then cropping
-            # Cause that's easier than only grabbing whats needed
-            # Well not rows since thats also easy
-
+        for channel in range(ch0, ch1 + 1):  # Inclusive
+            _logger.debug(f"Copying channel {channel}")
+            entry = PatternViewClipboardChannel(channel - ch0)
+            pattern = s.getPatternByLocation(channel, program.p.currentMatrixRow)
             entry.notes = {
-                (row - r1, col): v
-                for (row, col), v in pattern.notes.items()
-                if row >= r1 and row <= r2
+                (r, c): pattern.getNote(r, c) for (ch, r, c) in notes if ch == channel
             }
             entry.velocities = {
-                (row - r1, col): v
-                for (row, col), v in pattern.velocities.items()
-                if row >= r1 and row <= r2
+                (r, c): pattern.getVelocity(r, c)
+                for (ch, r, c) in vels
+                if ch == channel
             }
             entry.effects = {
-                (row - r1, col): v
-                for (row, col), v in pattern.effects.items()
-                if row >= r1 and row <= r2
+                (r, c): pattern.getEffect(r, c)
+                for (ch, r, c) in effects
+                if ch == channel
             }
-
-            if last:
-                c = t2.subcolumn
-                if t2.column != PVLM.EFFECT:
-                    entry.effects = dict()
-                    # TODO: indivudial note/vel handling
-                    entry.notes = {
-                        (row, col): v
-                        for (row, col), v in entry.notes.items()
-                        if col <= c
-                    }
-                    entry.velocities = {
-                        (row, col): v
-                        for (row, col), v in entry.velocities.items()
-                        if col <= (c if t2.column == PVLM.VELOCITY else c - 1)
-                    }
-                else:
-                    pass
-                    # TODO: do effects
-
-            if first:
-                # This shifts columns over so it has to be done after LAST
-                c = t1.subcolumn
-                if t1.column == PVLM.EFFECT:
-                    entry.notes = dict()
-                    entry.velocities = dict()
-                    # TODO: do effects
-                else:
-                    # TODO: indivudial note/vel handling
-                    entry.notes = {
-                        (row, col - c): v
-                        for (row, col), v in entry.notes.items()
-                        if col >= (c if t1.column == PVLM.NOTE else c + 1)
-                    }
-                    entry.velocities = {
-                        (row, col - c): v
-                        for (row, col), v in entry.velocities.items()
-                        if col >= c
-                    }
-
             _logger.debug(entry)
-
             self.clipboard.append(entry)
 
         _logger.debug("FINISH COPY")
