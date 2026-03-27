@@ -4,17 +4,49 @@ Random utilities
 
 from __future__ import annotations
 
-from typing import overload
+from itertools import chain
+from typing import TYPE_CHECKING, Callable, Iterable, overload
+
+if TYPE_CHECKING:
+    from _typeshed import SupportsRichComparison
 
 
 @overload
-def minmax(a, *, key=None):
+def minmax[
+    T: SupportsRichComparison
+](a: Iterable[T], *, key: None = None) -> tuple[T, T]:
     """Return the minimum and maximum of a container."""
 
 
 @overload
-def minmax[A, B](a: A, b: B, *, key=None) -> tuple[A | B, A | B]:
+def minmax[
+    T, C: SupportsRichComparison
+](a: Iterable[T], *, key: Callable[[T], C]) -> tuple[T, T]:
+    """Return the minimum and maximum of a container."""
+
+
+@overload
+def minmax[
+    T1: SupportsRichComparison, T2: SupportsRichComparison
+](a: T1, b: T2, *, key: None = None) -> tuple[T1 | T2, T1 | T2]:
     """Return the minimum and maximum of two values. Mostly useful if you're sampling two values but can't otherwise gaurantee their order."""
+
+
+@overload
+def minmax[
+    T1, T2, C: SupportsRichComparison
+](a: T1, b: T2, *, key: Callable[[T1 | T2], C]) -> tuple[T1 | T2, T1 | T2]:
+    """Return the minimum and maximum of two values. Mostly useful if you're sampling two values but can't otherwise gaurantee their order."""
+
+
+# min(None, None)
+# min(3, 4)
+# min("h", None)
+# min([None, 3])
+# minmax(None, None)
+# minmax(3, 4)
+# minmax("h", None)
+# minmax([None, 3])
 
 
 def minmax(a, b=None, *, key=None):
