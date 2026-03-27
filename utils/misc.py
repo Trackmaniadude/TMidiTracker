@@ -4,39 +4,65 @@ Random utilities
 
 from __future__ import annotations
 
+from enum import Enum
 from itertools import chain
-from typing import TYPE_CHECKING, Callable, Iterable, overload
+from typing import TYPE_CHECKING, Any, Callable, Iterable, overload
 
 if TYPE_CHECKING:
     from _typeshed import SupportsRichComparison
 
 
+class NoDefault(Enum):
+    NO_DEFAULT = object()
+
+
+NO_DEFAULT = NoDefault.NO_DEFAULT
+
+
 @overload
 def minmax[
     T: SupportsRichComparison
-](a: Iterable[T], *, key: None = None) -> tuple[T, T]:
+](
+    iterable: Iterable[T], /, *, key: None = None, default: T | NoDefault = NO_DEFAULT
+) -> tuple[T, T]:
     """Return the minimum and maximum of a container."""
 
 
 @overload
 def minmax[
     T, C: SupportsRichComparison
-](a: Iterable[T], *, key: Callable[[T], C]) -> tuple[T, T]:
+](
+    iterable: Iterable[T],
+    /,
+    *,
+    key: Callable[[T], C],
+    default: T | NoDefault = NO_DEFAULT,
+) -> tuple[T, T]:
     """Return the minimum and maximum of a container."""
 
 
 @overload
 def minmax[
     T1: SupportsRichComparison, T2: SupportsRichComparison
-](a: T1, b: T2, *, key: None = None) -> tuple[T1 | T2, T1 | T2]:
+](value1: T1, value2: T2, /, *, key: None = None) -> tuple[T1 | T2, T1 | T2]:
     """Return the minimum and maximum of two values. Mostly useful if you're sampling two values but can't otherwise gaurantee their order."""
 
 
 @overload
 def minmax[
     T1, T2, C: SupportsRichComparison
-](a: T1, b: T2, *, key: Callable[[T1 | T2], C]) -> tuple[T1 | T2, T1 | T2]:
+](value1: T1, value2: T2, /, *, key: Callable[[T1 | T2], C]) -> tuple[T1 | T2, T1 | T2]:
     """Return the minimum and maximum of two values. Mostly useful if you're sampling two values but can't otherwise gaurantee their order."""
+
+
+def minmax(a: Any, b: Any = None, /, *, key: Any = None, default: Any = NO_DEFAULT):
+    """Return the minimum and maximum of some values."""
+    if b is None:
+        if default is NO_DEFAULT:
+            return (min(a, key=key), max(a, key=key))
+        else:
+            return (min(a, key=key, default=default), max(a, key=key, default=default))
+    return (min(a, b, key=key), max(a, b, key=key))
 
 
 # min(None, None)
@@ -46,14 +72,7 @@ def minmax[
 # minmax(None, None)
 # minmax(3, 4)
 # minmax("h", None)
-# minmax([None, 3])
-
-
-def minmax(a, b=None, *, key=None):
-    """Return the minimum and maximum of some values."""
-    if b is None:
-        return (min(a, key=key), max(a, key=key))
-    return (min(a, b, key=key), max(a, b, key=key))
+# minmax([None, 3], default=3)
 
 
 def intKey2dToJson(key: tuple[int, int]) -> str:
