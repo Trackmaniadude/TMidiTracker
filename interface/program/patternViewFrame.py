@@ -365,6 +365,28 @@ class PatternViewFrame(ttk.Frame):
                         continue
                 pattern.setNote(row, col, note)
 
+            for (row, col), vel in entry.velocities.items():
+                row += r1
+                if row > r2:
+                    continue
+                if first:
+                    col += c1
+                if last:
+                    if col > c2:
+                        continue
+                pattern.setVelocity(row, col, vel)
+
+            for (row, col), effect in entry.effects.items():
+                row += r1
+                if row > r2:
+                    continue
+                if first:
+                    col += c1
+                if last:
+                    if col > c2:
+                        continue
+                pattern.setEffect(row, col, effect)
+
         self.refreshLabels()
 
     def getUsedIndicesInSelection(self):
