@@ -389,6 +389,7 @@ class PatternViewLabel(ttk.Label):
         if newText != self.__text:
             self.__text = newText
             self.config(text=newText)
+            self.config(width=len(newText) + 2)
 
 
 class PatternView(ttk.Frame):
@@ -529,7 +530,7 @@ class PatternView(ttk.Frame):
         for row in range(rows):
             for column in range(effects):
                 effect = PatternViewLabel(self, PVLM.EFFECT, row, column)
-                effect.grid(row=row, column=column)
+                effect.grid(row=row, column=column, sticky="ew")
                 self.__labels.add(effect)
 
                 self.labelLookup[row, PVLM.EFFECT, column] = effect
