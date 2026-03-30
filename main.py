@@ -15,6 +15,7 @@ from interface.program.patternViewFrame import PatternViewFrame
 from interface.program.songDataView import SongDataView
 from structures import program  # This also inits the program object
 from structures.globalEvents import Copy, Cut, Paste, ProjectModified
+from structures.player import Player
 from structures.song import Song
 from utils.constants import PROJECT_FILE
 
@@ -167,12 +168,21 @@ def menus():
                 else:
                     program.p.projectModified = False
 
+        def export():
+            filename = filedialog.asksaveasfilename(filetypes=[("MIDI FILE", ".mid")])
+            if filename == "":
+                return
+            player = Player()
+            player.toFile(filename)
+
         menu.add_command(label="Open", command=open)
         menu.add_command(label="New", command=new)
         menu.add_command(label="Save", command=save, accelerator="CTRL-S")
         menu.add_command(label="Save As", command=saveAs)
+        menu.add_command(label="Export", command=export, accelerator="CTRL-E")
 
         root.bind_all("<Control-S>", lambda *_: save())
+        root.bind_all("<Control-E>", lambda *_: export())
 
         def onClose():
             if promptSaveFirst():

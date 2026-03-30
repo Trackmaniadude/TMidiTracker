@@ -6,7 +6,7 @@ import logging
 import time
 from threading import Event, Thread
 
-from mido import Message, MetaMessage
+from mido import Message, MetaMessage, MidiFile, MidiTrack
 
 from structures import program  # Note: Can't use during init
 
@@ -32,6 +32,9 @@ class Player:
         """For live mode, time we should wait to before starting the next tick."""
         self.actualTime: float = 0
         """For live mode, time we are currently at after processing this tick."""
+
+        self.ticksSinceLastMessage: int = 0
+        """Used for offline timing."""
 
         self.playing: bool = False
         self.loop: bool | int = True
@@ -65,8 +68,15 @@ class Player:
                 if (
                     program.p.currentMatrixRow
                     >= program.p.currentSong.visibleMatrixRows
-                ):
-                    program.p.currentMatrixRow = 0
+                ):  # EOF
+                    if self.loop == True:
+                        program.p.currentMatrixRow = 0
+                    elif self.loop > 0:
+                        program.p.currentMatrixRow = 0
+                        self.loop -= 1
+                    else:
+                        self.pause()
+                        return []
             mainTick = True
 
         # Tick all channels and collate generated messages
@@ -75,6 +85,43 @@ class Player:
             messages.extend(channel.tick(mainTick))
 
         return messages
+
+    def playOffline(self) -> list[Message | MetaMessage]:
+        """Play the entire song out to a list of timed messages. This can be easily dumped to file."""
+        s = program.p.currentSong
+        out = list()
+
+        # Send metadata
+        out.append(MetaMessage("track_name", name="TRACK NAME", time=0))
+        out.append(MetaMessage("set_tempo", tempo=1000000, time=0))
+
+        if (
+            self.loop == True
+        ):  # If we somehow accidentally try to loop infinitely -- don't.
+            self.loop = False
+        self.setPlaybackCursor(0, 0)
+        self.ticksSinceLastMessage = 0
+        self.playing = True
+
+        while self.playing:
+            _logger.debug("TICK")
+            messages = self.tick()
+            self.ticksSinceLastMessage += 1
+            if len(messages) > 0:
+                mspt = 1000 // s.clock
+                messages[0].time = self.ticksSinceLastMessage * mspt
+                self.ticksSinceLastMessage = 0
+            _logger.debug(messages)
+            out += messages
+
+        return out
+
+    def toFile(self, filename: str):
+        """Use playOffline to save the song to file."""
+        track = MidiTrack()
+        for message in self.playOffline():
+            track.append(message)
+        MidiFile(type=0, ticks_per_beat=1000, tracks=[track]).save(filename)
 
     def setLiveMode(self):
         """Set this player to live playback mode."""
@@ -128,18 +175,18 @@ class Player:
                 program.p.currentPort.send(message)
 
     def play(self):
+        self.playing = True
         self.resume.set()
         self.lastMatrixRow = program.p.currentMatrixRow
         self.lastPatternRow = program.p.currentPatternRow
 
     def pause(self):
+        self.playing = False
         self.resume.clear()
         self.allOff()
 
     def togglePlayback(self):
         if self.playing:
-            self.playing = False
             self.pause()
         else:
-            self.playing = True
             self.play()
