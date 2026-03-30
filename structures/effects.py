@@ -11,14 +11,12 @@ if __name__ == "__main__":
 
     sys.path.append(".")
 
-from functools import cached_property
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from structures.channel import Channel
 
 import logging
-from abc import ABC, abstractmethod
 
 from structures import program
 
@@ -68,7 +66,20 @@ class Effects:
     class RawMidi(AbstractEffect):
         displayName = "Raw MIDI Message"
         prefix = (0x00,)
+        params = ["00..", "..", "An arbitrary series of hex bytes"]
         help = "Send an arbitrary midi message."
+
+        # TODO: verify
+        @classmethod
+        def actuate(
+            cls, channel: Channel, data: tuple[int, ...]
+        ) -> None | list[Message | MetaMessage]:
+            try:
+                r = [Message.from_bytes(data)]
+            except Exception:
+                return None
+            else:
+                return r  # type: ignore
 
     class RawControl(AbstractEffect):
         displayName = "Raw MIDI Control"
