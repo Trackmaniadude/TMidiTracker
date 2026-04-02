@@ -5,7 +5,7 @@ Contains channel information and channel playback state.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 
 if TYPE_CHECKING:
     from structures.pattern import Pattern
@@ -18,6 +18,7 @@ import mido
 from structures import program
 from structures.effects import runEffect
 from utils.reactiveClass import ReactiveClass
+from utils.types_ import note, velocity
 
 _logger = logging.getLogger(__name__)
 
@@ -27,11 +28,19 @@ class ChannelPlaybackState(ReactiveClass):
         super().__init__()
 
         self.velocities: dict[int, int] = dict()
-        """Current velocity for each column."""
+        """[col, velocity] Current velocity for each column."""
         self.activeNotes: set[int] = set()
-        """All notes currently playing in this channel."""
+        """[note] All notes currently playing in this channel."""
         self.columnNotes: dict[int, int] = dict()
-        """What note each column is currently playing, if any."""
+        """[col, note] What note each column is currently playing, if any."""
+
+        self.queuedNotes: dict[int, note] = dict()
+        """[col, note] Notes to start/stop playing this tick. Intended to allow effects to mess with notes."""
+        self.queuedVelocities: dict[int, velocity] = dict()
+        """[col, vel] Velocity changes to make this tick."""
+
+        self.scheduledEffects: dict[Callable, tuple[int, object]] = dict()
+        """[Effect callback, ticks until call, callback args] Effects to play on a timer."""
 
         self.setupContainerListen()
 
@@ -88,10 +97,24 @@ class Channel(ReactiveClass):
             return all(getattr(self, k) == getattr(value, k) for k in self.EQ_KEYS)
         return False
 
+    def clearSchedule(self):
+        self.playbackState.scheduledEffects = dict()
+        self.playbackState.setupContainerListen()
+
+    def scheduleEffect(self, ticks: int, callback: Callable, data: object):
+        """
+        Set a callback to be called on the channel in n ticks.
+        Used for delayed effects or effects which stay active.
+        (Note, schedule will be cleared on stop.)
+        """
+        self.playbackState.scheduledEffects[callback] = (ticks, data)
+
     def tick(self, read: bool) -> list[mido.Message | mido.MetaMessage]:
         """
         Tick the channel, optionally reading commands at the current song playback position.
         Returns a list of midi messages. Messages have time set to 0; change in whatever's ticking things.
+
+        Effects are applied between collecting notes and velocites and actually playing them, to allow effects to mess with them.
         """
 
         messages = list()
@@ -103,7 +126,13 @@ class Channel(ReactiveClass):
         if read:
             rowData = currentPattern.getRow(program.p.currentPatternRow)
 
-            # Apply all effects first
+            # Collect note and velocity changes
+            self.playbackState.queuedNotes.clear()
+            self.playbackState.queuedVelocities.clear()
+            self.playbackState.queuedNotes.update(rowData.notes)
+            self.playbackState.queuedVelocities.update(rowData.velocities)
+
+            # Apply all effects
             for col, effect in rowData.effects.items():
                 if col > self.effectColumns:
                     continue
@@ -111,12 +140,20 @@ class Channel(ReactiveClass):
                 if effectMessages is not None:
                     messages.extend(effectMessages)
 
-            # Determine velocities next
-            for col, vel in rowData.velocities.items():
+            # Time/run scheduled effects
+            for callback, (ticks, data) in self.playbackState.scheduledEffects.items():
+                if ticks <= 0:
+                    del self.playbackState.scheduledEffects[callback]
+                    callback(data)
+                else:
+                    self.playbackState.scheduledEffects[callback] = (ticks - 1, data)
+
+            # Determine velocities
+            for col, vel in self.playbackState.queuedVelocities.items():
                 self.playbackState.velocities[col] = vel
 
             # Play notes
-            for col, note in rowData.notes.items():
+            for col, note in self.playbackState.queuedNotes.items():
                 prevNote = self.playbackState.columnNotes.get(col)
                 if note == "stop":
                     if prevNote:
