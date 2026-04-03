@@ -6,3 +6,4 @@ __pycache__
 ideas.txt
 *.tmt
 test*
+*.mid
