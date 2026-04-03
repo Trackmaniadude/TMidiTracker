@@ -123,7 +123,7 @@ class Player:
             track.append(message)
         MidiFile(type=0, ticks_per_beat=1000, tracks=[track]).save(filename)
 
-    def setLiveMode(self):
+    def startLiveDaemon(self):
         """Set this player to live playback mode."""
 
         if self.live:

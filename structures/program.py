@@ -26,7 +26,7 @@ class Program(ReactiveClass):
         # TODO: handle no port connected
 
         self.songPlayer: Player = Player()
-        self.songPlayer.setLiveMode()
+        self.songPlayer.startLiveDaemon()
 
         self.stepSize: int = 1
         """How many rows to step after making an entry. 0 to disable."""
