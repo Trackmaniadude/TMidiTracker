@@ -285,7 +285,6 @@ class PatternViewLabel(ttk.Label):
         self.refresh()
 
     def destroy(self) -> None:
-        _logger.debug(f"{self} DESTROY")
         for connection in self.connections:
             connection.disconnect()
         return super().destroy()
