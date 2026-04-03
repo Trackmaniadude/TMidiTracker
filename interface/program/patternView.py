@@ -389,7 +389,8 @@ class PatternViewLabel(ttk.Label):
         if newText != self.__text:
             self.__text = newText
             self.config(text=newText)
-            self.config(width=len(newText) + 2)
+            if self.mode == PVLM.EFFECT:
+                self.config(width=len(newText) + 2)
 
 
 class PatternView(ttk.Frame):
