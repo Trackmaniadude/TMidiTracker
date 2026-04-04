@@ -35,7 +35,7 @@ class EffectList(ttk.Frame):
         self.__content = sf.content
         self.__content.configure(width=280, height=2000)
 
-        for _, effect in Effects.__dict__.items():
+        for effect in AbstractEffect.__subclasses__():
             if type(effect) is type:
                 if issubclass(effect, AbstractEffect):
                     f = EffectDisplay(sf.content, effect)
