@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 import logging
 
 from structures import program
+from utils.types_ import note
 
 _logger = logging.getLogger(__name__)
 
@@ -119,11 +120,36 @@ class Effects:
             params = ["10xx[yy]", "x", "Delay (in ticks)", "y", "Column"]
             help = "Delay playback of note(s) in this row (and channel). If no column is specified, applies to all notes."
 
+            @classmethod
+            def actuate(
+                cls, channel: Channel, data: tuple[int, ...]
+            ) -> None | list[Message | MetaMessage]:
+                delay = data[0]
+                col = data[1] if len(data) == 2 else None
+                notes = channel.playbackState.queuedNotes.copy()
+
+                def callback(savedNotes: dict[int, note]):
+                    channel.playbackState.queuedNotes.update(savedNotes)
+
+                if col is None:
+                    channel.playbackState.queuedNotes.clear()
+                    channel.scheduleEffect(delay, callback, notes)
+                else:
+                    note = channel.playbackState.queuedNotes.pop(col, None)
+                    if note is not None:
+                        channel.scheduleEffect(delay, callback, {col: note})
+
         class Arpeggiate(AbstractEffect):
             displayName = "Arpeggiate"
             prefix = (0x11,)
             params = ["11xx", "x", "Delay (in ticks) between notes."]
             help = "Insert delay between notes, with the leftmost note playing immediately and the rightmost note playing last."
+
+        class Retrigger:
+            pass
+
+        class Cut:
+            pass
 
     class Pitch(EffectCategory):
         class Vibrato:
