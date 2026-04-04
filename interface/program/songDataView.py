@@ -17,7 +17,9 @@ class SongDataView(ttk.Frame):
     def __init__(self, parent: tk.Misc):
         super().__init__(parent, relief="raised", width=300, height=0, borderwidth=2)
 
-        sf = DScrollFrame(self, mode="VERTICAL", propagationMode="contentDrivesFrame")
+        self.pack_propagate(False)
+
+        sf = DScrollFrame(self, mode="VERTICAL", propagationMode="frameDrivesContent")
         sf.pack(fill="both", expand=True)
         self.content = sf.content
 

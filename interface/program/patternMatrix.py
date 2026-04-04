@@ -511,7 +511,7 @@ class MatrixActions(ttk.Frame):
 
 class PatternMatrix(ttk.Frame, QuickRefresh):
     def __init__(self, parent: tk.Misc):
-        super().__init__(parent, relief="raised", width=400, height=200, borderwidth=2)
+        super().__init__(parent, relief="raised", width=500, height=200, borderwidth=2)
 
         sf = DScrollFrame(self, mode="DOUBLE")
         sf.pack(side="left", fill="both", expand=True)
