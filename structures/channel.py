@@ -39,7 +39,7 @@ class ChannelPlaybackState(ReactiveClass):
         self.queuedVelocities: dict[int, velocity] = dict()
         """[col, vel] Velocity changes to make this tick."""
 
-        self.scheduledEffects: dict[Callable, tuple[int, object]] = dict()
+        self.scheduledEffects: dict[Callable[[Any], None], tuple[int, Any]] = dict()
         """[Effect callback, ticks until call, callback args] Effects to play on a timer."""
 
         self.setupContainerListen()
@@ -101,13 +101,16 @@ class Channel(ReactiveClass):
         self.playbackState.scheduledEffects = dict()
         self.playbackState.setupContainerListen()
 
-    def scheduleEffect(self, ticks: int, callback: Callable, data: object):
+    def scheduleEffect[T](self, ticks: int, callback: Callable[[T], None], data: T):
         """
         Set a callback to be called on the channel in n ticks.
         Used for delayed effects or effects which stay active.
         (Note, schedule will be cleared on stop.)
         """
         self.playbackState.scheduledEffects[callback] = (ticks, data)
+        _logger.debug(
+            f"Scheduling effect. Current schedule {self.playbackState.scheduledEffects}"
+        )
 
     def tick(self, read: bool) -> list[mido.Message | mido.MetaMessage]:
         """
@@ -123,12 +126,13 @@ class Channel(ReactiveClass):
             self.channel, program.p.currentMatrixRow
         )
 
+        self.playbackState.queuedNotes.clear()
+        self.playbackState.queuedVelocities.clear()
+
         if read:
             rowData = currentPattern.getRow(program.p.currentPatternRow)
 
             # Collect note and velocity changes
-            self.playbackState.queuedNotes.clear()
-            self.playbackState.queuedVelocities.clear()
             self.playbackState.queuedNotes.update(rowData.notes)
             self.playbackState.queuedVelocities.update(rowData.velocities)
 
@@ -136,55 +140,72 @@ class Channel(ReactiveClass):
             for col, effect in rowData.effects.items():
                 if col > self.effectColumns:
                     continue
-                effectMessages = runEffect(effect, self)
-                if effectMessages is not None:
-                    messages.extend(effectMessages)
-
-            # Time/run scheduled effects
-            for callback, (ticks, data) in self.playbackState.scheduledEffects.items():
-                if ticks <= 0:
-                    del self.playbackState.scheduledEffects[callback]
-                    callback(data)
-                else:
-                    self.playbackState.scheduledEffects[callback] = (ticks - 1, data)
-
-            # Determine velocities
-            for col, vel in self.playbackState.queuedVelocities.items():
-                self.playbackState.velocities[col] = vel
-
-            # Play notes
-            for col, note in self.playbackState.queuedNotes.items():
-                prevNote = self.playbackState.columnNotes.get(col)
-                if note == "stop":
-                    if prevNote:
-                        if prevNote in self.playbackState.activeNotes:
-                            self.playbackState.activeNotes.remove(prevNote)
-                            del self.playbackState.columnNotes[col]
-                            messages.append(
-                                mido.Message(
-                                    "note_off", channel=self.channel, note=prevNote
-                                )
-                            )
-                else:
-                    if prevNote:
-                        if prevNote in self.playbackState.activeNotes:
-                            self.playbackState.activeNotes.remove(prevNote)
-                            messages.append(
-                                mido.Message(
-                                    "note_off", channel=self.channel, note=prevNote
-                                )
-                            )
-                    self.playbackState.columnNotes[col] = note
-                    self.playbackState.activeNotes.add(note)
-                    velocity = self.playbackState.velocities.get(col, 64)
-                    messages.append(
-                        mido.Message(
-                            "note_on",
-                            channel=self.channel,
-                            note=note,
-                            velocity=velocity,
-                        )
+                try:
+                    effectMessages = runEffect(effect, self)
+                except Exception as e:
+                    _logger.warning(
+                        f"{(program.p.currentMatrixRow, program.p.currentPatternRow, self.channel)} Effect processing failed: e"
                     )
+                else:
+                    if effectMessages is not None:
+                        messages.extend(effectMessages)
+
+        # Time/run scheduled effects
+        for callback, (
+            ticks,
+            data,
+        ) in self.playbackState.scheduledEffects.copy().items():
+            if ticks <= 0:
+                _logger.debug(
+                    f"Playing scheduled effect. Current schedule {self.playbackState.scheduledEffects}"
+                )
+                del self.playbackState.scheduledEffects[callback]
+                try:
+                    callback(data)
+                except Exception as e:
+                    _logger.warning(
+                        f"{(program.p.currentMatrixRow, program.p.currentPatternRow, self.channel)} Scheduled effect callback failed: {e}"
+                    )
+            else:
+                self.playbackState.scheduledEffects[callback] = (ticks - 1, data)
+
+        # Determine velocities
+        for col, vel in self.playbackState.queuedVelocities.items():
+            self.playbackState.velocities[col] = vel
+
+        # Play notes
+        for col, note in self.playbackState.queuedNotes.items():
+            prevNote = self.playbackState.columnNotes.get(col)
+            if note == "stop":
+                if prevNote:
+                    if prevNote in self.playbackState.activeNotes:
+                        self.playbackState.activeNotes.remove(prevNote)
+                        del self.playbackState.columnNotes[col]
+                        messages.append(
+                            mido.Message(
+                                "note_off", channel=self.channel, note=prevNote
+                            )
+                        )
+            else:
+                if prevNote:
+                    if prevNote in self.playbackState.activeNotes:
+                        self.playbackState.activeNotes.remove(prevNote)
+                        messages.append(
+                            mido.Message(
+                                "note_off", channel=self.channel, note=prevNote
+                            )
+                        )
+                self.playbackState.columnNotes[col] = note
+                self.playbackState.activeNotes.add(note)
+                velocity = self.playbackState.velocities.get(col, 64)
+                messages.append(
+                    mido.Message(
+                        "note_on",
+                        channel=self.channel,
+                        note=note,
+                        velocity=velocity,
+                    )
+                )
 
         return messages
 
