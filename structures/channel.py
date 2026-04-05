@@ -41,6 +41,8 @@ class ChannelPlaybackState(ReactiveClass):
 
         self.scheduledEffects: dict[Callable[[Any], None], tuple[int, Any]] = dict()
         """[Effect callback, ticks until call, callback args] Effects to play on a timer."""
+        self.effectData: dict[str, Any] = dict()
+        """[tag, data] Arbitrary data store for effects. Note: shared between all effects on this channel."""
 
         self.setupContainerListen()
 
