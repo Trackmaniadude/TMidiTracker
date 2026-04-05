@@ -3,6 +3,7 @@
 import logging
 import tkinter as tk
 from tkinter import ttk
+from typing import Any, Callable
 
 _logger = logging.getLogger(__name__)
 
@@ -47,6 +48,10 @@ class DictSettingsEditor(HeaderFrame):
         self.gridFrame = ttk.Frame(self.content)
         self.gridFrame.pack(side="top", fill="both", expand=True)
 
+        self.transforms: dict[
+            str, tuple[Callable[[Any], Any], Callable[[Any], Any]]
+        ] = dict()
+
         if makeApplyButtons:
             frame = ttk.Frame(self.content)
             frame.pack(side="top", fill="both")
@@ -66,12 +71,25 @@ class DictSettingsEditor(HeaderFrame):
         self.__row += 1
         return row
 
-    def addValueEdit(
-        self, key: str, entry: DSEEntry | None = None, label: str | None = None
+    def addValueEdit[
+        TExt, TInt
+    ](
+        self,
+        key: str,
+        entry: DSEEntry | None = None,
+        label: str | None = None,
+        *,
+        transformIn: Callable[[TExt], TInt] = lambda v: v,
+        transformOut: Callable[[TInt], TExt] = lambda v: v,
     ):
-        """Add a value edit. Leaving the entry empty will try to auto infer from type."""
+        """
+        Add a value edit. Leaving the entry empty will try to auto infer from type.
+        Optional transform functions allow transforming between the display and actual value.
+        """
         if label is None:
             label = key
+
+        self.transforms[key] = (transformIn, transformOut)
 
         row = self.getNewRow()
 
@@ -98,14 +116,14 @@ class DictSettingsEditor(HeaderFrame):
         self.__entries[key] = tEntry
 
         def onChange(*a, **kw):
-            self.__internalDict[key] = tEntry.get()
+            self.__internalDict[key] = self.transforms[key][1](tEntry.get())
             if self.__autoApply:
                 self.apply()
 
         tEntry.Changed.connect(onChange, self.connections)
 
         # Load in value
-        tEntry.set(self.__internalDict[key])
+        tEntry.set(self.transforms[key][0](self.__internalDict[key]))
 
     def addSubEditor(self, label: str = "", *, dct: dict | None = None):
         """Add a labeled subframe."""
@@ -164,7 +182,7 @@ class DictSettingsEditor(HeaderFrame):
         for key, entry in self.__entries.items():
             value = self.__dct[key]
             self.__internalDict[key] = value
-            entry.set(value)
+            entry.set(self.transforms[key][0](value))
 
         # Revert subs
         for sub in self.__subEditors:
@@ -191,6 +209,7 @@ if __name__ == "__main__":
         "settingSmallText1": "the j",
         "settingSmallText2": "jhe t",
         "settingLargeText": "engineer gaming",
+        "tfTest": 4,
     }
 
     root = tk.Tk()
@@ -210,7 +229,7 @@ if __name__ == "__main__":
 
     # set = DictSettingsEditor(sf.content, testDict, "TEST 1", makeApplyButtons=True)
     set = DictSettingsEditor(
-        sf.content, testDict, "TEST 1", autoApply=True, makeApplyButtons=True
+        sf.content, testDict, "TEST 1", autoApply=False, makeApplyButtons=True
     )
     set.pack(fill="both", expand=True)
 
@@ -227,7 +246,17 @@ if __name__ == "__main__":
     set.addSeparator()
     set.addTextbox("the j #3333")
 
-    set.addSubEditor("TEST 2").addSubEditor("TEST 3")
+    qqqq = set.addSubEditor("TEST 2")
+    qqqqq = qqqq.addSubEditor("TEST 3")
+
+    qqqqq.addValueEdit(
+        "tfTest",
+        DSEEntries.Float(),
+        "Transform Test",
+        transformIn=lambda v: v**2,
+        transformOut=lambda v: v**0.5,
+    )
+
     q = set.addSubEditor("TEST 4")
 
     q.addValueEdit(
