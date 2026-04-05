@@ -68,7 +68,7 @@ class EffectCategory:
 
 
 class Effects:
-    class Raw(EffectCategory):
+    class Control(EffectCategory):
         class RawMidi(AbstractEffect):
             displayName = "Raw MIDI Message"
             prefix = (0x00,)
@@ -105,6 +105,55 @@ class Effects:
                             "control_change",
                             channel=channel.channel,
                             control=control,
+                            value=value,
+                        )
+                    ]
+                except Exception:
+                    return None
+                else:
+                    return r  # type: ignore
+
+        class SetInstrument(AbstractEffect):
+            displayName = "Set Instrument"
+            prefix = (0x02,)
+            params = ["02xx", "x", "Instrument [0-7F]"]
+            help = "Set channel instrument."
+
+            @classmethod
+            def actuate(
+                cls, channel: Channel, data: tuple[int, ...]
+            ) -> None | list[Message | MetaMessage]:
+                try:
+                    program = data[0]
+                    r = [
+                        Message(
+                            "program_change",
+                            channel=channel.channel,
+                            program=program,
+                        )
+                    ]
+                except Exception:
+                    return None
+                else:
+                    return r  # type: ignore
+
+        class SetVolume(AbstractEffect):
+            displayName = "Set Volume"
+            prefix = (0x03,)
+            params = ["03xx", "x", "Volume [0-7F]"]
+            help = "Set channel volume. Equivalent to 0107xx"
+
+            @classmethod
+            def actuate(
+                cls, channel: Channel, data: tuple[int, ...]
+            ) -> None | list[Message | MetaMessage]:
+                try:
+                    value = data[0]
+                    r = [
+                        Message(
+                            "control_change",
+                            channel=channel.channel,
+                            control=7,
                             value=value,
                         )
                     ]
@@ -270,57 +319,6 @@ class Effects:
 
         class Arpeggio:
             pass
-
-    class ControlShortcuts(EffectCategory):
-
-        class SetInstrument(AbstractEffect):
-            displayName = "Set Instrument"
-            prefix = (0x02,)
-            params = ["02xx", "x", "Instrument [0-7F]"]
-            help = "Set channel instrument."
-
-            @classmethod
-            def actuate(
-                cls, channel: Channel, data: tuple[int, ...]
-            ) -> None | list[Message | MetaMessage]:
-                try:
-                    program = data[0]
-                    r = [
-                        Message(
-                            "program_change",
-                            channel=channel.channel,
-                            program=program,
-                        )
-                    ]
-                except Exception:
-                    return None
-                else:
-                    return r  # type: ignore
-
-        class SetVolume(AbstractEffect):
-            displayName = "Set Volume"
-            prefix = (0x03,)
-            params = ["03xx", "x", "Volume [0-7F]"]
-            help = "Set channel volume. Equivalent to 0107xx"
-
-            @classmethod
-            def actuate(
-                cls, channel: Channel, data: tuple[int, ...]
-            ) -> None | list[Message | MetaMessage]:
-                try:
-                    value = data[0]
-                    r = [
-                        Message(
-                            "control_change",
-                            channel=channel.channel,
-                            control=7,
-                            value=value,
-                        )
-                    ]
-                except Exception:
-                    return None
-                else:
-                    return r  # type: ignore
 
 
 effectsList: dict[tuple[int, ...], type[AbstractEffect]] = dict()
