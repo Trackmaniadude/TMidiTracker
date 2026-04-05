@@ -143,13 +143,126 @@ class Effects:
             displayName = "Arpeggiate"
             prefix = (0x11,)
             params = ["11xx", "x", "Delay (in ticks) between notes."]
-            help = "Insert delay between notes, with the leftmost note playing immediately and the rightmost note playing last."
+            help = "Insert delay between notes, with the leftmost note playing immediately and the rightmost note playing last. Only plays one note at a time in the column of the leftmost note."
 
-        class Retrigger:
-            pass
+            @classmethod
+            def actuate(
+                cls, channel: Channel, data: tuple[int, ...]
+            ) -> None | list[Message | MetaMessage]:
+                delay = data[0]
+                notes = channel.playbackState.queuedNotes.copy()
 
-        class Cut:
-            pass
+                def callback(data: tuple[int, int, list[note]]):
+                    """(time, col, [note])"""
+                    delay, col, notes = data
+                    note = notes.pop()
+                    channel.playbackState.queuedNotes[col] = note
+                    if len(notes) > 0:
+                        channel.scheduleEffect(delay, callback, (delay, col, notes))
+
+                channel.playbackState.queuedNotes.clear()
+                orderedNotes: list[tuple[int, note]] = [
+                    (col, note) for col, note in notes.items()
+                ]
+                orderedNotes.sort(key=lambda e: e[0])
+                orderedNotes.reverse()
+
+                callback(
+                    (delay, orderedNotes[-1][0], [pair[1] for pair in orderedNotes])
+                )
+
+        class Strum(AbstractEffect):
+            displayName = "Strum"
+            prefix = (0x12,)
+            params = ["12xx", "x", "Delay (in ticks) between notes."]
+            help = "Insert delay between notes, with the leftmost note playing immediately and the rightmost note playing last. All notes will ring out."
+
+            @classmethod
+            def actuate(
+                cls, channel: Channel, data: tuple[int, ...]
+            ) -> None | list[Message | MetaMessage]:
+                delay = data[0]
+                notes = channel.playbackState.queuedNotes.copy()
+
+                def callback(data: tuple[int, list[tuple[int, note]]]):
+                    """(time, [(col, note)])"""
+                    delay, notes = data
+                    col, note = notes.pop()
+                    channel.playbackState.queuedNotes[col] = note
+                    if len(notes) > 0:
+                        channel.scheduleEffect(delay, callback, (delay, notes))
+
+                channel.playbackState.queuedNotes.clear()
+                orderedNotes: list[tuple[int, note]] = [
+                    (col, note) for col, note in notes.items()
+                ]
+                orderedNotes.sort(key=lambda e: e[0])
+                orderedNotes.reverse()
+
+                callback((delay, orderedNotes))
+
+        class Retrigger(AbstractEffect):
+            displayName = "Retrigger"
+            prefix = (0x13,)
+            params = [
+                "13xx[yy][zz]",
+                "x",
+                "Delay (in ticks)",
+                "y",
+                "Count",
+                "z",
+                "Column",
+            ]
+            help = "Repeat note(s) after a time, y times. If no column is specified, applies to all notes."
+
+            @classmethod
+            def actuate(
+                cls, channel: Channel, data: tuple[int, ...]
+            ) -> None | list[Message | MetaMessage]:
+                delay = data[0]
+                count = data[1] if len(data) == 2 else 1
+                col = data[2] if len(data) == 3 else None
+                notes = channel.playbackState.queuedNotes.copy()
+
+                def callback(data: tuple[dict[int, note], int]):
+                    notes, count = data
+                    channel.playbackState.queuedNotes.update(notes)
+                    if count > 0:
+                        channel.scheduleEffect(delay, callback, (notes, count - 1))
+
+                if col is None:
+                    channel.scheduleEffect(delay, callback, (notes, count - 1))
+                else:
+                    note = notes.get(col, None)
+                    if note is not None:
+                        channel.scheduleEffect(
+                            delay, callback, ({col: note}, count - 1)
+                        )
+
+        class NoteCut(AbstractEffect):
+            displayName = "Note Cut"
+            prefix = (0x14,)
+            params = ["14xx[yy]", "x", "Delay (in ticks)", "y", "Column"]
+            help = "Stop playback of note(s) after a time. If no column is specified, applies to all notes. Mainly intended for notes shorter than the row time."
+
+            @classmethod
+            def actuate(
+                cls, channel: Channel, data: tuple[int, ...]
+            ) -> None | list[Message | MetaMessage]:
+                delay = data[0]
+                col = data[1] if len(data) == 2 else None
+                notes = channel.playbackState.queuedNotes.copy()
+
+                def callback(savedNotes: dict[int, note]):
+                    channel.playbackState.queuedNotes.update(savedNotes)
+
+                if col is None:
+                    channel.scheduleEffect(
+                        delay, callback, {n: "stop" for n in notes.keys()}
+                    )
+                else:
+                    if note is not None:
+                        channel.scheduleEffect(delay, callback, {col: "stop"})
 
     class Pitch(EffectCategory):
         class Vibrato:
