@@ -1,18 +1,12 @@
 import tkinter as tk
 from abc import ABC, abstractmethod
 from tkinter import ttk
-from typing import Protocol
+from typing import Callable
 
 from utils.event import Event
 
 ValidateableEntry = tk.Entry | tk.Spinbox | ttk.Entry | ttk.Spinbox | ttk.Combobox
-
-
-class ValidatorFunc(Protocol):
-    """Signature for validation functions."""
-
-    @staticmethod
-    def __func__(s: str) -> str | None: ...
+ValidatorFunc = Callable[[str], str | None]
 
 
 class AbstractValidator(ABC):
@@ -30,6 +24,15 @@ class Validators:
 
         def validate(self, s: str) -> str | None:
             return s
+
+    class Function(AbstractValidator):
+        """Uses an arbitrary function (if you don't want to make a new validator class)"""
+
+        def __init__(self, func: ValidatorFunc) -> None:
+            self.func: ValidatorFunc = func
+
+        def validate(self, s: str) -> str | None:
+            return self.func(s)
 
     class Numeric(AbstractValidator):
         """Requires the entry to be numerical, as well as limits on the number."""
