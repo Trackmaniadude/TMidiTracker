@@ -7,6 +7,7 @@ from interface.utilities.dictSettingsEditor import DictSettingsEditor
 from interface.utilities.dictSettingsEditorEntries import DSEEntries
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from interface.utilities.headerFrame import HeaderFrame
+from interface.utilities.validatedEntry import Validators
 from interface.utilities.validatedEntryPrebuilts import Prebuilts
 from structures import program
 from structures.globalEvents import SongReloaded, StructureChanged, TimingChanged
@@ -48,12 +49,39 @@ class SongDataView(ttk.Frame):
             autoApply=True,
             collapsible=True,
         )
-        timeEdit.collapse()
-        timeEdit.pack(side="top", fill="x", expand=False)
-        timeEdit.addValueEdit("clock", DSEEntries.Integer(min=1, max=1000), "Clock")
-        timeEdit.Applied.connect(
-            lambda changes: TimingChanged.fire(changes), self.connections
-        )
+
+        def doTimeEdit():
+            def grooveTFIn(l: list[int]) -> str:
+                return " ".join(str(e) for e in l)
+
+            def grooveTFOut(s: str) -> list[int]:
+                return [int(e) for e in s.split(" ")]
+
+            def grooveValid(s: str) -> str | None:
+                try:
+                    grooveTFOut(s)
+                except:
+                    return None
+                else:
+                    return s
+
+            timeEdit.collapse()
+            timeEdit.pack(side="top", fill="x", expand=False)
+            timeEdit.addValueEdit(
+                "clock", DSEEntries.Integer(min=1, max=1000), "Clock (hz)"
+            )
+            timeEdit.addValueEdit(
+                "groove",
+                DSEEntries.SmallTextbox(validator=Validators.Function(grooveValid)),
+                label="Groove",
+                transformIn=grooveTFIn,
+                transformOut=grooveTFOut,
+            )
+            timeEdit.Applied.connect(
+                lambda changes: TimingChanged.fire(changes), self.connections
+            )
+
+        doTimeEdit()
 
         ### Structure
         structureEdit = DictSettingsEditor(
