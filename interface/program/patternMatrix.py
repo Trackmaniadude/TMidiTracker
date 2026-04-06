@@ -421,9 +421,9 @@ class MatrixActions(ttk.Frame):
         #     text="Clone Rows After",
         #     command=lambda *_: self.cloneRows("after"),
         # ).pack(side="top", fill="x", expand=True)
-        # ttk.Button(
-        #     sf.content, text="Clone To End", command=lambda *_: self.cloneRows("end")
-        # ).pack(side="top", fill="x", expand=True)
+        ttk.Button(
+            sf.content, text="Clone To End", command=lambda *_: self.cloneRows("end")
+        ).pack(side="top", fill="x", expand=True)
         # ttk.Button(
         #     sf.content, text="Move Up", command=lambda *_: self.moveRows("up")
         # ).pack(side="top", fill="x", expand=True)
@@ -470,31 +470,31 @@ class MatrixActions(ttk.Frame):
         song.visibleMatrixRows += 1
         self.matrix.queueRefresh()
 
-    # def cloneRows(self, position: Literal["before", "after", "end"]):
-    #     song = program.p.currentSong
+    def cloneRows(self, position: Literal["before", "after", "end"]):
+        song = program.p.currentSong
 
-    #     rows = list(self.matrix.getSelectedRows())
-    #     newRows = len(rows)
-    #     if newRows == 0: return
-    #     rows.sort()
+        rows = list(self.matrix.getSelectedRows())
+        newRows = len(rows)
+        if newRows == 0: return
+        rows.sort()
 
-    #     if position == "before":
-    #         row0 = min(rows)
-    #         for i in range(newRows):
-    #             rows[i] += newRows
-    #     elif position == "after":
-    #         row0 = max(rows) + 1
-    #     elif position == "end":
-    #         row0 = song.visibleMatrixRows
+        if position == "before":
+            row0 = min(rows)
+            for i in range(newRows):
+                rows[i] += newRows
+        elif position == "after":
+            row0 = max(rows) + 1
+        elif position == "end":
+            row0 = song.visibleMatrixRows
 
-    #     song.shiftMatrixRows(row0, None, row0 + newRows)
+        song.shiftMatrixRows(row0, None, row0 + newRows)
 
-    #     for i, row in enumerate(rows):
-    #         for channel in range(song.visibleChannels):
-    #             song.setPatternNumber(channel, row0 + i, song.getPatternIdByLocation(channel, row))
+        for i, row in enumerate(rows):
+            for channel in range(song.visibleChannels):
+                song.setPatternNumber(channel, row0 + i, song.getPatternIdByLocation(channel, row))
 
-    #     song.visibleMatrixRows += newRows
-    #     self.matrix.queueRefresh()
+        song.visibleMatrixRows += newRows
+        self.matrix.queueRefresh()
 
     # def moveRows(self, direction: Literal["up", "down"]):
     #     song = program.p.currentSong
