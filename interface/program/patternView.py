@@ -291,27 +291,33 @@ class PatternViewLabel(ttk.Label):
 
     def increment(self, scale: int):
         if self.view.viewFrame.target.column == PVLM.NOTE:
-            currentNote = self.view.pattern.getNote(self.row, self.column)
-            if currentNote is None:
-                return
-            if currentNote == "stop":
-                return
-            self.view.pattern.setNote(
-                self.row, self.column, currentNote + NOTE_DELTAS[scale]
-            )
-            self.refresh()
+            notes, _, _ = self.view.viewFrame.getUsedIndicesInSelection()
+            for channel, row, column in notes:
+                pattern = program.p.currentSong.getPatternByLocation(
+                    channel, program.p.currentMatrixRow
+                )
+                currentNote = pattern.getNote(row, column)
+                if currentNote is None:
+                    return
+                if currentNote == "stop":
+                    return
+                pattern.setNote(row, column, currentNote + NOTE_DELTAS[scale])
+            self.view.viewFrame.refreshLabels()
 
     def decrement(self, scale: int):
         if self.view.viewFrame.target.column == PVLM.NOTE:
-            currentNote = self.view.pattern.getNote(self.row, self.column)
-            if currentNote is None:
-                return
-            if currentNote == "stop":
-                return
-            self.view.pattern.setNote(
-                self.row, self.column, currentNote - NOTE_DELTAS[scale]
-            )
-            self.refresh()
+            notes, _, _ = self.view.viewFrame.getUsedIndicesInSelection()
+            for channel, row, column in notes:
+                pattern = program.p.currentSong.getPatternByLocation(
+                    channel, program.p.currentMatrixRow
+                )
+                currentNote = pattern.getNote(row, column)
+                if currentNote is None:
+                    return
+                if currentNote == "stop":
+                    return
+                pattern.setNote(row, column, currentNote - NOTE_DELTAS[scale])
+            self.view.viewFrame.refreshLabels()
 
     def getTextValue(self):
         getter = getattr(self.view.pattern, self.mode.value.getter)
