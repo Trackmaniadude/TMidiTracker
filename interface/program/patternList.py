@@ -4,6 +4,7 @@ Shows all available patterns.
 
 from __future__ import annotations
 
+from itertools import chain
 from typing import TYPE_CHECKING, cast
 
 from interface.theme import MatrixSelector
@@ -113,12 +114,11 @@ class PatternList(ttk.Frame, QuickRefresh):
             )
 
         SongReloaded.connect(lambda *_: setupSongEventListeners(), self.connections)
-
         SongReloaded.connect(lambda *_: self.queueRefresh(), self.connections)
         self.refresh()
 
     def destroy(self) -> None:
-        for connection in self.connections:
+        for connection in chain(self.connections, self.songConnections):
             connection.disconnect()
         return super().destroy()
 

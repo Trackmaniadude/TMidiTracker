@@ -289,14 +289,20 @@ makeKeybinds()
 
 
 # Load open files
-# openFile = args.file
-# try:
-#     program.p.currentSong = Song.fromFile(openFile)
-# except:
-#     try:
-#         program.p.currentSong = Song.fromFile("startup.tmt")
-#     except:
-#         pass
+openFile = args.file
+try:
+    program.p.currentSong = Song.fromFile(openFile)
+    program.p.currentFile = openFile
+    program.p.projectModified = False
+    updateWindowTitle()
+except:
+    try:
+        program.p.currentSong = Song.fromFile("startup.tmt")
+        program.p.currentFile = None
+        program.p.projectModified = False
+        updateWindowTitle()
+    except:
+        pass
 
 
 root.mainloop()
