@@ -475,7 +475,8 @@ class MatrixActions(ttk.Frame):
 
         rows = list(self.matrix.getSelectedRows())
         newRows = len(rows)
-        if newRows == 0: return
+        if newRows == 0:
+            return
         rows.sort()
 
         if position == "before":
@@ -491,7 +492,9 @@ class MatrixActions(ttk.Frame):
 
         for i, row in enumerate(rows):
             for channel in range(song.visibleChannels):
-                song.setPatternNumber(channel, row0 + i, song.getPatternIdByLocation(channel, row))
+                song.setPatternNumber(
+                    channel, row0 + i, song.getPatternIdByLocation(channel, row)
+                )
 
         song.visibleMatrixRows += newRows
         self.matrix.queueRefresh()
