@@ -3,7 +3,7 @@ import logging
 import os
 import tkinter as tk
 import traceback
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, ttk, font
 from typing import cast
 
 from interface.program.channelDebug import ChannelDebug
@@ -63,6 +63,7 @@ root.option_add("*tearOff", False)
 root.unbind_all("<Tab>")
 root.unbind_all("<<NextWindow>>")
 root.unbind_all("<<PrevWindow>>")
+root.option_add("*Font", value=font.nametofont("TkFixedFont"))
 
 from interface import theme
 

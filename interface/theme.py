@@ -106,10 +106,7 @@ class MatrixSelector:
 
 def generate():
     s = ttk.Style()
-    # s.theme_use("clam")
-
-    s.configure(".", font=("TkFixedFont", 10))
-
+    # s.theme_use("winnative")  # Dated look but I kind of like it?
     Style.generateAll(s)
 
 
