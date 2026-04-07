@@ -112,13 +112,15 @@ class SongDataView(ttk.Frame):
         )
 
         # Rebinding
-        SongReloaded.connect(
-            lambda *_: metadataEdit.rebind(program.p.currentSong.metadata.__dict__)
-        )
-        SongReloaded.connect(lambda *_: timeEdit.rebind(program.p.currentSong.__dict__))
-        SongReloaded.connect(
-            lambda *_: structureEdit.rebind(program.p.currentSong.__dict__)
-        )
+        def reload():
+            metadataEdit.rebind(program.p.currentSong.metadata.__dict__)
+            metadataEdit.revert()
+            timeEdit.rebind(program.p.currentSong.__dict__)
+            timeEdit.revert()
+            structureEdit.rebind(program.p.currentSong.__dict__)
+            structureEdit.revert()
+
+        SongReloaded.connect(lambda *_: reload(), self.connections)
 
     def destroy(self) -> None:
         for connection in self.connections:
