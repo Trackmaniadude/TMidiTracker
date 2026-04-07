@@ -170,7 +170,7 @@ class ReactiveClass:
                 f"Attempt to bind to non-existant attribute '{name}' in {self}"
             )
         if name not in self.__individualChangeEvents:
-            _logger.debug(f"Generating attribute change event for {name} ({self})")
+            # _logger.debug(f"Generating attribute change event for {name} ({self})")
             e = Event()
             self.__individualChangeEvents[name] = e
 

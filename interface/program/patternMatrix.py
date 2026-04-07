@@ -700,33 +700,33 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
 
         # Row Labels
         if rows > currentRows:  # Need more
-            _logger.debug("Need more matrix rows")
+            # _logger.debug("Need more matrix rows")
             for row in range(currentRows, rows):
                 label = PatternSelectorRowLabel(self.__grid, self, row)
                 pos = self.gridPosition(row, 0, "row label")
                 label.grid(row=pos[0], column=pos[1])
                 self.__rowLabels.append(label)
-                _logger.debug(row)
+                # _logger.debug(row)
         elif rows < currentRows:  # Need less
             for row in range(currentRows, rows, -1):
                 label = self.__rowLabels.pop()
                 label.destroy()
-                _logger.debug(row)
+                # _logger.debug(row)
 
         # Column Labels
         if cols > currentCols:  # Need more
-            _logger.debug("Need more matrix cols")
+            # _logger.debug("Need more matrix cols")
             for col in range(currentCols, cols):
                 label = ttk.Label(self.__grid, text=CHANNEL_ORDER[col] + 1, width=3)
                 pos = self.gridPosition(0, col, "column label")
                 label.grid(row=pos[0], column=pos[1])
                 self.__colLabels.append(label)
-                _logger.debug(col)
+                # _logger.debug(col)
         elif cols < currentCols:  # Need less
             for col in range(currentCols, cols, -1):
                 label = self.__colLabels.pop()
                 label.destroy()
-                _logger.debug(col)
+                # _logger.debug(col)
 
         # Selectors
         for row in range(max(rows, currentRows)):
@@ -741,7 +741,7 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
                         pos = self.gridPosition(row, col, "selector")
                         selector.grid(row=pos[0], column=pos[1], sticky="nesw")
                         self.__selectors[row, col] = selector
-                        _logger.debug(f"Adding selector at <{row}, {col}>")
+                        # _logger.debug(f"Adding selector at <{row}, {col}>")
                 else:
                     # We don't want a selector here
                     if (row, col) in self.__selectors:
@@ -749,4 +749,4 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
                         selector = self.__selectors[row, col]
                         selector.destroy()
                         del self.__selectors[row, col]
-                        _logger.debug(f"Removing selector at <{row}, {col}>")
+                        # _logger.debug(f"Removing selector at <{row}, {col}>")

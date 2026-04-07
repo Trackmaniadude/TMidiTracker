@@ -104,14 +104,14 @@ class Player:
         self.playing = True
 
         while self.playing:
-            _logger.debug("TICK")
+            # _logger.debug("TICK")
             messages = self.tick()
             self.ticksSinceLastMessage += 1
             if len(messages) > 0:
                 mspt = 1000 // s.clock
                 messages[0].time = self.ticksSinceLastMessage * mspt
                 self.ticksSinceLastMessage = 0
-            _logger.debug(messages)
+            # _logger.debug(messages)
             out += messages
 
         return out
@@ -139,7 +139,7 @@ class Player:
                 # Play messages
                 for message in self.tick():
                     program.p.currentPort.send(message)
-                    _logger.debug(message)
+                    # _logger.debug(message)
 
                 # Timing. We figure out how long we should wait, then adjust based off how long processing took.
                 tickLength = 1 / program.p.currentSong.clock  # Target amount to wait
