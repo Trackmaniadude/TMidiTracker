@@ -86,14 +86,76 @@ class Player:
 
         return messages
 
-    def playOffline(self) -> list[Message | MetaMessage]:
-        """Play the entire song out to a list of timed messages. This can be easily dumped to file."""
+    def playOffline(self) -> tuple[list[Message | MetaMessage], int]:
+        """
+        Play the entire song out to a list of timed messages. This can be easily dumped to file.
+        Also returns some extra information.
+          Currently: ticks per beat (since this is needed to write to file)
+        """
         s = program.p.currentSong
         out = list()
 
+        # Determine time signature (makes midi nicer)
+        # Assumes a quarter note is the minor split marker, a measure is the major split marker
+        # If groove does not fit evenly into minor split, will give wonky results. TODO: tell the user that, not our problem here
+        def getTimeSignature() -> tuple[int, int, int, int]:
+            # Determine ticks per quarter (per minor split)
+            ticksPerQuarter = 0
+            for i in range(s.minorSubdiv):
+                ticksPerQuarter += s.groove[i % len(s.groove)]
+
+            timeSigRaw = s.majorSubdiv / s.minorSubdiv
+            # If this is an integer, use that as numerator
+            # If it is not an integer, double the time signature (midi takes denom as a power of two, mido takes it raw, so we do raw here)
+            # If this fails after a few times, ahh well, thats on the user for being weird (if this is you, do share, weird music is fun!)
+            denominator = 4  # Quarter by default
+            for i in range(6):  # How silly we get
+                if timeSigRaw == int(timeSigRaw):
+                    break
+                timeSigRaw *= 2
+                denominator *= 2
+
+            num = int(timeSigRaw)
+            den = denominator
+            tspb = (
+                s.minorSubdiv * 2
+            )  # Currently assuming minor subdiv is visually 16th notes
+            return num, den, tspb, ticksPerQuarter
+
+        numerator, denominator, tspb, ticksPerBeat = getTimeSignature()
+
+        _logger.debug(
+            f"""
+
+EXPORTING SONG
+start info (may change)
+clock={s.clock}
+groove={s.groove}
+usPerTick={1000000 // s.clock}
+ticksPerBeat={ticksPerBeat}
+inferredTimeSignature={numerator}/{denominator}
+thirtySecondsPerBeat={tspb}
+tempo={int(1000000 / s.clock) * ticksPerBeat}
+        """
+        )
+
         # Send metadata
         out.append(MetaMessage("track_name", name="TRACK NAME", time=0))
-        out.append(MetaMessage("set_tempo", tempo=1000000, time=0))
+        out.append(
+            MetaMessage(
+                "set_tempo", tempo=int(1000000 / s.clock) * ticksPerBeat, time=0
+            )
+        )
+        out.append(
+            MetaMessage(
+                "time_signature",
+                numerator=numerator,
+                denominator=denominator,
+                clocks_per_click=ticksPerBeat,
+                notated_32nd_notes_per_beat=tspb,
+                time=0,
+            )
+        )
 
         if (
             self.loop == True
@@ -108,20 +170,20 @@ class Player:
             messages = self.tick()
             self.ticksSinceLastMessage += 1
             if len(messages) > 0:
-                mspt = 1000 // s.clock
-                messages[0].time = self.ticksSinceLastMessage * mspt
+                messages[0].time = self.ticksSinceLastMessage
                 self.ticksSinceLastMessage = 0
             # _logger.debug(messages)
             out += messages
 
-        return out
+        return out, ticksPerBeat
 
     def toFile(self, filename: str):
         """Use playOffline to save the song to file."""
         track = MidiTrack()
-        for message in self.playOffline():
+        messages, ticksPerBeat = self.playOffline()
+        for message in messages:
             track.append(message)
-        MidiFile(type=0, ticks_per_beat=1000, tracks=[track]).save(filename)
+        MidiFile(type=0, ticks_per_beat=ticksPerBeat, tracks=[track]).save(filename)
 
     def startLiveDaemon(self):
         """Set this player to live playback mode."""
