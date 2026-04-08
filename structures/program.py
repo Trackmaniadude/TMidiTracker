@@ -47,6 +47,10 @@ class Program(ReactiveClass):
         """Current row in pattern matrix."""
         self.currentPatternRow: int = 0
         """Current row in patterns."""
+        self.nextMatrixRow: int = -1
+        """Setting to a value other than -1 will make any running Player jump to that row instead of the next row."""
+        self.nextPatternRow: int = -1
+        """Setting to a value other than -1 will make any running Player jump to that row instead of the next row."""
 
         # Files
         self.currentFile: str | None = None

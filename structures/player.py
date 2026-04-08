@@ -61,6 +61,19 @@ class Player:
             self.grooveIndex = (self.grooveIndex + 1) % len(
                 program.p.currentSong.groove
             )
+
+            # Jump Pattern Row
+            if program.p.nextPatternRow != -1:
+                program.p.currentPatternRow = program.p.nextPatternRow - 1
+                # -1 so we can just run the main logic again
+                program.p.nextPatternRow = -1
+
+            # Jump Matrix Row
+            if program.p.nextMatrixRow != -1:
+                program.p.currentMatrixRow = program.p.nextMatrixRow
+                program.p.nextMatrixRow = -1
+
+            # Move to next row
             program.p.currentPatternRow += 1
             if program.p.currentPatternRow >= program.p.currentSong.patternLength:
                 program.p.currentPatternRow = 0
