@@ -195,6 +195,7 @@ tempo={int(1000000 / s.clock) * ticksPerBeat}
                 self.ticksSinceLastMessage = 0
             # _logger.debug(messages)
             out += messages
+        out.append(MetaMessage("end_of_track", time=self.ticksSinceLastMessage))
 
         return out, ticksPerBeat
 
