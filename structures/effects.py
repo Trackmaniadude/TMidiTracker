@@ -322,11 +322,17 @@ class Effects:
             pass
 
     class Flow(EffectCategory):
-        # class End(AbstractEffect):
-        #     displayName = "End Song"
-        #     prefix = (0xF0,)
-        #     params = ["F0"]
-        #     help = "Stop playback."
+        class End(AbstractEffect):
+            displayName = "End Song"
+            prefix = (0xF0,)
+            params = ["F0"]
+            help = "Stops playback."
+
+            @classmethod
+            def actuate(
+                cls, channel: Channel, player: program.Player, data: tuple[int, ...]
+            ) -> None | list[Message | MetaMessage]:
+                player.pause()
 
         class Loop(AbstractEffect):
             displayName = "Loop"
@@ -346,7 +352,7 @@ class Effects:
                 "indefinitely in live playback, or use the repeat amount for offline playback."
             )
 
-            storeName = "LoopEffect{mat}{pat}"
+            storeName = "LoopEffect{mat}{pat}"  # Was that the bite of '87??
 
             @classmethod
             def actuate(
