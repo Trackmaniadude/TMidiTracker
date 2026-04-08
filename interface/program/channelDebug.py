@@ -20,13 +20,13 @@ class ChannelDebug(ttk.Frame):
     def __init__(self, parent: tk.Misc):
         super().__init__(parent, relief="raised", width=300, height=200)
 
-        sf = DScrollFrame(self, mode="VERTICAL")
+        sf = DScrollFrame(self, mode="DOUBLE")
         sf.pack(fill="both", expand=True)
 
         self.pack_propagate(False)
 
         self.__content = sf.content
-        self.__content.configure(width=280, height=2000)
+        self.__content.configure(width=1000, height=2000)
 
         self.__content.pack_propagate(False)
 

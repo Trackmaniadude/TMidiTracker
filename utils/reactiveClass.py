@@ -232,11 +232,11 @@ class ReactiveClassView(ttk.Frame):
                     )
                     view.grid(row=i, column=0, columnspan=2)
                 else:
-                    ttk.Label(hf.content, text=field).grid(
+                    ttk.Label(hf.content, text=field, justify="left").grid(
                         row=i, column=0, sticky="nesw"
                     )
-                    view = ttk.Label(hf.content)
-                    view.grid(row=i, column=1)
+                    view = ttk.Label(hf.content, justify="left")
+                    view.grid(row=i, column=1, sticky="nesw")
 
                     def g():
                         targetVal = getattr(target, field)
