@@ -327,8 +327,8 @@ class Effects:
         #     params = ["F0"]
         #     help = "Stop playback."
 
-        class Jump(AbstractEffect):
-            displayName = "Jump"
+        class Loop(AbstractEffect):
+            displayName = "Loop"
             prefix = (0xF4,)
             params = [
                 "F4mm[pp][ll]",
@@ -345,20 +345,24 @@ class Effects:
                 "indefinitely in live playback, or use the repeat amount for offline playback."
             )
 
-            storeName = "JumpEffect{mat}{pat}"
+            storeName = "LoopEffect{mat}{pat}"
 
             @classmethod
             def actuate(
                 cls, channel: Channel, data: tuple[int, ...]
             ) -> None | list[Message | MetaMessage]:
-                storeName = cls.storeName.format(mat=program.p.currentMatrixRow, pat=program.p.currentPatternRow)
+                storeName = cls.storeName.format(
+                    mat=program.p.currentMatrixRow, pat=program.p.currentPatternRow
+                )
 
                 matrixRow = data[0]
                 patternRow = data[1] if len(data) > 1 else 0
                 repeat = data[2] if len(data) > 2 else None
 
                 if repeat is not None:
-                    count: int = channel.playbackState.effectData.get(storeName, repeat) - 1
+                    count: int = (
+                        channel.playbackState.effectData.get(storeName, repeat) - 1
+                    )
                     channel.playbackState.effectData[storeName] = count
                     if count <= 0:
                         del channel.playbackState.effectData[storeName]
@@ -367,9 +371,96 @@ class Effects:
                 program.p.nextMatrixRow = matrixRow
                 program.p.nextPatternRow = patternRow
 
-        # class JumpRelative(AbstractEffect):
-        #     displayName = "Jump (Relative)"
-        #     prefix = (0xF5,)
+        class Jump(AbstractEffect):
+            displayName = "Jump"
+            prefix = (0xF5,)
+            params = [
+                "F5mm[pp][cc]",
+                "mm",
+                "Matrix Row",
+                "[pp]",
+                "Pattern Row",
+                "[cc]",
+                "Countdown",
+            ]
+            help = (
+                "Jump to another row, and optionally position in that row."
+                "\nAlso has an optional countdown. Specifying this will ignore "
+                "the jump until it has been passed n-1 times (so specifying 2 "
+                "will jump the second time around)"
+            )
+
+            storeName = "JumpEffect{mat}{pat}"
+
+            @classmethod
+            def actuate(
+                cls, channel: Channel, data: tuple[int, ...]
+            ) -> None | list[Message | MetaMessage]:
+                storeName = cls.storeName.format(
+                    mat=program.p.currentMatrixRow, pat=program.p.currentPatternRow
+                )
+
+                matrixRow = data[0]
+                patternRow = data[1] if len(data) > 1 else 0
+                countdown = data[2] if len(data) > 2 else 1
+
+                count: int = (
+                    channel.playbackState.effectData.get(storeName, countdown) - 1
+                )
+                channel.playbackState.effectData[storeName] = count
+                if count <= 0:
+                    del channel.playbackState.effectData[storeName]
+                    program.p.nextMatrixRow = matrixRow
+                    program.p.nextPatternRow = patternRow
+
+        class JumpRel(AbstractEffect):
+            displayName = "Jump Relative"
+            prefix = (0xF6,)
+            params = [
+                "F6mm[pp][cc]",
+                "mm",
+                "Matrix Row Offset",
+                "[pp]",
+                "Pattern Row Offset",
+                "[cc]",
+                "Countdown",
+            ]
+            help = (
+                "Jump to another row, and optionally position in that row. "
+                "Rows are specified as offsets. However, pattern offset only applies "
+                "if row offset is 0, otherwise pattern is set absolute."
+                "\nAlso has an optional countdown. Specifying this will ignore "
+                "the jump until it has been passed n-1 times (so specifying 2 "
+                "will jump the second time around)"
+            )
+
+            storeName = "JumpRelativeEffect{mat}{pat}"
+
+            @classmethod
+            def actuate(
+                cls, channel: Channel, data: tuple[int, ...]
+            ) -> None | list[Message | MetaMessage]:
+                storeName = cls.storeName.format(
+                    mat=program.p.currentMatrixRow, pat=program.p.currentPatternRow
+                )
+
+                matrixRow = data[0]
+                patternRow = data[1] if len(data) > 1 else 0
+                countdown = data[2] if len(data) > 2 else 1
+
+                count: int = (
+                    channel.playbackState.effectData.get(storeName, countdown) - 1
+                )
+                channel.playbackState.effectData[storeName] = count
+                if count <= 0:
+                    del channel.playbackState.effectData[storeName]
+                    program.p.nextMatrixRow = program.p.currentMatrixRow + matrixRow
+                    if matrixRow == 0:
+                        program.p.nextPatternRow = (
+                            program.p.currentPatternRow + patternRow
+                        )
+                    else:
+                        program.p.nextPatternRow = patternRow
 
 
 effectsList: dict[tuple[int, ...], type[AbstractEffect]] = dict()
