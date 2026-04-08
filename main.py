@@ -3,7 +3,7 @@ import logging
 import os
 import tkinter as tk
 import traceback
-from tkinter import filedialog, messagebox, ttk, font
+from tkinter import filedialog, font, messagebox, ttk
 from typing import cast
 
 from interface.program.channelDebug import ChannelDebug
