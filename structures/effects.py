@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from structures.channel import Channel
+    from structures.player import Player
 
 import logging
 
@@ -38,7 +39,7 @@ class AbstractEffect:
 
     @classmethod
     def actuate(
-        cls, channel: Channel, data: tuple[int, ...]
+        cls, channel: Channel, player: Player, data: tuple[int, ...]
     ) -> None | list[Message | MetaMessage]:
         """Run effect code. May directly fiddle with channel data, or return MIDI messages."""
         _logger.warning(
@@ -78,7 +79,7 @@ class Effects:
             # TODO: verify
             @classmethod
             def actuate(
-                cls, channel: Channel, data: tuple[int, ...]
+                cls, channel: Channel, player: Player, data: tuple[int, ...]
             ) -> None | list[Message | MetaMessage]:
                 try:
                     r = [Message.from_bytes(data)]
@@ -95,7 +96,7 @@ class Effects:
 
             @classmethod
             def actuate(
-                cls, channel: Channel, data: tuple[int, ...]
+                cls, channel: Channel, player: Player, data: tuple[int, ...]
             ) -> None | list[Message | MetaMessage]:
                 try:
                     control = data[0]
@@ -121,7 +122,7 @@ class Effects:
 
             @classmethod
             def actuate(
-                cls, channel: Channel, data: tuple[int, ...]
+                cls, channel: Channel, player: Player, data: tuple[int, ...]
             ) -> None | list[Message | MetaMessage]:
                 try:
                     program = data[0]
@@ -145,7 +146,7 @@ class Effects:
 
             @classmethod
             def actuate(
-                cls, channel: Channel, data: tuple[int, ...]
+                cls, channel: Channel, player: Player, data: tuple[int, ...]
             ) -> None | list[Message | MetaMessage]:
                 try:
                     value = data[0]
@@ -171,7 +172,7 @@ class Effects:
 
             @classmethod
             def actuate(
-                cls, channel: Channel, data: tuple[int, ...]
+                cls, channel: Channel, player: Player, data: tuple[int, ...]
             ) -> None | list[Message | MetaMessage]:
                 delay = data[0]
                 col = data[1] if len(data) == 2 else None
@@ -196,7 +197,7 @@ class Effects:
 
             @classmethod
             def actuate(
-                cls, channel: Channel, data: tuple[int, ...]
+                cls, channel: Channel, player: Player, data: tuple[int, ...]
             ) -> None | list[Message | MetaMessage]:
                 delay = data[0]
                 notes = channel.playbackState.queuedNotes.copy()
@@ -228,7 +229,7 @@ class Effects:
 
             @classmethod
             def actuate(
-                cls, channel: Channel, data: tuple[int, ...]
+                cls, channel: Channel, player: Player, data: tuple[int, ...]
             ) -> None | list[Message | MetaMessage]:
                 delay = data[0]
                 notes = channel.playbackState.queuedNotes.copy()
@@ -266,7 +267,7 @@ class Effects:
 
             @classmethod
             def actuate(
-                cls, channel: Channel, data: tuple[int, ...]
+                cls, channel: Channel, player: Player, data: tuple[int, ...]
             ) -> None | list[Message | MetaMessage]:
                 delay = data[0]
                 count = data[1] if len(data) == 2 else 1
@@ -296,7 +297,7 @@ class Effects:
 
             @classmethod
             def actuate(
-                cls, channel: Channel, data: tuple[int, ...]
+                cls, channel: Channel, player: Player, data: tuple[int, ...]
             ) -> None | list[Message | MetaMessage]:
                 delay = data[0]
                 col = data[1] if len(data) == 2 else None
@@ -349,10 +350,10 @@ class Effects:
 
             @classmethod
             def actuate(
-                cls, channel: Channel, data: tuple[int, ...]
+                cls, channel: Channel, player: Player, data: tuple[int, ...]
             ) -> None | list[Message | MetaMessage]:
                 storeName = cls.storeName.format(
-                    mat=program.p.currentMatrixRow, pat=program.p.currentPatternRow
+                    mat=player.currentMatrixRow, pat=player.currentPatternRow
                 )
 
                 matrixRow = data[0]
@@ -368,8 +369,8 @@ class Effects:
                         del channel.playbackState.effectData[storeName]
                         return
 
-                program.p.nextMatrixRow = matrixRow
-                program.p.nextPatternRow = patternRow
+                player.nextMatrixRow = matrixRow
+                player.nextPatternRow = patternRow
 
         class Jump(AbstractEffect):
             displayName = "Jump"
@@ -394,10 +395,10 @@ class Effects:
 
             @classmethod
             def actuate(
-                cls, channel: Channel, data: tuple[int, ...]
+                cls, channel: Channel, player: Player, data: tuple[int, ...]
             ) -> None | list[Message | MetaMessage]:
                 storeName = cls.storeName.format(
-                    mat=program.p.currentMatrixRow, pat=program.p.currentPatternRow
+                    mat=player.currentMatrixRow, pat=player.currentPatternRow
                 )
 
                 matrixRow = data[0]
@@ -410,8 +411,8 @@ class Effects:
                 channel.playbackState.effectData[storeName] = count
                 if count <= 0:
                     del channel.playbackState.effectData[storeName]
-                    program.p.nextMatrixRow = matrixRow
-                    program.p.nextPatternRow = patternRow
+                    player.nextMatrixRow = matrixRow
+                    player.nextPatternRow = patternRow
 
         class JumpRel(AbstractEffect):
             displayName = "Jump Relative"
@@ -438,10 +439,10 @@ class Effects:
 
             @classmethod
             def actuate(
-                cls, channel: Channel, data: tuple[int, ...]
+                cls, channel: Channel, player: Player, data: tuple[int, ...]
             ) -> None | list[Message | MetaMessage]:
                 storeName = cls.storeName.format(
-                    mat=program.p.currentMatrixRow, pat=program.p.currentPatternRow
+                    mat=player.currentMatrixRow, pat=player.currentPatternRow
                 )
 
                 matrixRow = data[0]
@@ -454,13 +455,11 @@ class Effects:
                 channel.playbackState.effectData[storeName] = count
                 if count <= 0:
                     del channel.playbackState.effectData[storeName]
-                    program.p.nextMatrixRow = program.p.currentMatrixRow + matrixRow
+                    player.nextMatrixRow = player.currentMatrixRow + matrixRow
                     if matrixRow == 0:
-                        program.p.nextPatternRow = (
-                            program.p.currentPatternRow + patternRow
-                        )
+                        player.nextPatternRow = player.currentPatternRow + patternRow
                     else:
-                        program.p.nextPatternRow = patternRow
+                        player.nextPatternRow = patternRow
 
 
 effectsList: dict[tuple[int, ...], type[AbstractEffect]] = dict()
@@ -486,12 +485,12 @@ def getEffect(data: tuple[int, ...]) -> type[AbstractEffect] | None:
 
 
 def runEffect(
-    data: tuple[int, ...], channel: Channel
+    channel: Channel, player: Player, data: tuple[int, ...]
 ) -> None | list[Message | MetaMessage]:
     """Get an effect, and call it's actuate if it exists with data - effect prefix."""
     effect = getEffect(data)
     if effect:
-        return effect.actuate(channel, data[len(effect.prefix) :])
+        return effect.actuate(channel, player, data[len(effect.prefix) :])
 
 
 if __name__ == "__main__":

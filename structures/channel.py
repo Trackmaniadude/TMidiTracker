@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Callable
 if TYPE_CHECKING:
     from structures.pattern import Pattern
     from structures.song import Song
+    from structures.player import Player
 
 import logging
 
@@ -114,7 +115,9 @@ class Channel(ReactiveClass):
             f"Scheduling effect. Current schedule {self.playbackState.scheduledEffects}"
         )
 
-    def tick(self, read: bool) -> list[mido.Message | mido.MetaMessage]:
+    def tick(
+        self, player: Player, read: bool, matrixRow: int, patternRow: int
+    ) -> list[mido.Message | mido.MetaMessage]:
         """
         Tick the channel, optionally reading commands at the current song playback position.
         Returns a list of midi messages. Messages have time set to 0; change in whatever's ticking things.
@@ -125,14 +128,14 @@ class Channel(ReactiveClass):
         messages = list()
 
         currentPattern = program.p.currentSong.getPatternByLocation(
-            self.channel, program.p.currentMatrixRow
+            self.channel, matrixRow
         )
 
         self.playbackState.queuedNotes.clear()
         self.playbackState.queuedVelocities.clear()
 
         if read:
-            rowData = currentPattern.getRow(program.p.currentPatternRow)
+            rowData = currentPattern.getRow(patternRow)
 
             # Collect note and velocity changes
             self.playbackState.queuedNotes.update(rowData.notes)
@@ -143,10 +146,10 @@ class Channel(ReactiveClass):
                 if col > self.effectColumns:
                     continue
                 try:
-                    effectMessages = runEffect(effect, self)
+                    effectMessages = runEffect(self, player, effect)
                 except Exception as e:
                     _logger.warning(
-                        f"{(program.p.currentMatrixRow, program.p.currentPatternRow, self.channel)} Effect processing failed: e"
+                        f"{(matrixRow, patternRow, self.channel)} Effect processing failed: e"
                     )
                 else:
                     if effectMessages is not None:
@@ -166,7 +169,7 @@ class Channel(ReactiveClass):
                     callback(data)
                 except Exception as e:
                     _logger.warning(
-                        f"{(program.p.currentMatrixRow, program.p.currentPatternRow, self.channel)} Scheduled effect callback failed: {e}"
+                        f"{(matrixRow, patternRow, self.channel)} Scheduled effect callback failed: {e}"
                     )
             else:
                 self.playbackState.scheduledEffects[callback] = (ticks - 1, data)

@@ -43,6 +43,11 @@ class Player:
         self.live: bool = False
         """If the player should run the live sequencer."""
 
+        self.currentMatrixRow: int = 0
+        self.currentPatternRow: int = 0
+        self.nextMatrixRow: int | None = None
+        self.nextPatternRow: int | None = None
+
     def tick(self) -> list[Message | MetaMessage]:
         """Run one tick on all channels, and step when needed."""
         self.grooveTimer += 1
@@ -63,29 +68,28 @@ class Player:
             )
 
             # Jump Pattern Row
-            if program.p.nextPatternRow != -1:
-                program.p.currentPatternRow = program.p.nextPatternRow - 1
+            if self.nextPatternRow is not None:
+                self.currentPatternRow = self.nextPatternRow - 1
                 # -1 so we can just run the main logic again
-                program.p.nextPatternRow = -1
+                self.nextPatternRow = None
 
             # Jump Matrix Row
-            if program.p.nextMatrixRow != -1:
-                program.p.currentMatrixRow = program.p.nextMatrixRow
-                program.p.nextMatrixRow = -1
+            if self.nextMatrixRow is not None:
+                self.currentMatrixRow = self.nextMatrixRow
+                self.nextMatrixRow = None
 
             # Move to next row
-            program.p.currentPatternRow += 1
-            if program.p.currentPatternRow >= program.p.currentSong.patternLength:
-                program.p.currentPatternRow = 0
-                program.p.currentMatrixRow += 1
+            self.currentPatternRow += 1
+            if self.currentPatternRow >= program.p.currentSong.patternLength:
+                self.currentPatternRow = 0
+                self.currentMatrixRow += 1
                 if (
-                    program.p.currentMatrixRow
-                    >= program.p.currentSong.visibleMatrixRows
+                    self.currentMatrixRow >= program.p.currentSong.visibleMatrixRows
                 ):  # EOF
                     if self.loop == True:
-                        program.p.currentMatrixRow = 0
+                        self.currentMatrixRow = 0
                     elif self.loop > 0:
-                        program.p.currentMatrixRow = 0
+                        self.currentMatrixRow = 0
                         self.loop -= 1
                     else:
                         self.pause()
@@ -95,7 +99,11 @@ class Player:
         # Tick all channels and collate generated messages
         messages: list[Message | MetaMessage] = list()
         for channel in program.p.currentSong.channels:
-            messages.extend(channel.tick(mainTick))
+            messages.extend(
+                channel.tick(
+                    self, mainTick, self.currentMatrixRow, self.currentPatternRow
+                )
+            )
 
         return messages
 
@@ -216,6 +224,10 @@ tempo={int(1000000 / s.clock) * ticksPerBeat}
                     program.p.currentPort.send(message)
                     # _logger.debug(message)
 
+                # Update UI
+                program.p.currentMatrixRow = self.currentMatrixRow
+                program.p.currentPatternRow = self.currentPatternRow
+
                 # Timing. We figure out how long we should wait, then adjust based off how long processing took.
                 tickLength = 1 / program.p.currentSong.clock  # Target amount to wait
                 self.expectedTime += tickLength  # Absolute time we want to end up at
@@ -242,6 +254,8 @@ tempo={int(1000000 / s.clock) * ticksPerBeat}
         program.p.currentPatternRow = (
             patternRow if patternRow is not None else program.p.currentPatternRow
         )
+        self.currentMatrixRow = program.p.currentMatrixRow
+        self.currentPatternRow = program.p.currentPatternRow
 
     def allOff(self):
         for channel in range(16):
