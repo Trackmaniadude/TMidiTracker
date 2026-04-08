@@ -320,6 +320,57 @@ class Effects:
         class Arpeggio:
             pass
 
+    class Flow(EffectCategory):
+        # class End(AbstractEffect):
+        #     displayName = "End Song"
+        #     prefix = (0xF0,)
+        #     params = ["F0"]
+        #     help = "Stop playback."
+
+        class Jump(AbstractEffect):
+            displayName = "Jump"
+            prefix = (0xF4,)
+            params = [
+                "F4mm[pp][ll]",
+                "mm",
+                "Matrix Row",
+                "[pp]",
+                "Pattern Row",
+                "[ll]",
+                "Repeat Limit",
+            ]
+            help = (
+                "Jump to another row, and optionally position in that row."
+                "\nAlso has an optional repetition limit. Not specifying this will repeat "
+                "indefinitely in live playback, or use the repeat amount for offline playback."
+            )
+
+            storeName = "JumpEffect{mat}{pat}"
+
+            @classmethod
+            def actuate(
+                cls, channel: Channel, data: tuple[int, ...]
+            ) -> None | list[Message | MetaMessage]:
+                storeName = cls.storeName.format(mat=program.p.currentMatrixRow, pat=program.p.currentPatternRow)
+
+                matrixRow = data[0]
+                patternRow = data[1] if len(data) > 1 else 0
+                repeat = data[2] if len(data) > 2 else None
+
+                if repeat is not None:
+                    count: int = channel.playbackState.effectData.get(storeName, repeat) - 1
+                    channel.playbackState.effectData[storeName] = count
+                    if count <= 0:
+                        del channel.playbackState.effectData[storeName]
+                        return
+
+                program.p.nextMatrixRow = matrixRow
+                program.p.nextPatternRow = patternRow
+
+        # class JumpRelative(AbstractEffect):
+        #     displayName = "Jump (Relative)"
+        #     prefix = (0xF5,)
+
 
 effectsList: dict[tuple[int, ...], type[AbstractEffect]] = dict()
 
