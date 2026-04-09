@@ -11,6 +11,9 @@ from utils.reactiveClass import ReactiveClass
 _logger = logging.getLogger(__name__)
 
 
+dummyPort = mido.ports.BaseOutput()
+
+
 class Program(ReactiveClass):
     """
     Singleton class maintaining program state that is not tied to the current project, as well as other program globals.
@@ -19,11 +22,11 @@ class Program(ReactiveClass):
     def __init__(self):
         super().__init__()
 
-        # fmt: off
-        self.currentPortName: str = mido.get_output_names()[0] # pyright: ignore[reportAttributeAccessIssue]
-        self.currentPort: mido.ports.BaseOutput = mido.open_output(self.currentPortName)  # pyright: ignore[reportAttributeAccessIssue]
-        # fmt: on
-        # TODO: handle no port connected
+        self.currentPort: mido.ports.BaseOutput = dummyPort
+
+        # Auto connect to first available port
+        ports = self.getAvailablePorts()
+        self.setPort(ports[0] if len(ports) > 0 else None)
 
         self.songPlayer: Player = Player()
         self.songPlayer.startLiveDaemon()
@@ -62,8 +65,24 @@ class Program(ReactiveClass):
         )
         SongReloaded.connect(lambda *_: _logger.debug("Song was reloaded!"))
 
+    def getAvailablePorts(self) -> list[str]:
+        return mido.get_output_names()  # type: ignore
+        # Mido doesn't export some functions for some reason, even though they're intended for use
+
+    def setPort(self, portname: str | None):
+        self.currentPort.close()
+        _logger.info(f"Switching output port to '{portname}'")
+        try:
+            self.currentPort = mido.open_output(portname)  # type: ignore
+            # Mido doesn't export some functions for some reason, even though they're intended for use
+        except Exception as e:
+            if portname != None:
+                _logger.error(f"Could not open given port: {e}")
+            self.currentPort = dummyPort
+
     def close(self):
         self.currentPort.close()
 
 
 p = Program()
+"""Main program data object. Singleton."""
