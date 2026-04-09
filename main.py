@@ -222,6 +222,31 @@ def menus():
 
     editMenu()
 
+    def portMenu():
+        menu = tk.Menu(menubar)
+        menubar.add_cascade(menu=menu, label="Port")
+
+        def refresh():
+            menu.delete(3, "end")
+            ports = [None] + program.p.getAvailablePorts()
+            for port in ports:
+                menu.add_radiobutton(
+                    label=port if port is not None else "No Port",
+                    command=createPortCommand(port),
+                )
+
+        def createPortCommand(portname: str | None):
+            def command(*_):
+                program.p.setPort(portname)
+
+            return command
+
+        menu.add_command(label="Refresh", command=refresh)
+        menu.add_separator()
+        refresh()
+
+    portMenu()
+
 
 menus()
 
