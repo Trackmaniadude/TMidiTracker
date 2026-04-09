@@ -11,7 +11,7 @@ from utils.reactiveClass import ReactiveClass
 _logger = logging.getLogger(__name__)
 
 
-dummyPort = mido.ports.BaseOutput()
+dummyPort = mido.ports.BaseOutput(name="No Port")
 
 
 class Program(ReactiveClass):
@@ -72,13 +72,15 @@ class Program(ReactiveClass):
     def setPort(self, portname: str | None):
         self.currentPort.close()
         _logger.info(f"Switching output port to '{portname}'")
-        try:
-            self.currentPort = mido.open_output(portname)  # type: ignore
-            # Mido doesn't export some functions for some reason, even though they're intended for use
-        except Exception as e:
-            if portname != None:
+        newPort = dummyPort
+        if portname is not None:
+            try:
+                newPort = mido.open_output(portname)  # type: ignore
+                # Mido doesn't export some functions for some reason, even though they're intended for use
+            except Exception as e:
                 _logger.error(f"Could not open given port: {e}")
-            self.currentPort = dummyPort
+        _logger.info(f"Set output port to '{newPort}'")
+        self.currentPort = newPort
 
     def close(self):
         self.currentPort.close()
