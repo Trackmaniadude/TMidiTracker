@@ -51,6 +51,9 @@ class InfoBar(ttk.Frame):
         time = ttk.Label(self)
         time.pack(side="left")
 
+        port = ttk.Label(self, text=str(program.p.currentPort.name))
+        port.pack(side="right")
+
         # Behavior
         octave.Changed.connect(
             lambda *_: setattr(program.p, "currentOctave", int(octave.value))
@@ -65,6 +68,9 @@ class InfoBar(ttk.Frame):
 
         program.p.getAttributeChangedEvent("currentPatternRow").connect(
             lambda *_: timeStamp()
+        )
+        program.p.getAttributeChangedEvent("currentPort").connect(
+            lambda *_: port.config(text=str(program.p.currentPort.name))
         )
         timeStamp()
 
