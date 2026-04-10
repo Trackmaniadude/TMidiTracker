@@ -68,7 +68,9 @@ class SongDataView(ttk.Frame):
             timeEdit.collapse()
             timeEdit.pack(side="top", fill="x", expand=False)
             timeEdit.addValueEdit(
-                "clock", DSEEntries.Integer(min=1, max=1000), "Clock (hz)"
+                "clock",
+                DSEEntries.Float(min=1, max=1000),
+                "Clock (hz)",
             )
             timeEdit.addValueEdit(
                 "groove",
