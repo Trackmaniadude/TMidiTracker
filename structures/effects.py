@@ -364,7 +364,11 @@ class Effects:
 
                 matrixRow = data[0]
                 patternRow = data[1] if len(data) > 1 else 0
-                repeat = data[2] if len(data) > 2 else None
+                repeat = (
+                    data[2]
+                    if len(data) > 2
+                    else (None if player.live else program.p.currentSong.loopCount)
+                )
 
                 if repeat is not None:
                     count: int = (

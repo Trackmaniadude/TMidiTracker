@@ -51,10 +51,12 @@ class Song(ReactiveClass):
         self.patternLength: int = 16
         self.majorSubdiv: int = 16
         self.minorSubdiv: int = 4
+
         self.clock: float = 60
         self.groove: list[int] = [4]
         self.syncGrooveToPattern: bool = True
         """Reset groove pattern at beginning of pattern"""
+        self.loopCount: int = 2
 
         self.channels: list[Channel] = [Channel(self, i) for i in range(CHANNEL_COUNT)]
         self.patternList: dict[tuple[int, int], Pattern] = dict()

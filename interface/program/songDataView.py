@@ -79,6 +79,18 @@ class SongDataView(ttk.Frame):
                 transformIn=grooveTFIn,
                 transformOut=grooveTFOut,
             )
+            timeEdit.addTextbox(
+                "Ticks to run before stepping to the next row. Can have multiple values to use different timings per row."
+                "Ex: '6 4' will have every other row be shorter, which can be useful for swing."
+            )
+            timeEdit.addValueEdit(
+                "loopCount",
+                DSEEntries.Integer(min=1),
+                "Loop Count",
+            )
+            timeEdit.addTextbox(
+                "Loop count overrides indefinite loops during export (or other offline playback)."
+            )
             timeEdit.Applied.connect(
                 lambda changes: TimingChanged.fire(changes), self.connections
             )
