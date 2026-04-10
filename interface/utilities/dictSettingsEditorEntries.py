@@ -75,6 +75,7 @@ class DSEEntries:
                 range=None if min is None or max is None else (min, max),
                 increment=increment,
                 round=round,
+                integer=True,
             )
             self.entry.entry.pack(fill="both", expand=True)
             self.Changed = self.entry.Changed

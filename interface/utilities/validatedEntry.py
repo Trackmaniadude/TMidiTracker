@@ -43,10 +43,12 @@ class Validators:
             max: float | None = None,
             *,
             round: float | None = None,
+            integer: bool = False,
         ) -> None:
             self.min = min
             self.max = max
             self.round = round
+            self.integer = integer
 
         def validate(self, s: str) -> str | None:
             try:
@@ -57,7 +59,7 @@ class Validators:
                     v = max(v, self.min)
                 if self.max is not None:
                     v = min(v, self.max)
-                return str(v)
+                return str(int(v)) if self.integer else str(v)
             except:
                 return None
 

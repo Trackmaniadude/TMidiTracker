@@ -41,6 +41,7 @@ class Prebuilts:
             range: tuple[float, float] | None = None,
             increment: float = 1,
             round: float | None = None,
+            integer: bool = False,
         ):
             min = range[0] if range is not None else None
             max = range[1] if range is not None else None
@@ -59,7 +60,7 @@ class Prebuilts:
             self.entry.set(default)
 
             self.vEntry = ValidatedEntry(
-                self.entry, Validators.Numeric(min, max, round=round)
+                self.entry, Validators.Numeric(min, max, round=round, integer=integer)
             )
 
             self.Changed = self.vEntry.Changed
