@@ -64,6 +64,7 @@ root.unbind_all("<Tab>")
 root.unbind_all("<<NextWindow>>")
 root.unbind_all("<<PrevWindow>>")
 root.option_add("*Font", value=font.nametofont("TkFixedFont"))
+root.iconphoto(True, tk.PhotoImage(file="logo.png"))
 
 from interface import theme
 
