@@ -8,7 +8,7 @@ I wanted to write MIDI files and existing tools weren't doing it for me so I did
 - Launch run.bat
   - This is how you launch the program. It will setup venv and install dependencies the first time around.<br>(Delete the 'INSTALLED' file that gets generated to redo this)
 ## Not Windows
-- I haven't got around to that yet. Should be the same process, but you'll have to do what run.bat does manually.
+- I haven't got around to that yet. Should be the same process, but you'll have to do what run.bat does manually. Also the program may still not work because it's untested elsewhere.
 
 # Other Information
 no
