@@ -113,6 +113,9 @@ class Player:
         Also returns some extra information.
           Currently: ticks per beat (since this is needed to write to file)
         """
+        for channel in program.p.currentSong.channels:
+            channel.reset()
+
         s = program.p.currentSong
         out = list()
 
@@ -266,6 +269,8 @@ tempo={int(1000000 / s.clock) * ticksPerBeat}
 
     def play(self):
         self.playing = True
+        for channel in program.p.currentSong.channels:
+            channel.reset()
         self.resume.set()
         self.lastMatrixRow = program.p.currentMatrixRow
         self.lastPatternRow = program.p.currentPatternRow

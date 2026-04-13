@@ -47,6 +47,15 @@ class ChannelPlaybackState(ReactiveClass):
 
         self.setupContainerListen()
 
+    def reset(self):
+        self.velocities.clear()
+        self.activeNotes.clear()
+        self.columnNotes.clear()
+        self.queuedNotes.clear()
+        self.queuedVelocities.clear()
+        self.scheduledEffects.clear()
+        self.effectData.clear()
+
 
 class Channel(ReactiveClass):
     """
@@ -213,6 +222,10 @@ class Channel(ReactiveClass):
                 )
 
         return messages
+
+    def reset(self):
+        """Reset the state of this channel."""
+        self.playbackState.reset()
 
     def seek(self, matrixRow: int, patternRow: int):
         """Reset and process the channel up to the given point."""
