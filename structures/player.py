@@ -99,11 +99,15 @@ class Player:
         # Tick all channels and collate generated messages
         messages: list[Message | MetaMessage] = list()
         for channel in program.p.currentSong.channels:
-            messages.extend(
-                channel.tick(
+            channel.beginTick()
+        while any(
+            channel.tickProcessing() for channel in program.p.currentSong.channels
+        ):
+            for channel in program.p.currentSong.channels:
+                channelMessages = channel.tick(
                     self, mainTick, self.currentMatrixRow, self.currentPatternRow
                 )
-            )
+                messages.extend(channelMessages)
 
         return messages
 

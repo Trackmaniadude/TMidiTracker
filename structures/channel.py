@@ -72,6 +72,8 @@ class Channel(ReactiveClass):
         self.effectColumns = 1
 
         self.playbackState = ChannelPlaybackState()
+        self.tickState: int | None = None
+        """Subtick counter. Set to None once all steps are completed."""
 
         self.Changed.connect(
             lambda name, key, old, new: setattr(program.p, "projectModified", True)
@@ -124,6 +126,13 @@ class Channel(ReactiveClass):
             f"Scheduling effect. Current schedule {self.playbackState.scheduledEffects}"
         )
 
+    def beginTick(self):
+        """Reset subtick counter to begin processing a tick."""
+        self.tickState = 0
+
+    def tickProcessing(self):
+        return self.tickState is not None
+
     def tick(
         self, player: Player, read: bool, matrixRow: int, patternRow: int
     ) -> list[mido.Message | mido.MetaMessage]:
@@ -134,92 +143,106 @@ class Channel(ReactiveClass):
         Effects are applied between collecting notes and velocites and actually playing them, to allow effects to mess with them.
         """
 
+        # Common data
         messages = list()
-
         currentPattern = program.p.currentSong.getPatternByLocation(
             self.channel, matrixRow
         )
+        rowData = currentPattern.getRow(patternRow)
+        if self.tickState is None:
+            return messages
 
-        self.playbackState.queuedNotes.clear()
-        self.playbackState.queuedVelocities.clear()
+        # Process
+        if self.tickState == 0:
+            # Acquire notes and velocities
+            self.tickState = 1
 
-        if read:
-            rowData = currentPattern.getRow(patternRow)
+            self.playbackState.queuedNotes.clear()
+            self.playbackState.queuedVelocities.clear()
 
-            # Collect note and velocity changes
-            self.playbackState.queuedNotes.update(rowData.notes)
-            self.playbackState.queuedVelocities.update(rowData.velocities)
+            if read:
+                self.playbackState.queuedNotes.update(rowData.notes)
+                self.playbackState.queuedVelocities.update(rowData.velocities)
 
-            # Apply all effects
-            for col, effect in rowData.effects.items():
-                if col > self.effectColumns:
-                    continue
-                try:
-                    effectMessages = runEffect(self, player, effect)
-                except Exception as e:
-                    _logger.warning(
-                        f"{(matrixRow, patternRow, self.channel)} Effect processing failed: e"
+        elif self.tickState == 1:
+            # Run effects
+            self.tickState = 2
+
+            if read:
+                for col, effect in rowData.effects.items():
+                    if col > self.effectColumns:
+                        continue
+                    try:
+                        effectMessages = runEffect(self, player, effect)
+                    except Exception as e:
+                        _logger.warning(
+                            f"{(matrixRow, patternRow, self.channel)} Effect processing failed: e"
+                        )
+                    else:
+                        if effectMessages is not None:
+                            messages.extend(effectMessages)
+
+        elif self.tickState == 2:
+            # Process scheduled effects
+            self.tickState = 3
+
+            for callback, (
+                ticks,
+                data,
+            ) in self.playbackState.scheduledEffects.copy().items():
+                if ticks <= 0:
+                    _logger.debug(
+                        f"Playing scheduled effect. Current schedule {self.playbackState.scheduledEffects}"
                     )
+                    del self.playbackState.scheduledEffects[callback]
+                    try:
+                        callback(data)
+                    except Exception as e:
+                        _logger.warning(
+                            f"{(matrixRow, patternRow, self.channel)} Scheduled effect callback failed: {e}"
+                        )
                 else:
-                    if effectMessages is not None:
-                        messages.extend(effectMessages)
+                    self.playbackState.scheduledEffects[callback] = (ticks - 1, data)
 
-        # Time/run scheduled effects
-        for callback, (
-            ticks,
-            data,
-        ) in self.playbackState.scheduledEffects.copy().items():
-            if ticks <= 0:
-                _logger.debug(
-                    f"Playing scheduled effect. Current schedule {self.playbackState.scheduledEffects}"
-                )
-                del self.playbackState.scheduledEffects[callback]
-                try:
-                    callback(data)
-                except Exception as e:
-                    _logger.warning(
-                        f"{(matrixRow, patternRow, self.channel)} Scheduled effect callback failed: {e}"
-                    )
-            else:
-                self.playbackState.scheduledEffects[callback] = (ticks - 1, data)
+        elif self.tickState == 3:
+            # Apply velocites and play notes
+            self.tickState = None
 
-        # Determine velocities
-        for col, vel in self.playbackState.queuedVelocities.items():
-            self.playbackState.velocities[col] = vel
+            for col, vel in self.playbackState.queuedVelocities.items():
+                self.playbackState.velocities[col] = vel
 
-        # Play notes
-        for col, note in self.playbackState.queuedNotes.items():
-            prevNote = self.playbackState.columnNotes.get(col)
-            if note == "stop":
-                if prevNote:
-                    if prevNote in self.playbackState.activeNotes:
-                        self.playbackState.activeNotes.remove(prevNote)
-                        del self.playbackState.columnNotes[col]
-                        messages.append(
-                            mido.Message(
-                                "note_off", channel=self.channel, note=prevNote
+            for col, note in self.playbackState.queuedNotes.items():
+                prevNote = self.playbackState.columnNotes.get(col)
+                if note == "stop":
+                    if prevNote:
+                        if prevNote in self.playbackState.activeNotes:
+                            self.playbackState.activeNotes.remove(prevNote)
+                            del self.playbackState.columnNotes[col]
+                            messages.append(
+                                mido.Message(
+                                    "note_off", channel=self.channel, note=prevNote
+                                )
                             )
-                        )
-            else:
-                if prevNote:
-                    if prevNote in self.playbackState.activeNotes:
-                        self.playbackState.activeNotes.remove(prevNote)
-                        messages.append(
-                            mido.Message(
-                                "note_off", channel=self.channel, note=prevNote
+                else:
+                    if prevNote:
+                        if prevNote in self.playbackState.activeNotes:
+                            self.playbackState.activeNotes.remove(prevNote)
+                            messages.append(
+                                mido.Message(
+                                    "note_off", channel=self.channel, note=prevNote
+                                )
                             )
+                    self.playbackState.columnNotes[col] = note
+                    self.playbackState.activeNotes.add(note)
+                    velocity = self.playbackState.velocities.get(col, 64)
+                    messages.append(
+                        mido.Message(
+                            "note_on",
+                            channel=self.channel,
+                            note=note,
+                            velocity=velocity,
                         )
-                self.playbackState.columnNotes[col] = note
-                self.playbackState.activeNotes.add(note)
-                velocity = self.playbackState.velocities.get(col, 64)
-                messages.append(
-                    mido.Message(
-                        "note_on",
-                        channel=self.channel,
-                        note=note,
-                        velocity=velocity,
                     )
-                )
 
         return messages
 
