@@ -7,11 +7,11 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from dataclasses import dataclass
 from itertools import chain
 from tkinter import ttk
 from typing import Literal, cast
 
+import utils.misc as util
 import utils.tk as tkutil
 from interface.program.patternView import PatternView
 from interface.program.patternViewUtils import PVLM, PatternViewClipboardChannel, Target
@@ -36,23 +36,39 @@ class InfoBar(ttk.Frame):
     def __init__(self, parent: tk.Misc):
         super().__init__(parent)
 
-        ttk.Label(self, text="OCT: ").pack(side="left")
+        ttk.Label(self, text="OCT:").pack(side="left")
         octave = Prebuilts.Spinbox(
             self, default=program.p.currentOctave, range=(1, 10), increment=1, round=1
         )
         octave.entry.config(width=3)
         octave.entry.pack(side="left")
 
-        ttk.Label(self, text="STEP: ").pack(side="left")
+        ttk.Separator(self, orient="vertical").pack(
+            side="left", fill="y", padx=tkutil.DEF_PAD
+        )
+
+        ttk.Label(self, text="STEP:").pack(side="left")
         step = Prebuilts.Spinbox(self, default=1, range=(1, 8), increment=1, round=1)
         step.entry.config(width=3)
         step.entry.pack(side="left")
 
+        ttk.Separator(self, orient="vertical").pack(
+            side="left", fill="y", padx=tkutil.DEF_PAD
+        )
+
         time = ttk.Label(self)
         time.pack(side="left")
 
+        ttk.Separator(self, orient="vertical").pack(
+            side="left", fill="y", padx=tkutil.DEF_PAD
+        )
+
         port = ttk.Label(self, text=str(program.p.currentPort.name))
         port.pack(side="right")
+
+        ttk.Separator(self, orient="vertical").pack(
+            side="right", fill="y", padx=tkutil.DEF_PAD
+        )
 
         # Behavior
         octave.Changed.connect(
@@ -63,7 +79,13 @@ class InfoBar(ttk.Frame):
         def timeStamp():
             matrixRow = program.p.currentMatrixRow
             patternRow = program.p.currentPatternRow
-            text = f"{matrixRow}:{patternRow}"
+
+            s = program.p.currentSong
+            avgRowTime = (sum(s.groove) / len(s.groove)) / s.clock
+            rows = patternRow + (matrixRow * s.patternLength)
+            currentTime = rows * avgRowTime
+
+            text = f"{matrixRow:02d}:{patternRow:02d} ({util.formatTime(currentTime)})"
             time.config(text=text)
 
         program.p.getAttributeChangedEvent("currentPatternRow").connect(
