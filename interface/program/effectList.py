@@ -14,6 +14,7 @@ class EffectCategoryDisplay(ttk.Frame):
         frame = HeaderFrame(self, category.__name__, userCollapsible=True)
         frame.separator.pack_forget()
         frame.pack(side="top", fill="x", expand=True)
+        frame.collapse()
 
         for childClass in category.__dict__.values():
             if isinstance(childClass, type):
