@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 import logging
 
 from structures import program
-from utils.types_ import note
+from utils.types_ import note, velocity
 
 _logger = logging.getLogger(__name__)
 
@@ -516,10 +516,28 @@ class Effects:
                 targetChannel, delay, offset = data
 
                 source = program.p.currentSong.channels[targetChannel]
-                notes = source.playbackState.queuedNotes.copy()
+                notes: dict[int, note] = {
+                    col: (note + offset if type(note) is int else note)
+                    for col, note in source.playbackState.queuedNotes.items()
+                }
                 vels = source.playbackState.queuedVelocities.copy()
-                channel.playbackState.queuedNotes.update(notes)
-                channel.playbackState.queuedVelocities.update(vels)
+
+                if delay <= 0:
+                    channel.playbackState.queuedNotes.update(notes)
+                    channel.playbackState.queuedVelocities.update(vels)
+                else:
+                    if len(notes) > 0 or len(vels) > 0:
+
+                        def delayCallback(
+                            data: tuple[dict[int, note], dict[int, velocity]]
+                        ):
+                            # Has to be defined in the loop body due to the schedule system indexing on the callback functions
+                            # TODO: investigate the impact of doing this vs some other identifier
+                            notes, vels = data
+                            channel.playbackState.queuedNotes.update(notes)
+                            channel.playbackState.queuedVelocities.update(vels)
+
+                        channel.scheduleEffect(delay, delayCallback, (notes, vels))
 
                 channel.scheduleEffect(1, loop, None)
 
