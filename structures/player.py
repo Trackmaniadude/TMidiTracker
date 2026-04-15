@@ -40,13 +40,18 @@ class Player:
         self.loop: bool | int = True
         """If the player should loop. If it is set to an integer, it will count down until it hits 0, at which point playback will stop."""
 
-        self.live: bool = False
-        """If the player should run the live sequencer."""
+        self.liveThread: Thread | None = None
+        """Live playback thread."""
+        self.killLiveThread: bool = False
+        """Set to true to indicate the live thread should end."""
 
         self.currentMatrixRow: int = 0
         self.currentPatternRow: int = 0
         self.nextMatrixRow: int | None = None
         self.nextPatternRow: int | None = None
+
+    def isLive(self):
+        return self.liveThread is not None
 
     def tick(self) -> list[Message | MetaMessage]:
         """Run one tick on all channels, and step when needed."""
@@ -217,8 +222,10 @@ tempo={int(1000000 / s.clock) * ticksPerBeat}
     def startLiveDaemon(self):
         """Set this player to live playback mode."""
 
-        if self.live:
-            return
+        # Don't create a new live thread if one already exists (and is alive)
+        if self.liveThread is not None:
+            if not self.liveThread.is_alive():
+                return
 
         def playbackDaemon():
             while True:
@@ -249,7 +256,9 @@ tempo={int(1000000 / s.clock) * ticksPerBeat}
                 time.sleep(sleepTime)  # Sleep
 
         # Start playback daemon
-        Thread(name="PlaybackDaemon", target=playbackDaemon, daemon=True).start()
+        self.liveThread = Thread(
+            name="PlaybackDaemon", target=playbackDaemon, daemon=True
+        ).start()
 
     def setPlaybackCursor(
         self, matrixRow: int | None = None, patternRow: int | None = None

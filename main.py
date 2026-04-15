@@ -225,10 +225,16 @@ def menus():
 
     def portMenu():
         menu = tk.Menu(menubar)
-        menubar.add_cascade(menu=menu, label="Port")
+        menubar.add_cascade(menu=menu, label="Playback")
+
+        def restartPlayer():
+            program.p.songPlayer.startLiveDaemon()
+
+        def pausePlay():
+            program.p.songPlayer.togglePlayback()
 
         def refresh():
-            menu.delete(3, "end")
+            menu.delete(5, "end")
             ports = [None] + program.p.getAvailablePorts()
             for port in ports:
                 menu.add_radiobutton(
@@ -242,6 +248,9 @@ def menus():
 
             return command
 
+        menu.add_command(label="Pause/Play", command=pausePlay, accelerator="Space")
+        menu.add_command(label="Restart Playback Thread", command=restartPlayer)
+        menu.add_separator()
         menu.add_command(label="Refresh", command=refresh)
         menu.add_separator()
         refresh()

@@ -450,7 +450,7 @@ class Effects:
                 repeat = (
                     data[2]
                     if len(data) > 2
-                    else (None if player.live else program.p.currentSong.loopCount)
+                    else (None if player.isLive() else program.p.currentSong.loopCount)
                 )
 
                 if repeat is not None:
