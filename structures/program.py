@@ -1,4 +1,5 @@
 import logging
+from typing import cast
 
 import mido
 
@@ -11,9 +12,6 @@ from utils.reactiveClass import ReactiveClass
 _logger = logging.getLogger(__name__)
 
 
-dummyPort = mido.ports.BaseOutput(name="No Port")
-
-
 class Program(ReactiveClass):
     """
     Singleton class maintaining program state that is not tied to the current project, as well as other program globals.
@@ -22,7 +20,7 @@ class Program(ReactiveClass):
     def __init__(self):
         super().__init__()
 
-        self.currentPort: mido.ports.BaseOutput = dummyPort
+        self.currentPort: mido.ports.BaseOutput = mido.ports.BaseOutput(name="No Port")
 
         # Auto connect to first available port
         ports = self.getAvailablePorts()
@@ -72,13 +70,15 @@ class Program(ReactiveClass):
     def setPort(self, portname: str | None):
         self.currentPort.close()
         _logger.info(f"Switching output port to '{portname}'")
-        newPort = dummyPort
-        if portname is not None:
+        if portname is None:
+            newPort = mido.ports.BaseOutput(name="No Port")
+        else:
             try:
-                newPort = mido.open_output(portname)  # type: ignore
+                newPort: mido.ports.BaseOutput = mido.open_output(portname)  # type: ignore
                 # Mido doesn't export some functions for some reason, even though they're intended for use
             except Exception as e:
                 _logger.error(f"Could not open given port: {e}")
+                newPort = mido.ports.BaseOutput(name="No Port")
         _logger.info(f"Set output port to '{newPort}'")
         self.currentPort = newPort
 
