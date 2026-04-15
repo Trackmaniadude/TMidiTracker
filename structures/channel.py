@@ -229,7 +229,7 @@ class Channel(ReactiveClass):
                                     "note_off", channel=self.channel, note=prevNote
                                 )
                             )
-                else:
+                elif note >= 0 and note <= 127:
                     if prevNote:
                         if prevNote in self.playbackState.activeNotes:
                             self.playbackState.activeNotes.remove(prevNote)
@@ -249,6 +249,8 @@ class Channel(ReactiveClass):
                             velocity=velocity,
                         )
                     )
+                else:
+                    _logger.warning(f"Out of range note ({note})")
 
         return messages
 
