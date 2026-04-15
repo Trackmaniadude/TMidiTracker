@@ -119,8 +119,14 @@ class Channel(ReactiveClass):
         """
         Set a callback to be called on the channel in n ticks.
         Used for delayed effects or effects which stay active.
-        (Note, schedule will be cleared on stop.)
+        (Note: immediate schedules (time=0) can't be done during or after scheduled effect processing.)
+        (Note: schedule will be cleared on stop.)
         """
+        if self.tickState is not None:
+            if self.tickState > 2:
+                ticks -= 1
+                # Scheduling callbacks during or after the scheduled effect phase will add an extra tick of delay
+                # Account for that here so schedule(1) will always occur next tick.
         self.playbackState.scheduledEffects[callback] = (ticks, data)
         _logger.debug(
             f"Scheduling effect. Current schedule {self.playbackState.scheduledEffects}"
