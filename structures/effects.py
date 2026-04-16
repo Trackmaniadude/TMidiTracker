@@ -167,6 +167,34 @@ class Effects:
                 else:
                     return r  # type: ignore
 
+        class SetPan(AbstractEffect):
+            displayName = "Set Panning"
+            prefix = (0x04,)
+            params = ["04xx", "x", "Pan [0-7F]"]
+            help = (
+                "Set channel panning. Equivalent to 010Axx."
+                "\nCenter is 0x40, lower is left, greater is right."
+            )
+
+            @classmethod
+            def actuate(
+                cls, channel: Channel, player: Player, data: tuple[int, ...]
+            ) -> None | list[Message | MetaMessage]:
+                try:
+                    value = data[0]
+                    r = [
+                        Message(
+                            "control_change",
+                            channel=channel.channel,
+                            control=10,
+                            value=value,
+                        )
+                    ]
+                except Exception:
+                    return None
+                else:
+                    return r  # type: ignore
+
     class Timing(EffectCategory):
         # 10-1F
         class Delay(AbstractEffect):
