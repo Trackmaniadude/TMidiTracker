@@ -253,31 +253,47 @@ class PatternViewLabel(ttk.Label):
             "<Right>",
             lambda *_: self.view.viewFrame.stepTarget(1, focus=True, direction="Right"),
         )
-
-        # Increment/Decrement
         self.bind(
             "<Shift-Up>",
-            lambda *_: self.increment(0),
+            lambda *_: self.view.viewFrame.stepTarget(
+                1, focus=True, direction="Up", moveSecondary=True
+            ),
         )
         self.bind(
             "<Shift-Down>",
+            lambda *_: self.view.viewFrame.stepTarget(
+                1, focus=True, direction="Down", moveSecondary=True
+            ),
+        )
+        self.bind(
+            "<Shift-Left>",
+            lambda *_: self.view.viewFrame.stepTarget(
+                1, focus=True, direction="Left", moveSecondary=True
+            ),
+        )
+        self.bind(
+            "<Shift-Right>",
+            lambda *_: self.view.viewFrame.stepTarget(
+                1, focus=True, direction="Right", moveSecondary=True
+            ),
+        )
+
+        # Increment/Decrement
+        self.bind(
+            "<equal>",
+            lambda *_: self.increment(0),
+        )
+        self.bind(
+            "<minus>",
             lambda *_: self.decrement(0),
         )
         self.bind(
-            "<Control-Up>",
+            "<Control-equal>",
             lambda *_: self.increment(1),
         )
         self.bind(
-            "<Control-Down>",
+            "<Control-minus>",
             lambda *_: self.decrement(1),
-        )
-        self.bind(
-            "<Control-Shift-Up>",
-            lambda *_: self.increment(2),
-        )
-        self.bind(
-            "<Control-Shift-Down>",
-            lambda *_: self.decrement(2),
         )
 
         StructureChanged.connect(lambda *_: self.refresh(), self.connections)
