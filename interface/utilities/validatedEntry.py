@@ -104,9 +104,9 @@ class ValidatedEntry[Entry: ValidateableEntry]:
         entry.config(textvariable=self.__var)
         self.entry = entry
 
-        self.Changed: Event[[bool]] = Event()
+        self.Changed: Event[[bool]] = Event(f"{self.__class__.__name__}.Changed")
         """Fired on a successful change to the variable. Provides one bool, if the event was caused by user input."""
-        self.Error: Event[[bool]] = Event()
+        self.Error: Event[[bool]] = Event(f"{self.__class__.__name__}.Error")
         """Fired on an unsuccessful change to the variable. Provides one bool, if the event was caused by user input."""
 
     def get(self) -> str:

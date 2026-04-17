@@ -7,6 +7,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
+import inspect
+
+dumpEvents = False
+"""Set to true to print events as they are fired. Can be turned on globally or used for spot checks."""
+
 
 @dataclass(frozen=True)
 class Connection[**P]:
@@ -30,8 +35,11 @@ class Event[**P]:
     Calling Fire() will call all callbacks registered through Connect()
     """
 
-    def __init__(self) -> None:
+    def __init__(self, name: str | None = None) -> None:
         self.__connections: set[Connection[P]] = set()
+        self.name = name if name is not None else "-".join(frame.function for frame in inspect.stack()[1:4])
+        if dumpEvents:
+            print(f"CREATE EVENT: {self.name}")
 
     def connect(self, callback: Callable[P], conList: list[Connection] | None = None):
         """Register a callback with the event. A list can be provided to automatically put this connection in."""
@@ -48,5 +56,7 @@ class Event[**P]:
 
     def fire(self, *args: P.args, **kwargs: P.kwargs):
         """Fire the event (calls all registered callbacks with the provided arguments)"""
+        if dumpEvents:
+            print(f"FIRE EVENT: {self.name} ({len(self.__connections)} connections)")
         for con in list(self.__connections):
             con.callback(*args, **kwargs)

@@ -23,7 +23,7 @@ class ReactiveContainerJSONEncoder(JSONEncoder):
 
 class ReactiveContainer[TContainer, TKey, TContent]:
     def __init__(self, container: TContainer) -> None:
-        self.Changed: Event[[TKey, TContent, TContent]] = Event()
+        self.Changed: Event[[TKey, TContent, TContent]] = Event(f"{self.__class__.__name__}.Changed")
         """Event(index: int, old: T, new: T)"""
         self._container = container
 
@@ -118,7 +118,7 @@ class ReactiveClass:
     """
 
     def __init__(self) -> None:
-        self.Changed: Event[[str, Any, Any, Any]] = Event()
+        self.Changed: Event[[str, Any, Any, Any]] = Event(f"{self.__class__.__name__}.Changed")
         """
         Fired when any attribute is changed. (name: str, key: Any, old: Any, new: Any)
         Key is set if a container was changed. Otherwise it is the attribute singleton.
@@ -171,7 +171,7 @@ class ReactiveClass:
             )
         if name not in self.__individualChangeEvents:
             # _logger.debug(f"Generating attribute change event for {name} ({self})")
-            e = Event()
+            e = Event(f"{self.__class__.__name__}.{name}.Changed")
             self.__individualChangeEvents[name] = e
 
         return self.__individualChangeEvents[name]

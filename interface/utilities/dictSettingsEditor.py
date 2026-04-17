@@ -37,7 +37,7 @@ class DictSettingsEditor(HeaderFrame):
 
         self.connections: list[Connection] = list()
 
-        self.Applied: Event[list[str]] = Event()
+        self.Applied: Event[list[str]] = Event(f"{self.__class__.__name__}.Applied")
         """Fired when changes are applied. Contains a list of all keys that changed."""
 
         self.__row = 0

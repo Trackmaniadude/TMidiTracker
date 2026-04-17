@@ -61,8 +61,8 @@ class TKVar[V: tkvar, VT: tkvart]:
 
         self.var.trace_add("write", lambda *_: self.__trace())
 
-        self.Changed: Event[[]] = Event()
-        self.ChangedUser: Event[[]] = Event()
+        self.Changed: Event[[]] = Event(f"{self.__class__.__name__}.Changed")
+        self.ChangedUser: Event[[]] = Event(f"{self.__class__.__name__}.ChangedUser")
 
     def __trace(self):
         actual = cast(VT, self.var.get())

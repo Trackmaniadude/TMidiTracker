@@ -134,7 +134,7 @@ class DSEEntries:
             self.entry = tk.Text(self, width=0, height=height)
             self.entry.pack(fill="both", expand=True)
 
-            self.Changed = Event()
+            self.Changed = Event(f"{self.__class__.__name__}.Changed")
 
             self.entry.bind("<FocusOut>", lambda *_: self.Changed.fire())
 
