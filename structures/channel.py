@@ -44,7 +44,7 @@ class ChannelPlaybackState(ReactiveClass):
         """[Effect callback, ticks until call, callback args] Effects to play on a timer."""
         self.effectData: dict[str, Any] = dict()
         """[tag, data] Arbitrary data store for effects. Note: shared between all effects on this channel."""
-
+        
         self.setupContainerListen()
 
     def reset(self):
@@ -75,6 +75,7 @@ class Channel(ReactiveClass):
         self.tickState: int | None = None
         """Subtick counter. Set to None once all steps are completed."""
 
+        self.changeFilter = {"noteColumns", "effectColumns"}
         self.Changed.connect(
             lambda name, key, old, new: setattr(program.p, "projectModified", True)
         )
@@ -112,8 +113,7 @@ class Channel(ReactiveClass):
         return False
 
     def clearSchedule(self):
-        self.playbackState.scheduledEffects = dict()
-        self.playbackState.setupContainerListen()
+        self.playbackState.scheduledEffects.clear()
 
     def scheduleEffect[T](self, ticks: int, callback: Callable[[T], None], data: T):
         """
