@@ -228,7 +228,7 @@ tempo={int(1000000 / s.clock) * ticksPerBeat}
 
         # Don't create a new live thread if one already exists (and is alive)
         if self.liveThread is not None:
-            if not self.liveThread.is_alive():
+            if self.liveThread.is_alive():
                 return
 
         def playbackDaemon():
