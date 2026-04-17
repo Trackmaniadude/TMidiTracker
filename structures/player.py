@@ -3,6 +3,7 @@ Live playback code.
 """
 
 import logging
+import threading
 import time
 from threading import Event, Thread
 
@@ -56,6 +57,9 @@ class Player:
     def tick(self) -> list[Message | MetaMessage]:
         """Run one tick on all channels, and step when needed."""
         self.grooveTimer += 1
+
+        self.lastMatrixRow = self.currentMatrixRow
+        self.lastPatternRow = self.currentPatternRow
 
         # Some actions are only meant to occur when we step, rather than every tick.
         mainTick = False
@@ -240,8 +244,15 @@ tempo={int(1000000 / s.clock) * ticksPerBeat}
                     # _logger.debug(message)
 
                 # Update UI
-                program.p.currentMatrixRow = self.currentMatrixRow
-                program.p.currentPatternRow = self.currentPatternRow
+                def updateUI():
+                    program.p.currentMatrixRow = self.currentMatrixRow
+                    program.p.currentPatternRow = self.currentPatternRow
+
+                if (
+                    self.currentMatrixRow != self.lastMatrixRow
+                    or self.currentPatternRow != self.lastPatternRow
+                ):
+                    program.p.tkRoot.after("idle", updateUI)
 
                 # Timing. We figure out how long we should wait, then adjust based off how long processing took.
                 tickLength = 1 / program.p.currentSong.clock  # Target amount to wait

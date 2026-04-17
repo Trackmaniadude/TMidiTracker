@@ -1,5 +1,5 @@
 import logging
-from typing import cast
+import tkinter as tk
 
 import mido
 
@@ -28,6 +28,8 @@ class Program(ReactiveClass):
 
         self.songPlayer: Player = Player()
         self.songPlayer.startLiveDaemon()
+
+        self.tkRoot: tk.Misc
 
         self.stepSize: int = 1
         """How many rows to step after making an entry. 0 to disable."""

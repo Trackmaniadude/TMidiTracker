@@ -55,6 +55,7 @@ _logger = logging.getLogger(__name__)
 # Setup TK
 
 root = tk.Tk()
+program.p.tkRoot = root
 if args.windowed:
     root.geometry("1600x800")
 else:
