@@ -188,14 +188,13 @@ class PatternViewFrame(ttk.Frame):
             self.songConnections = list()
 
             program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
-                lambda *a: self.after(0, self.matrixChangedEvent, *a),
-                self.songConnections,
+                self.matrixChangedEvent, self.songConnections
             )
 
         SongReloaded.connect(lambda *_: setupSongEventListeners(), self.connections)
 
         program.p.getAttributeChangedEvent("currentMatrixRow").connect(
-            lambda *a: self.after(0, self.onMatrixRowChange, *a), self.connections
+            self.onMatrixRowChange, self.connections
         )
 
         StructureChanged.connect(lambda *_: self.showChannels(True), self.connections)

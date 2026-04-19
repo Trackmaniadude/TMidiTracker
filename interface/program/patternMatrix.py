@@ -548,10 +548,8 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
         self.refresh()
         StructureChanged.connect(lambda *_: self.queueRefresh(), self.connections)
         SongReloaded.connect(lambda *_: self.queueRefresh(), self.connections)
-        program.p.Changed.connect(
-            lambda name, key, old, new: (
-                self.queueRefresh() if name == "currentMatrixRow" else None
-            )
+        program.p.getAttributeChangedEvent("currentMatrixRow").connect(
+            lambda *_: self.queueRefresh()
         )
 
     def destroy(self) -> None:
