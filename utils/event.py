@@ -4,10 +4,9 @@ Basic event system
 
 from __future__ import annotations
 
+import inspect
 from dataclasses import dataclass
 from typing import Callable
-
-import inspect
 
 dumpEvents = False
 """Set to true to print events as they are fired. Can be turned on globally or used for spot checks."""
@@ -37,7 +36,11 @@ class Event[**P]:
 
     def __init__(self, name: str | None = None) -> None:
         self.__connections: set[Connection[P]] = set()
-        self.name = name if name is not None else "-".join(frame.function for frame in inspect.stack()[1:4])
+        self.name = (
+            name
+            if name is not None
+            else "-".join(frame.function for frame in inspect.stack()[1:4])
+        )
         if dumpEvents:
             print(f"CREATE EVENT: {self.name}")
 
@@ -57,6 +60,8 @@ class Event[**P]:
     def fire(self, *args: P.args, **kwargs: P.kwargs):
         """Fire the event (calls all registered callbacks with the provided arguments)"""
         if dumpEvents:
-            print(f"FIRE EVENT: {self.name} ({len(self.__connections)} connections)")
+            print(
+                f"FIRE EVENT: {self.name} [{args}, {kwargs}] ({len(self.__connections)} connections)"
+            )
         for con in list(self.__connections):
             con.callback(*args, **kwargs)
