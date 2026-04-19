@@ -44,8 +44,6 @@ class Player:
 
         self.liveThread: Thread | None = None
         """Live playback thread."""
-        self.killLiveThread: bool = False
-        """Set to true to indicate the live thread should end."""
 
         self.currentMatrixRow: int = 0
         self.currentPatternRow: int = 0
