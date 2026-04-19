@@ -10,6 +10,7 @@ from threading import Event, Thread
 from mido import Message, MetaMessage, MidiFile, MidiTrack
 
 from structures import program  # Note: Can't use during init
+from utils import event
 
 _logger = logging.getLogger(__name__)
 
@@ -245,8 +246,10 @@ tempo={int(1000000 / s.clock) * ticksPerBeat}
 
                 # Update UI
                 def updateUI():
+                    # event.dumpEvents = True
                     program.p.currentMatrixRow = self.currentMatrixRow
                     program.p.currentPatternRow = self.currentPatternRow
+                    # event.dumpEvents = False
 
                 if (
                     self.currentMatrixRow != self.lastMatrixRow
