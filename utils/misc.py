@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, overload
 if TYPE_CHECKING:
     from _typeshed import SupportsRichComparison
 
+    from utils.types_ import SupportsMath
+
 
 class NoDefault(Enum):
     NO_DEFAULT = object()
@@ -122,14 +124,14 @@ def itemFromSet[T](set: set[T]) -> T | None:
         return None
 
 
-def mapRange(a, b, c, d, i: float):
+def mapRange[T: SupportsMath](a: T, b: T, c: T, d: T, i: float) -> T:
     """Map value i from range [a:b] to range [c:d]"""
     if b - a == 0:
         return (0.5 * (d - c)) + c
     return (((i - a) / (b - a)) * (d - c)) + c
 
 
-def clamp(v, v1, v2):
+def clamp[T: SupportsRichComparison](v: T, v1: T, v2: T) -> T:
     mn = min(v1, v2)
     mx = max(v1, v2)
     return max(mn, min(mx, v))
