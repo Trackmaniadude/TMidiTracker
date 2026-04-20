@@ -349,8 +349,28 @@ class Effects:
 
     class Pitch(EffectCategory):
         # 20-2F
-        class Vibrato:
-            pass
+        class Detune(AbstractEffect):
+            displayName = "Detune"
+            prefix = (0x20,)
+            params = [
+                "20dd",
+                "dd",
+                "Detune",
+            ]
+            help = "Detune the channel.\n0  = -1\n80 =  0\nFF  =  1"
+
+            bendName = "Detune"
+
+            @classmethod
+            def actuate(
+                cls, channel: Channel, player: Player, data: tuple[int, ...]
+            ) -> None | list[Message | MetaMessage]:
+                bend = (data[0] - 0x80) / 0x7F
+                if bend == 0:
+                    channel.playbackState.pitchBends.pop(cls.bendName, None)
+                else:
+                    channel.playbackState.pitchBends[cls.bendName] = bend
+
 
         class Arpeggio:
             pass
