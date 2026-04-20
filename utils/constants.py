@@ -17,6 +17,15 @@ CHANNEL_ORDER_INVERSE.insert(DRUM_CHANNEL, 0)
 
 NOTES_PER_OCTAVE = 12
 
+# 16364, signed
+PITCH_BEND_MIN = -8192
+PITCH_BEND_MAX = 8191
+
+DEFAULT_BEND_RANGE = 127  # Basically we want it at max
+BEND_STEPS_PER_SEMITONE = 8192 // DEFAULT_BEND_RANGE
+# Basically we want to set range to allow bending the entire range
+# That's still 50 ish points per note, which is enough
+
 KEYBOARD_MAP: dict[str, int] = dict()
 """Map of keyboard keys to notes. (0 is C)"""
 for i, k in enumerate("q2w3er5t6y7ui9o0p[=]"):

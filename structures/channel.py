@@ -18,6 +18,13 @@ import mido
 
 from structures import program
 from structures.effects import runEffect
+from utils.constants import (
+    BEND_STEPS_PER_SEMITONE,
+    DEFAULT_BEND_RANGE,
+    PITCH_BEND_MAX,
+    PITCH_BEND_MIN,
+)
+from utils.misc import clamp
 from utils.reactiveClass import ReactiveClass
 from utils.types_ import note, velocity
 
@@ -34,6 +41,13 @@ class ChannelPlaybackState(ReactiveClass):
         """[note] All notes currently playing in this channel."""
         self.columnNotes: dict[int, int] = dict()
         """[col, note] What note each column is currently playing, if any."""
+
+        self.pitchBends: dict[str, float] = dict()
+        """[str, offset] Pitch offsets which will be summed to get the final bend.
+        A dict is used to allow multiple effects to pitch bend without conflict.
+        """
+        self.lastBend: float = 0
+        """Track changes so we only send bend messages when needed."""
 
         self.queuedNotes: dict[int, note] = dict()
         """[col, note] Notes to start/stop playing this tick. Intended to allow effects to mess with notes."""
@@ -211,12 +225,25 @@ class Channel(ReactiveClass):
                     self.playbackState.scheduledEffects[callback] = (ticks - 1, data)
 
         elif self.tickState == 3:
-            # Apply velocites and play notes
             self.tickState = None
 
+            # Velocities
             for col, vel in self.playbackState.queuedVelocities.items():
                 self.playbackState.velocities[col] = vel
 
+            # Pitch Bend
+            bend = sum(self.playbackState.pitchBends.values(), start=0.0)
+            if bend != self.playbackState.lastBend:
+                # Convert bend to midi value
+                midiBend = clamp(
+                    int(bend * BEND_STEPS_PER_SEMITONE), PITCH_BEND_MIN, PITCH_BEND_MAX
+                )
+                messages.append(
+                    mido.Message("pitchwheel", channel=self.channel, pitch=midiBend)
+                )
+            self.playbackState.lastBend = bend
+
+            # Notes
             for col, note in self.playbackState.queuedNotes.items():
                 prevNote = self.playbackState.columnNotes.get(col)
                 if note == "stop":
@@ -257,6 +284,26 @@ class Channel(ReactiveClass):
     def reset(self):
         """Reset the state of this channel."""
         self.playbackState.reset()
+
+    def initMessages(self):
+        # http://midi.teragonaudio.com/tech/midispec.htm
+        return [
+            mido.Message(
+                "control_change", channel=self.channel, control=0x65, value=0x00
+            ),  # RPN Coarse: Pitch Bend Range
+            mido.Message(
+                "control_change", channel=self.channel, control=0x64, value=0x00
+            ),  # RPN Fine: Pitch Bend Range
+            mido.Message(
+                "control_change",
+                channel=self.channel,
+                control=0x06,
+                value=DEFAULT_BEND_RANGE,
+            ),  # Data Entry Coarse
+            mido.Message(
+                "control_change", channel=self.channel, control=0x26, value=0
+            ),  # Data Entry Fine
+        ]
 
     def seek(self, matrixRow: int, patternRow: int):
         """Reset and process the channel up to the given point."""

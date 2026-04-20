@@ -5,6 +5,7 @@ Live playback code.
 import logging
 import threading
 import time
+from itertools import chain
 from threading import Event, Thread
 
 from mido import Message, MetaMessage, MidiFile, MidiTrack
@@ -49,6 +50,13 @@ class Player:
         self.currentPatternRow: int = 0
         self.nextMatrixRow: int | None = None
         self.nextPatternRow: int | None = None
+
+        self.doInitChannels: bool = True  # TODO: reset this when changing port
+
+    def initChannels(self):
+        return chain.from_iterable(
+            channel.initMessages() for channel in program.p.currentSong.channels
+        )
 
     def isLive(self):
         return self.liveThread is not None
@@ -130,6 +138,8 @@ class Player:
 
         s = program.p.currentSong
         out = list()
+
+        out.extend(self.initChannels())
 
         # Determine time signature (makes midi nicer)
         # Assumes a quarter note is the minor split marker, a measure is the major split marker
@@ -238,6 +248,10 @@ tempo={int(1000000 / s.clock) * ticksPerBeat}
                 t0 = time.perf_counter()
 
                 # Play messages
+                if self.doInitChannels:
+                    for message in self.initChannels():
+                        program.p.currentPort.send(message)
+                    self.doInitChannels = False
                 for message in self.tick():
                     program.p.currentPort.send(message)
                     # _logger.debug(message)
