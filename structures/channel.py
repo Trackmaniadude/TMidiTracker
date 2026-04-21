@@ -69,6 +69,7 @@ class ChannelPlaybackState(ReactiveClass):
         self.queuedVelocities.clear()
         self.scheduledEffects.clear()
         self.effectData.clear()
+        self.pitchBends.clear()
 
 
 class Channel(ReactiveClass):
