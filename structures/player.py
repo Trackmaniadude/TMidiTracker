@@ -236,6 +236,8 @@ tempo={int(1000000 / s.clock) * ticksPerBeat}
         """Set this player to live playback mode."""
 
         # Don't create a new live thread if one already exists (and is alive)
+        # Do reset it though
+        self.doInitChannels = True
         if self.liveThread is not None:
             if self.liveThread.is_alive():
                 return
@@ -284,7 +286,8 @@ tempo={int(1000000 / s.clock) * ticksPerBeat}
         # Start playback daemon
         self.liveThread = Thread(
             name="PlaybackDaemon", target=playbackDaemon, daemon=True
-        ).start()
+        )
+        self.liveThread.start()
 
     def setPlaybackCursor(
         self, matrixRow: int | None = None, patternRow: int | None = None

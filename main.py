@@ -1,10 +1,10 @@
 import argparse
 import logging
-import os
 import tkinter as tk
 import traceback
 from tkinter import filedialog, font, messagebox, ttk
-from typing import cast
+
+import mido
 
 from interface.program.channelDebug import ChannelDebug
 from interface.program.effectList import EffectList
@@ -18,6 +18,7 @@ from structures.globalEvents import Copy, Cut, Paste, ProjectModified
 from structures.player import Player
 from structures.song import Song
 from utils.constants import (
+    CHANNEL_COUNT,
     MIDI_FILE_EXTENSION,
     MIDI_FILE_TK_LIST,
     PROJECT_FILE_EXTENSION,
@@ -237,8 +238,24 @@ def menus():
         menu = tk.Menu(menubar)
         menubar.add_cascade(menu=menu, label="Playback")
 
-        def restartPlayer():
-            program.p.songPlayer.startLiveDaemon()
+        def resetOutput():
+            program.p.songPlayer.pause()  # If player is running, stop it
+            p = program.p.currentPort.name
+            program.p.setPort(None)
+            program.p.setPort(p)
+            for channel in range(CHANNEL_COUNT):
+                program.p.currentPort.send(
+                    mido.Message(
+                        "control_change", channel=channel, control=120, value=0
+                    )
+                )
+                program.p.currentPort.send(
+                    mido.Message(
+                        "control_change", channel=channel, control=121, value=0
+                    )
+                )
+            program.p.songPlayer.startLiveDaemon()  # Triggers resending internal init commands, since their
+            # purpose is to modify the normal default device state
 
         def pausePlay():
             program.p.songPlayer.togglePlayback()
@@ -259,7 +276,7 @@ def menus():
             return command
 
         menu.add_command(label="Pause/Play", command=pausePlay, accelerator="Space")
-        menu.add_command(label="Restart Playback Thread", command=restartPlayer)
+        menu.add_command(label="Reset Output", command=resetOutput)
         menu.add_separator()
         menu.add_command(label="Refresh", command=refresh)
         menu.add_separator()
