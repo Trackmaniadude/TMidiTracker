@@ -24,6 +24,7 @@ from utils.constants import (
     PROJECT_FILE_EXTENSION,
     PROJECT_FILE_TK_LIST,
 )
+from utils.misc import incrementFilename
 
 PROGRAM_NAME = "TMidiTracker"
 
@@ -95,6 +96,9 @@ def updateWindowTitle():
 
 updateWindowTitle()
 ProjectModified.connect(updateWindowTitle)
+program.p.getAttributeChangedEvent("currentFile").connect(
+    lambda *_: updateWindowTitle()
+)
 
 
 # Setup menus
@@ -179,6 +183,26 @@ def menus():
                 else:
                     program.p.projectModified = False
 
+        def saveIncremental():
+            if program.p.currentFile is None:
+                saveAs()
+            else:
+                program.p.currentFile = (
+                    incrementFilename(
+                        program.p.currentFile[: program.p.currentFile.rfind(".")]
+                    )
+                    + PROJECT_FILE_EXTENSION
+                )
+                try:
+                    program.p.currentSong.toFile(program.p.currentFile)
+                except Exception as e:
+                    messagebox.showerror(
+                        "File Error",
+                        f"An error occurred while saving:\n{traceback.format_exception_only(e)}",
+                    )
+                else:
+                    program.p.projectModified = False
+
         def export():
             filename = filedialog.asksaveasfilename(
                 filetypes=MIDI_FILE_TK_LIST, defaultextension=MIDI_FILE_EXTENSION
@@ -192,6 +216,7 @@ def menus():
         menu.add_command(label="New", command=new)
         menu.add_command(label="Save", command=save, accelerator="CTRL-S")
         menu.add_command(label="Save As", command=saveAs)
+        menu.add_command(label="Save Incremental", command=saveIncremental)
         menu.add_command(label="Export", command=export, accelerator="CTRL-E")
 
         root.bind_all("<Control-S>", lambda *_: save())

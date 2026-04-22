@@ -105,6 +105,26 @@ def flatten[T](it: Iterable[Iterable[T]]):
     return chain.from_iterable(it)
 
 
+def incrementFilename(filename: str) -> str:
+    """Take a string, and if it has a number at the end, increment it. If it doesn't, make it -01."""
+    n = None
+    s = filename
+    for i in range(1, len(filename)):
+        try:
+            n = int(filename[-i:])
+            s = filename[:-i]
+        except:
+            break
+    if n is None:
+        return f"{s}-01"
+    if n < 0:
+        return f"{s}{n-1:03d}"
+        # If you use '-' as a separator, it gets interpreted as a negative number.
+        # So just decrement it so it looks like it's going up.
+    else:
+        return f"{s}{n+1:02d}"
+
+
 def formatTime(t: float, alwaysShowHour: bool = False) -> str:
     """Format a number of seconds."""
     sec = int(t % 60)
