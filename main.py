@@ -17,7 +17,12 @@ from structures import program  # This also inits the program object
 from structures.globalEvents import Copy, Cut, Paste, ProjectModified
 from structures.player import Player
 from structures.song import Song
-from utils.constants import PROJECT_FILE
+from utils.constants import (
+    MIDI_FILE_EXTENSION,
+    MIDI_FILE_TK_LIST,
+    PROJECT_FILE_EXTENSION,
+    PROJECT_FILE_TK_LIST,
+)
 
 PROGRAM_NAME = "TMidiTracker"
 
@@ -121,7 +126,7 @@ def menus():
         def open():
             if not promptSaveFirst():
                 return
-            filename = filedialog.askopenfilename(filetypes=PROJECT_FILE)
+            filename = filedialog.askopenfilename(filetypes=PROJECT_FILE_TK_LIST)
             if filename == "":
                 return
             try:
@@ -143,7 +148,9 @@ def menus():
             program.p.projectModified = False
 
         def saveAs():
-            filename = filedialog.asksaveasfilename(filetypes=PROJECT_FILE)
+            filename = filedialog.asksaveasfilename(
+                filetypes=PROJECT_FILE_TK_LIST, defaultextension=PROJECT_FILE_EXTENSION
+            )
             if filename == "":
                 return
             try:
@@ -172,7 +179,9 @@ def menus():
                     program.p.projectModified = False
 
         def export():
-            filename = filedialog.asksaveasfilename(filetypes=[("MIDI FILE", ".mid")])
+            filename = filedialog.asksaveasfilename(
+                filetypes=MIDI_FILE_TK_LIST, defaultextension=MIDI_FILE_EXTENSION
+            )
             if filename == "":
                 return
             player = Player()

@@ -2,7 +2,11 @@
 
 # Try to avoid importing things here. Except maybe data types.
 
-PROJECT_FILE = [("TMT Project", ".tmt")]
+PROJECT_FILE_EXTENSION = ".tmt"
+PROJECT_FILE_TK_LIST = [("TMT Project", PROJECT_FILE_EXTENSION)]
+
+MIDI_FILE_EXTENSION = ".mid"
+MIDI_FILE_TK_LIST = [("MIDI File", MIDI_FILE_EXTENSION)]
 
 CHANNEL_COUNT = 16
 
