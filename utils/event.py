@@ -5,8 +5,11 @@ Basic event system
 from __future__ import annotations
 
 import inspect
+import logging
 from dataclasses import dataclass
 from typing import Callable
+
+_logger = logging.getLogger(__name__)
 
 dumpEvents = False
 """Set to true to print events as they are fired. Can be turned on globally or used for spot checks."""
@@ -64,4 +67,8 @@ class Event[**P]:
                 f"FIRE EVENT: {self.name} [{args}, {kwargs}] ({len(self.__connections)} connections)"
             )
         for con in list(self.__connections):
-            con.callback(*args, **kwargs)
+            try:
+                con.callback(*args, **kwargs)
+            except Exception as e:
+                _logger.error(f"Error occurred during event callback for {self.name}")
+                _logger.exception(e)
