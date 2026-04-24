@@ -4,9 +4,7 @@ Interface for editing the message data in a pattern.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from enum import Enum
-from typing import TYPE_CHECKING, Callable, Literal, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 from interface.program.patternViewUtils import PVLM, PatternViewLabelModes, Target
 from utils.event import Connection
@@ -36,7 +34,6 @@ from utils.constants import (
     NOTE_NAMES_SHARP,
     NOTES_PER_OCTAVE,
 )
-from utils.misc import hex2
 from utils.types_ import *
 
 _logger = logging.getLogger(__name__)
@@ -525,10 +522,9 @@ class PatternView(ttk.Frame):
     def buildLabels(self):
         # Remove old labels
         for label in self.__labels:
-            # self.__labels.remove(label)
             label.destroy()
-        self.__labels = set()
-        self.labelLookup = dict()
+        self.__labels.clear()
+        self.labelLookup.clear()
 
         # Notes
         rows = program.p.currentSong.patternLength
