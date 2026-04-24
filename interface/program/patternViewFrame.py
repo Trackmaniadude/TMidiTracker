@@ -119,6 +119,7 @@ class RowList(ttk.Frame):
             lambda changes: self.rebuild() if "visibleChannels" in changes else None,
             self.connections,
         )
+        SongReloaded.connect(lambda *_: self.rebuild(), self.connections)
 
     def destroy(self) -> None:
         for connection in self.connections:
@@ -143,9 +144,9 @@ class RowList(ttk.Frame):
         self.__highlight = highlight
 
     def rebuild(self):
-        for i, label in self.labels.copy().items():
-            del self.labels[i]
+        for label in self.labels.values():
             label.destroy()
+        self.labels.clear()
         for i in range(program.p.currentSong.patternLength):
             label = ttk.Label(self, text=i, justify="left")
             label.grid(row=i + 1, column=0, sticky="nesw")
