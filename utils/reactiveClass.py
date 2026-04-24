@@ -198,10 +198,7 @@ class ReactiveClass:
             old = self.__getattribute__(name)
             super().__setattr__(name, value)
             if old != value:
-                try:
-                    self.Changed.fire(name, attribute, old, value)
-                except Exception as e:
-                    _logger.error(e)
+                self.Changed.fire(name, attribute, old, value)
         else:
             super().__setattr__(name, value)
 
