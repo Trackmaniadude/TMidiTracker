@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import inspect
 import logging
+import traceback
 from dataclasses import dataclass
 from typing import Callable
 
@@ -13,6 +14,8 @@ _logger = logging.getLogger(__name__)
 
 dumpEvents = False
 """Set to true to print events as they are fired. Can be turned on globally or used for spot checks."""
+warnDoubleDisconnects = True
+"""Log a warning when you attempt to disconnect an event that has already been disconnected."""
 
 
 @dataclass(frozen=True)
@@ -29,6 +32,10 @@ class Connection[**P]:
     def disconnect(self):
         """Remove this connection from the owning event's registry."""
         self.owner.disconnect(self)
+
+    def isConnected(self):
+        """Return if this connection is still connected to it's event."""
+        return self.owner.isConnected(self)
 
 
 class Event[**P]:
@@ -59,16 +66,33 @@ class Event[**P]:
         """Remove a connection from the event."""
         if con in self.__connections:
             self.__connections.remove(con)
+        elif warnDoubleDisconnects:
+            _logger.warning(
+                f"Attempt to disconnect disconnected connection ({hex(id(con))} from {self.name} ({hex(id(self))}))."
+            )
+            _logger.warning("".join(traceback.format_stack()))
+
+    def isConnected(self, con: Connection) -> bool:
+        """Check if a connection is connected to this event."""
+        return con in self.__connections
 
     def fire(self, *args: P.args, **kwargs: P.kwargs):
         """Fire the event (calls all registered callbacks with the provided arguments)"""
         if dumpEvents:
             print(
-                f"FIRE EVENT: {self.name} [{args}, {kwargs}] ({len(self.__connections)} connections)"
+                f"FIRE EVENT: {self.name} ({hex(id(self))}) [{args}, {kwargs}] ({len(self.__connections)} connections)"
             )
-        for con in list(self.__connections):
-            try:
-                con.callback(*args, **kwargs)
-            except Exception as e:
-                _logger.error(f"Error occurred during event callback for {self.name}")
-                _logger.exception(e)
+        for con in self.__connections.copy():
+            if (
+                con in self.__connections
+            ):  # In case a previous connection disconnected one we're going to do.
+                try:
+                    con.callback(*args, **kwargs)
+                except Exception as e:
+                    _logger.error(
+                        f"Error occurred during event callback for {self.name}"
+                    )
+                    _logger.error("Traceback to event handler.")
+                    _logger.error("".join(traceback.format_stack()))
+                    _logger.error("Traceback in event handler.")
+                    _logger.exception(e)
