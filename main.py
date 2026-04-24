@@ -52,7 +52,7 @@ args = parser.parse_args()
 if args.debug:
     logging.basicConfig(level=logging.DEBUG)
 elif args.quiet:
-    logging.basicConfig(level=logging.WARNING)
+    logging.basicConfig(level=logging.CRITICAL)
 else:
     logging.basicConfig(level=logging.INFO)
 
