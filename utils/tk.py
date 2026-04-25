@@ -8,8 +8,9 @@ if __name__ == "__main__":
     sys.path.append(".")
 
 import tkinter as tk
+from dataclasses import dataclass, field
 from tkinter import ttk
-from typing import Any, Callable, Literal, cast
+from typing import Any, Callable, Literal, NamedTuple, cast
 
 from utils.event import Event
 
@@ -48,6 +49,15 @@ def bindOnSizeChange(widget: tk.Misc, callback: Callable[[], None]):
     widget.bind("<Configure>", _callback, add=True)
 
 
+@dataclass
+class TKQueuedActionState:
+    """Injected into an instance so TKQueuedAction can keep track of queue state."""
+
+    queued: bool = False
+    args: tuple[Any, ...] = field(default_factory=lambda: tuple())
+    kwargs: dict[str, Any] = field(default_factory=lambda: dict())
+
+
 class TKQueuedAction[A]:  # Not using the generic confuses pylance
     """
     Queue object created by tkQueueAction wrapper. Replaces a normal method function in a class.
@@ -58,25 +68,26 @@ class TKQueuedAction[A]:  # Not using the generic confuses pylance
     ) -> None:
         self.function = f
         self.argmode = argmode
-        self.queued: bool = False
-        self.args: tuple[Any, ...]
-        self.kwargs: dict[str, Any]
+        self.__storename = f"__{self.__class__.__name__}-{id(self)}"
 
     def __get__(self, instance, owner):
         def f(*args, **kwargs):
-            if self.queued:
+            if not hasattr(instance, self.__storename):
+                setattr(instance, self.__storename, TKQueuedActionState())
+            state = getattr(instance, self.__storename)
+            if state.queued:
                 if self.argmode == "last":
-                    self.args = args
-                    self.kwargs = kwargs
+                    state.args = args
+                    state.kwargs = kwargs
             else:
-                self.queued = True
-                self.args = args
-                self.kwargs = kwargs
+                state.queued = True
+                state.args = args
+                state.kwargs = kwargs
                 instance.after(
                     "idle",
                     lambda: (
-                        self.function(instance, *self.args, **self.kwargs),
-                        setattr(self, "queued", False),
+                        self.function(instance, *state.args, **state.kwargs),
+                        setattr(state, "queued", False),
                     ),
                 )
 
