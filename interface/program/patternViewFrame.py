@@ -611,6 +611,7 @@ class PatternViewFrame(ttk.Frame):
                         setSecondary=moveSecondary,
                     )
 
+    @tkutil.tkQueuedAction()
     def showChannels(self, fullRebuild: bool = False):
         currentChannelsShown = len(self.views)
         newList = list()
