@@ -6,9 +6,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, cast
 
-from interface.utilities.quickRefresh import QuickRefresh
 from utils.event import Connection
 from utils.misc import clamp
+from utils.tk import tkQueuedAction
 
 if TYPE_CHECKING:
     from structures.song import Song
@@ -28,7 +28,7 @@ from utils.constants import CHANNEL_ORDER, CHANNEL_ORDER_INVERSE, PATTERN_DELTAS
 _logger = logging.getLogger(__name__)
 
 
-class PatternSelector(ttk.Label, QuickRefresh):
+class PatternSelector(ttk.Label):
     def __init__(self, parent: tk.Misc, matrix: PatternMatrix, channel: int, row: int):
         super().__init__(parent, relief="sunken")
 
@@ -44,8 +44,8 @@ class PatternSelector(ttk.Label, QuickRefresh):
 
         # Interaction
 
-        self.bind("<FocusIn>", lambda *_: self.queueRefresh())
-        self.bind("<FocusOut>", lambda *_: self.queueRefresh())
+        self.bind("<FocusIn>", lambda *_: self.refresh())
+        self.bind("<FocusOut>", lambda *_: self.refresh())
 
         def setupIncrement():
             # Linux Scroll
@@ -186,7 +186,7 @@ class PatternSelector(ttk.Label, QuickRefresh):
     def setPatternId(self, pattern: int):
         """Set the pattern id this selector references."""
         program.p.currentSong.setPatternNumber(self.channel, self.row, pattern)
-        self.queueRefresh()
+        self.refresh()
 
     def increment(self, scale: int = 0, useSelection: bool = False):
         if useSelection:
@@ -235,9 +235,9 @@ class PatternSelector(ttk.Label, QuickRefresh):
 
     ###
 
+    @tkQueuedAction()
     def refresh(self):
         """Reload this selector's visual state."""
-        self.resetRefreshFlag()
 
         ### If chain to determine style to use
         if self.position in self.matrix.getSelection():
@@ -282,7 +282,7 @@ class PatternSelector(ttk.Label, QuickRefresh):
             self.config(text=self.__text)
 
 
-class PatternSelectorRowLabel(ttk.Label, QuickRefresh):
+class PatternSelectorRowLabel(ttk.Label):
     def __init__(self, parent: tk.Misc, matrix: PatternMatrix, row: int):
         super().__init__(parent, text=str(hex(row)[2:].upper()), width=3)
         self.matrix = matrix
@@ -355,8 +355,9 @@ class PatternSelectorRowLabel(ttk.Label, QuickRefresh):
 
         setupMiddleClick()
 
-        self.queueRefresh()
+        self.refresh()
 
+    @tkQueuedAction()
     def refresh(self):
         if self.row == program.p.currentMatrixRow:
             style = MatrixSelector.Target2
@@ -443,7 +444,7 @@ class MatrixActions(ttk.Frame):
             else:
                 song.highlightedMatrixItems.discard(pos)
 
-        self.matrix.queueRefresh()
+        self.matrix.refresh()
 
     def removeRows(self):
         # For each row, remove it and move the rest backwards
@@ -453,7 +454,7 @@ class MatrixActions(ttk.Frame):
             song.shiftMatrixRows(row + 1, None, row)
             song.visibleMatrixRows -= 1
         self.matrix.clearSelection()
-        self.matrix.queueRefresh()
+        self.matrix.refresh()
 
     def addNewRow(self, position: Literal["before", "after", "end"]):
         song = program.p.currentSong
@@ -468,7 +469,7 @@ class MatrixActions(ttk.Frame):
         song.shiftMatrixRows(row, None, row + 1)
 
         song.visibleMatrixRows += 1
-        self.matrix.queueRefresh()
+        self.matrix.refresh()
 
     def cloneRows(self, position: Literal["before", "after", "end"]):
         song = program.p.currentSong
@@ -497,7 +498,7 @@ class MatrixActions(ttk.Frame):
                 )
 
         song.visibleMatrixRows += newRows
-        self.matrix.queueRefresh()
+        self.matrix.refresh()
 
     # def moveRows(self, direction: Literal["up", "down"]):
     #     song = program.p.currentSong
@@ -509,10 +510,10 @@ class MatrixActions(ttk.Frame):
     #     elif direction == "down":
     #         pass
 
-    #     self.matrix.queueRefresh()
+    #     self.matrix.refresh()
 
 
-class PatternMatrix(ttk.Frame, QuickRefresh):
+class PatternMatrix(ttk.Frame):
     def __init__(self, parent: tk.Misc):
         super().__init__(parent, relief="raised", width=500, height=200, borderwidth=2)
 
@@ -546,10 +547,10 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
         # """(row, channel) -> pattern id"""
 
         self.refresh()
-        StructureChanged.connect(lambda *_: self.queueRefresh(), self.connections)
-        SongReloaded.connect(lambda *_: self.queueRefresh(), self.connections)
+        StructureChanged.connect(lambda *_: self.refresh(), self.connections)
+        SongReloaded.connect(lambda *_: self.refresh(), self.connections)
         program.p.getAttributeChangedEvent("currentMatrixRow").connect(
-            lambda *_: self.queueRefresh()
+            lambda *_: self.refresh()
         )
 
     def destroy(self) -> None:
@@ -677,8 +678,8 @@ class PatternMatrix(ttk.Frame, QuickRefresh):
             out.add(row)
         return out
 
+    @tkQueuedAction()
     def refresh(self):
-        self.resetRefreshFlag()
         self.rebuild()
         self._refresh()
 

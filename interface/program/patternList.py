@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING, cast
 
 from interface.theme import MatrixSelector
 from interface.utilities.doubleScrollFrame import DScrollFrame
-from interface.utilities.quickRefresh import QuickRefresh
 from utils.constants import CHANNEL_ORDER
 from utils.event import Connection
+from utils.tk import tkQueuedAction
 
 if TYPE_CHECKING:
     from structures.song import Song
@@ -28,7 +28,7 @@ from structures.globalEvents import SongReloaded, StructureChanged
 _logger = logging.getLogger(__name__)
 
 
-class PatternSelector(ttk.Label, QuickRefresh):
+class PatternSelector(ttk.Label):
     def __init__(self, parent: tk.Misc, lst: PatternList, channel: int, pattern: int):
         super().__init__(parent, relief="sunken")
 
@@ -50,7 +50,7 @@ class PatternSelector(ttk.Label, QuickRefresh):
             self.songConnections = list()
 
             program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
-                lambda key, *_: self.queueRefresh(), self.songConnections
+                lambda key, *_: self.refresh(), self.songConnections
             )
 
         SongReloaded.connect(lambda *_: setupSongEventListeners(), self.connections)
@@ -61,8 +61,8 @@ class PatternSelector(ttk.Label, QuickRefresh):
     # def getPattern(self) -> int:
     #     return program.p.currentSong.getPatternNumberByLocation(self.channel, self.row)
 
+    @tkQueuedAction()
     def refresh(self):
-        self.resetRefreshFlag()
         if program.p.currentSong.patternIdExists(self.channel, self.pattern):
             count = program.p.currentSong.getPatternUsage(
                 program.p.currentSong.getPatternById(self.channel, self.pattern)
@@ -86,7 +86,7 @@ class PatternSelector(ttk.Label, QuickRefresh):
         return super().destroy()
 
 
-class PatternList(ttk.Frame, QuickRefresh):
+class PatternList(ttk.Frame):
     def __init__(self, parent: tk.Misc):
         super().__init__(parent, relief="raised", width=400, height=200, borderwidth=2)
 
@@ -110,11 +110,11 @@ class PatternList(ttk.Frame, QuickRefresh):
             self.songConnections = list()
 
             program.p.currentSong.getAttributeChangedEvent("patternList").connect(
-                lambda key, *_: self.queueRefresh(), self.songConnections
+                lambda key, *_: self.refresh(), self.songConnections
             )
 
         SongReloaded.connect(lambda *_: setupSongEventListeners(), self.connections)
-        SongReloaded.connect(lambda *_: self.queueRefresh(), self.connections)
+        SongReloaded.connect(lambda *_: self.refresh(), self.connections)
         self.refresh()
 
     def destroy(self) -> None:
@@ -122,8 +122,8 @@ class PatternList(ttk.Frame, QuickRefresh):
             connection.disconnect()
         return super().destroy()
 
+    @tkQueuedAction()
     def refresh(self):
-        self.resetRefreshFlag()
         rows = program.p.currentSong.visibleChannels + 1
         cols = (
             max(
