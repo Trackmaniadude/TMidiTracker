@@ -2,6 +2,7 @@ import argparse
 import logging
 import tkinter as tk
 import traceback
+from enum import Enum
 from tkinter import filedialog, font, messagebox, ttk
 
 import mido
@@ -17,6 +18,7 @@ from structures import program  # This also inits the program object
 from structures.globalEvents import Copy, Cut, Paste, ProjectModified
 from structures.player import Player
 from structures.song import Song
+from utils import persistence
 from utils.constants import (
     CHANNEL_COUNT,
     MIDI_FILE_EXTENSION,
@@ -334,14 +336,99 @@ if args.debug:
 
 # Setup interface
 
-if args.debug:
-    ChannelDebug(root).pack(side="right", fill="both")
-EffectList(root).pack(side="right", fill="both")
-InstrumentList(root).pack(side="right", fill="both")
-PatternViewFrame(root).pack(side="bottom", fill="both", expand=True)
-PatternMatrix(root).pack(side="left", fill="both")
-SongDataView(root).pack(side="left", fill="both")
-PatternList(root).pack(side="left", fill="both", expand=True)
+mainframe: ttk.Frame = ttk.Frame()
+
+
+def layoutSetup():
+
+    def layout1():
+        if args.debug:
+            ChannelDebug(mainframe).pack(side="right", fill="both")
+        EffectList(mainframe).pack(side="right", fill="both")
+        InstrumentList(mainframe).pack(side="right", fill="both")
+        PatternViewFrame(mainframe).pack(side="bottom", fill="both", expand=True)
+        PatternMatrix(mainframe).pack(side="left", fill="both")
+        SongDataView(mainframe).pack(side="left", fill="both")
+        PatternList(mainframe).pack(side="left", fill="both", expand=True)
+
+    def layout2():
+        side = ttk.Notebook(mainframe)
+        upper = ttk.Notebook(mainframe)
+        main = PatternViewFrame(mainframe)
+
+        side.pack(side="right", fill="y")
+        upper.pack(side="top", fill="x")
+        main.pack(fill="both", expand=True)
+
+        side.add(EffectList(side), text="Effects")
+        side.add(InstrumentList(side), text="Instruments")
+        side.add(SongDataView(side), text="Song Settings")
+        if args.debug:
+            side.add(ChannelDebug(side), text="Channels")
+
+        upper.add(PatternMatrix(upper), text="Matrix")
+        upper.add(PatternList(upper), text="Patterns")
+
+    def layout3():
+        right = ttk.Notebook(mainframe)
+        left = ttk.Notebook(mainframe)
+        main = PatternViewFrame(mainframe)
+
+        right.pack(side="right", fill="y")
+        left.pack(side="left", fill="y")
+        main.pack(fill="both", expand=True)
+
+        right.add(EffectList(right), text="Effects")
+        right.add(InstrumentList(right), text="Instruments")
+        if args.debug:
+            right.add(ChannelDebug(right), text="Channels")
+
+        left.add(PatternMatrix(left, width=300, controlsPos="bottom"), text="Matrix")
+        left.add(SongDataView(left), text="Song Settings")
+        # left.add(PatternList(left), text="Patterns")
+
+    class UILayouts(Enum):
+        Layout1 = ("Layout 1", layout1)
+        Layout2 = ("Layout 2", layout2)
+        Layout3 = ("Layout 3", layout3)
+
+    currentLayout: UILayouts = UILayouts.Layout3
+
+    def buildLayout(layout: UILayouts):
+        global mainframe
+        nonlocal currentLayout
+        mainframe.destroy()
+        mainframe = ttk.Frame(root)
+        mainframe.pack(fill="both", expand=True)
+        layout.value[1]()
+        currentLayout = layout
+
+    def layoutMenu():
+        menu = tk.Menu(menubar)
+        menubar.add_cascade(menu=menu, label="Layout")
+
+        def c(layout: UILayouts):
+            menu.add_command(label=layout.value[0], command=lambda: buildLayout(layout))
+
+        for layout in UILayouts:
+            c(layout)
+
+    layoutMenu()
+
+    def loadLayout(value: str):
+        if value is persistence.USE_DEFAULT:
+            newLayout = UILayouts.Layout3
+        else:
+            newLayout = UILayouts[value]
+        buildLayout(newLayout)
+
+    def saveLayout() -> str:
+        return currentLayout.name
+
+    persistence.registerPersistence("Layout", saveLayout, loadLayout)
+
+
+layoutSetup()
 
 
 # Global Keyboard Shortcuts
@@ -393,5 +480,7 @@ except:
         pass
 
 
+persistence.loadPersistence()
 root.mainloop()
+persistence.savePersistence()
 program.p.close()

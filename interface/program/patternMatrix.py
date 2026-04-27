@@ -4,7 +4,7 @@ View/editor for the pattern matrix.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Callable, Literal, cast
 
 from utils.event import Connection
 from utils.misc import clamp
@@ -386,51 +386,66 @@ class PatternSelectorRowLabel(ttk.Label):
 
 
 class MatrixActions(ttk.Frame):
-    def __init__(self, parent: tk.Misc, matrix: PatternMatrix):
-        super().__init__(parent)
+    def __init__(
+        self,
+        parent: tk.Misc,
+        matrix: PatternMatrix,
+        *,
+        orientation: Literal["vertical", "horizontal"] = "vertical",
+    ):
+        super().__init__(parent, width=100, height=100)
         self.matrix = matrix
 
-        sf = DScrollFrame(self, mode="VERTICAL", propagationMode="contentDrivesFrame")
-        sf.pack(fill="both", expand=True)
+        if orientation == "vertical":
+            sf = DScrollFrame(
+                self, mode="VERTICAL", propagationMode="contentDrivesFrame"
+            )
+            sf.pack(fill="both", expand=True)
 
-        ttk.Button(
-            sf.content, text="Delete Rows", command=lambda *_: self.removeRows()
-        ).pack(side="top", fill="x", expand=True)
-        ttk.Button(
-            sf.content,
-            text="New Row Before",
-            command=lambda *_: self.addNewRow("before"),
-        ).pack(side="top", fill="x", expand=True)
-        ttk.Button(
-            sf.content, text="New Row After", command=lambda *_: self.addNewRow("after")
-        ).pack(side="top", fill="x", expand=True)
-        ttk.Button(
-            sf.content, text="New Row At End", command=lambda *_: self.addNewRow("end")
-        ).pack(side="top", fill="x", expand=True)
-        ttk.Button(
-            sf.content,
-            text="Toggle Highlight",
-            command=lambda *_: self.toggleHighlight(),
-        ).pack(side="top", fill="x", expand=True)
-        # ttk.Button(
-        #     sf.content,
-        #     text="Clone Rows Before",
-        #     command=lambda *_: self.cloneRows("before"),
-        # ).pack(side="top", fill="x", expand=True)
-        # ttk.Button(
-        #     sf.content,
-        #     text="Clone Rows After",
-        #     command=lambda *_: self.cloneRows("after"),
-        # ).pack(side="top", fill="x", expand=True)
-        ttk.Button(
-            sf.content, text="Clone To End", command=lambda *_: self.cloneRows("end")
-        ).pack(side="top", fill="x", expand=True)
-        # ttk.Button(
-        #     sf.content, text="Move Up", command=lambda *_: self.moveRows("up")
-        # ).pack(side="top", fill="x", expand=True)
-        # ttk.Button(
-        #     sf.content, text="Move Down", command=lambda *_: self.moveRows("down")
-        # ).pack(side="top", fill="x", expand=True)
+            def addCommand(name: str, action: Callable):
+                ttk.Button(sf.content, text=name, command=action).pack(
+                    side="top", fill="x", expand=True
+                )
+
+            def addSeparator():
+                ttk.Separator(sf.content, orient="horizontal").pack(
+                    side="top", fill="x"
+                )
+
+        elif orientation == "horizontal":
+            sf = DScrollFrame(
+                self, mode="HORIZONTAL", propagationMode="contentDrivesFrame"
+            )
+            sf.pack(fill="both", expand=True)
+
+            HEIGHT = 3
+            c = 0
+
+            def addCommand(name: str, action: Callable):
+                nonlocal c
+                ttk.Button(sf.content, text=name, command=action).grid(
+                    row=c % HEIGHT, column=c // HEIGHT, sticky="nesw"
+                )
+                c += 1
+
+            def addSeparator():
+                nonlocal c
+                c = (int(c / HEIGHT) + 1) * HEIGHT
+
+        addCommand("Delete Rows", lambda: self.removeRows())
+        addSeparator()
+        addCommand("New Row Before", lambda: self.addNewRow("before"))
+        addCommand("New Row After", lambda: self.addNewRow("after"))
+        addCommand("New Row End", lambda: self.addNewRow("end"))
+        addSeparator()
+        addCommand("Toggle Highlight", lambda: self.toggleHighlight())
+        addSeparator()
+        # addCommand("Clone Before", lambda: self.cloneRows("before"))
+        # addCommand("Clone After", lambda: self.cloneRows("after"))
+        addCommand("Clone End", lambda: self.cloneRows("end"))
+        # addSeparator()
+        # addCommand("Move Up", lambda: self.moveRows("up"))
+        # addCommand("Move Down", lambda: self.moveRows("down"))
 
     def toggleHighlight(self):
         # Highlight selected, unless all selected are highlighted, then unhighlight.
@@ -514,20 +529,36 @@ class MatrixActions(ttk.Frame):
 
 
 class PatternMatrix(ttk.Frame):
-    def __init__(self, parent: tk.Misc):
-        super().__init__(parent, relief="raised", width=500, height=200, borderwidth=2)
+    def __init__(
+        self,
+        parent: tk.Misc,
+        *,
+        width: int = 500,
+        height: int = 200,
+        controlsPos: Literal["right", "bottom"] = "right",
+    ):
+        super().__init__(
+            parent, relief="raised", width=width, height=height, borderwidth=2
+        )
 
         sf = DScrollFrame(self, mode="DOUBLE")
-        sf.pack(side="left", fill="both", expand=True)
-
         sf.widgetNameBlockList.add("patternselector")
-
-        actions = MatrixActions(self, self)
-        actions.pack(side="left", fill="both")
+        if controlsPos == "right":
+            actions = MatrixActions(self, self, orientation="vertical")
+            sf.grid(row=0, column=0, sticky="nesw")
+            actions.grid(row=0, column=1, sticky="ns")
+            self.columnconfigure(0, weight=1)
+            self.rowconfigure(0, weight=1)
+        elif controlsPos == "bottom":
+            actions = MatrixActions(self, self, orientation="horizontal")
+            sf.grid(row=0, column=0, sticky="nesw")
+            actions.grid(row=1, column=0, sticky="ew")
+            self.columnconfigure(0, weight=1)
+            self.rowconfigure(0, weight=1)
 
         self.connections: list[Connection] = list()
 
-        self.pack_propagate(False)
+        self.grid_propagate(False)
 
         self.__content = sf.content
         self.__grid = ttk.Frame(self.__content)
