@@ -47,7 +47,13 @@ loggerGroup.add_argument(
     "-q", "--quiet", help="Only print errors.", action="store_true"
 )
 
-parser.add_argument("-w", "--windowed", help="Start in windowed.", action="store_true")
+wGroup = parser.add_mutually_exclusive_group()
+wGroup.add_argument(
+    "-w", "--windowed", help="Start in default windowed.", action="store_true"
+)
+wGroup.add_argument(
+    "-m", "--maximized", help="Start program maximized.", action="store_true"
+)
 
 args = parser.parse_args()
 
@@ -65,16 +71,34 @@ _logger = logging.getLogger(__name__)
 
 root = tk.Tk()
 program.p.tkRoot = root
-if args.windowed:
-    root.geometry("1600x800")
-else:
-    root.state("zoomed")
 root.option_add("*tearOff", False)
 root.unbind_all("<Tab>")
 root.unbind_all("<<NextWindow>>")
 root.unbind_all("<<PrevWindow>>")
 root.option_add("*Font", value=font.nametofont("TkFixedFont"))
 root.iconphoto(True, tk.PhotoImage(file="assets/logo.png"))
+
+
+def windowShape():
+    def save():
+        return (root.geometry(), root.state())
+
+    def load(value):
+        if args.windowed:
+            root.geometry("1600x800")
+        elif args.maximized:
+            root.state("zoomed")
+        elif value is persistence.USE_DEFAULT:
+            root.state("zoomed")
+        else:
+            geo, state = value
+            root.geometry(geo)
+            root.state(state)
+
+    persistence.registerPersistence("WindowShape", save, load)
+
+
+windowShape()
 
 from interface import theme
 
@@ -480,7 +504,12 @@ except:
         pass
 
 
+def onClose():
+    persistence.savePersistence()
+    program.p.close()
+    root.destroy()
+
+
+root.protocol("WM_DELETE_WINDOW", onClose)
 persistence.loadPersistence()
 root.mainloop()
-persistence.savePersistence()
-program.p.close()
