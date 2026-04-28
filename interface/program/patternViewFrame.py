@@ -36,6 +36,8 @@ class InfoBar(ttk.Frame):
     def __init__(self, parent: tk.Misc):
         super().__init__(parent)
 
+        self.connections: list[Connection] = list()
+
         ttk.Label(self, text="OCT:").pack(side="left")
         octave = Prebuilts.Spinbox(
             self, default=program.p.currentOctave, range=(1, 10), increment=1, round=1
@@ -89,12 +91,18 @@ class InfoBar(ttk.Frame):
             time.config(text=text)
 
         program.p.getAttributeChangedEvent("currentPatternRow").connect(
-            lambda *_: timeStamp()
+            lambda *_: timeStamp(), self.connections
         )
         program.p.getAttributeChangedEvent("currentPort").connect(
-            lambda *_: port.config(text=str(program.p.currentPort.name))
+            lambda *_: port.config(text=str(program.p.currentPort.name)),
+            self.connections,
         )
         timeStamp()
+
+    def destroy(self) -> None:
+        for con in self.connections:
+            con.disconnect()
+        return super().destroy()
 
 
 class RowList(ttk.Frame):
