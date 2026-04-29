@@ -27,6 +27,7 @@ from utils.constants import (
     PROJECT_FILE_TK_LIST,
 )
 from utils.misc import incrementFilename
+from utils.tk import blockEventFromTypes
 
 PROGRAM_NAME = "TMidiTracker"
 
@@ -461,13 +462,17 @@ def makeKeybinds():
     # I wish I could make anonymous scopes.
 
     # Pause/Play
-    root.bind_all("<space>", lambda *_: program.p.songPlayer.togglePlayback())
+    root.bind_all(
+        "<space>", blockEventFromTypes(lambda *_: program.p.songPlayer.togglePlayback())
+    )
 
     # Jump to start of pattern
     def jumpToStartOfPattern():
         program.p.songPlayer.setPlaybackCursor(None, 0)
 
-    root.bind_all("<Control-space>", lambda *_: jumpToStartOfPattern())
+    root.bind_all(
+        "<Control-space>", blockEventFromTypes(lambda *_: jumpToStartOfPattern())
+    )
 
     # Jump to last playback position
     def jumpToLastPlaybackPosition():
@@ -475,13 +480,17 @@ def makeKeybinds():
             program.p.songPlayer.lastMatrixRow, program.p.songPlayer.lastPatternRow
         )
 
-    root.bind_all("<Shift-space>", lambda *_: jumpToLastPlaybackPosition())
+    root.bind_all(
+        "<Shift-space>", blockEventFromTypes(lambda *_: jumpToLastPlaybackPosition())
+    )
 
     # Jump to start of song
     def jumpToStartOfSong():
         program.p.songPlayer.setPlaybackCursor(0, 0)
 
-    root.bind_all("<Control-Shift-space>", lambda *_: jumpToStartOfSong())
+    root.bind_all(
+        "<Control-Shift-space>", blockEventFromTypes(lambda *_: jumpToStartOfSong())
+    )
 
 
 makeKeybinds()

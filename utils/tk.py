@@ -10,7 +10,7 @@ if __name__ == "__main__":
 import tkinter as tk
 from dataclasses import dataclass, field
 from tkinter import ttk
-from typing import Any, Callable, Literal, NamedTuple, cast
+from typing import Any, Callable, Literal, cast
 
 from utils.event import Event
 
@@ -21,6 +21,30 @@ class SPECIAL_CHARS:
 
 
 DEF_PAD = 2
+
+
+BLOCK_ERRANT_ENTRIES: list[type[tk.Misc]] = [
+    tk.Entry,
+    ttk.Entry,
+    tk.Text,
+    tk.Spinbox,
+    ttk.Spinbox,
+]
+
+
+def blockEventFromTypes(
+    func: Callable[[tk.Event], None],
+    blockList: list[type[tk.Misc]] = BLOCK_ERRANT_ENTRIES,
+):
+    """Wrap a tk bind callback to block calling when certain types of widgets are in focus (if it is not doing that for some reason)"""
+    classes = {c().winfo_class() for c in blockList}
+
+    def wrapped(event: tk.Event):
+        if event.widget.winfo_class() in classes:
+            return
+        func(event)
+
+    return wrapped
 
 
 def isDescendantOf(test: tk.Misc, descendsFrom: tk.Misc) -> bool:
