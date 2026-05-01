@@ -16,6 +16,7 @@ from interface.program.patternViewFrame import PatternViewFrame
 from interface.program.songDataView import SongDataView
 from structures import program  # This also inits the program object
 from structures.globalEvents import Copy, Cut, Paste, ProjectModified, SongReloaded
+from structures.globalEvents import Copy, Cut, Paste, ProjectModified, SongReloaded
 from structures.player import Player
 from structures.song import Song
 from utils import persistence
