@@ -15,7 +15,7 @@ from interface.program.patternMatrix import PatternMatrix
 from interface.program.patternViewFrame import PatternViewFrame
 from interface.program.songDataView import SongDataView
 from structures import program  # This also inits the program object
-from structures.globalEvents import Copy, Cut, Paste, ProjectModified
+from structures.globalEvents import Copy, Cut, Paste, ProjectModified, SongReloaded
 from structures.player import Player
 from structures.song import Song
 from utils import persistence
@@ -139,28 +139,25 @@ def menus():
         menu = tk.Menu(menubar)
         menubar.add_cascade(menu=menu, label="File")
 
-        def promptSaveFirst() -> bool:
-            """Ask the user if they want to continue due to unsaved work. Returns true if we may continue (user did not select 'cancel')"""
-            # TODO: should this also return false if the user says "yes" but then cancels the save?
-            if not program.p.projectModified:
-                return True
-            result = messagebox.askyesnocancel(
-                "Unsaved Work",
-                "There is currently unsaved work, would you like to save before proceeding?",
-                icon="warning",
-            )
-            if result == True:
-                save()
-            if result is None:
-                return False
-            return True
+        def promptSave(func):
+            """Ask the user if they want to continue due to unsaved work. If the user selects 'cancel', the function will not be called."""
 
-        def open():
-            if not promptSaveFirst():
-                return
-            filename = filedialog.askopenfilename(filetypes=PROJECT_FILE_TK_LIST)
-            if filename == "":
-                return
+            def wrapped(*args, **kwargs):
+                if program.p.projectModified:
+                    result = messagebox.askyesnocancel(
+                        "Unsaved Work",
+                        "There is currently unsaved work, would you like to save before proceeding?",
+                        icon="warning",
+                    )
+                    if result is None:
+                        return
+                    if result == True:
+                        save()
+                func(*args, **kwargs)
+
+            return wrapped
+
+        def openFile(filename: str):
             try:
                 program.p.currentSong = Song.fromFile(filename)
             except Exception as e:
@@ -172,9 +169,17 @@ def menus():
                 program.p.currentFile = filename
                 program.p.projectModified = False
 
-        def new():
-            if not promptSaveFirst():
+        @promptSave
+        def open():
+            filename = filedialog.askopenfilename(filetypes=PROJECT_FILE_TK_LIST)
+            if filename == "":
                 return
+            openFile(filename)
+
+        # def openFile(filename)
+
+        @promptSave
+        def new():
             program.p.currentSong = Song()
             program.p.currentFile = None
             program.p.projectModified = False
@@ -239,7 +244,55 @@ def menus():
             player = Player()
             player.toFile(filename)
 
+        def genRecentMenu():
+            recentMenu = tk.Menu(menu)
+            recents: list[str] = list()
+            """list[full path]"""
+
+            def loadRecents(value: list[str]):
+                if value is not persistence.USE_DEFAULT:
+                    nonlocal recents
+                    recents = value
+                updateRecentMenu()
+
+            def saveRecents():
+                return recents
+
+            persistence.registerPersistence("Recent Files", saveRecents, loadRecents)
+
+            def onSongChange():
+                if program.p.currentFile in recents:
+                    recents.remove(program.p.currentFile)
+                if program.p.currentFile is not None:
+                    recents.insert(0, program.p.currentFile)
+                updateRecentMenu()
+
+            program.p.getAttributeChangedEvent("currentFile").connect(
+                lambda *_: onSongChange()
+            )
+
+            def openFileCommand(path):
+                @promptSave
+                def o():
+                    openFile(path)
+
+                return o
+
+            def updateRecentMenu():
+                RECENT_LENGTH = 10  # TODO: more proper location for config things
+
+                recentMenu.delete(0, "end")
+                for i, path in enumerate(recents):
+                    if i >= RECENT_LENGTH:
+                        break
+                    recentMenu.add_command(
+                        label=path[path.rfind("/") + 1 :], command=openFileCommand(path)
+                    )
+
+            return recentMenu
+
         menu.add_command(label="Open", command=open)
+        menu.add_cascade(label="Recent", menu=genRecentMenu())
         menu.add_command(label="New", command=new)
         menu.add_command(label="Save", command=save, accelerator="CTRL-S")
         menu.add_command(label="Save As", command=saveAs)
@@ -249,9 +302,9 @@ def menus():
         root.bind_all("<Control-S>", lambda *_: save())
         root.bind_all("<Control-E>", lambda *_: export())
 
+        @promptSave
         def onClose():
-            if promptSaveFirst():
-                root.destroy()
+            root.destroy()
 
         root.protocol("WM_DELETE_WINDOW", onClose)
 
