@@ -31,6 +31,12 @@ from utils.types_ import note, velocity
 _logger = logging.getLogger(__name__)
 
 
+# TODO: given how common the pattern of effects that stay active is, maybe
+# there should be a discrete structure for such "active" effects.
+
+# TODO: I would like to split this up into multiple files, but how?
+
+
 class AbstractEffect:
     displayName: str
     """Display name."""
@@ -350,6 +356,97 @@ class Effects:
                 else:
                     if note is not None:
                         channel.scheduleEffect(delay, callback, {col: "stop"})
+
+        class Stutter(AbstractEffect):
+            displayName = "Stutter"
+            prefix = (0x15,)
+            params = [
+                "15[xy...]",
+                "xy",
+                "On/Off Delay",
+            ]
+            help = (
+                "Repeat notes when played with a highly configurable pace.\n"
+                "Note will be on for x ticks, then off for y ticks, repeating through all provided xy pairs.\n"
+                "Calling with no arguments stops the effect.\n"
+                "An xy pair of 00 will set a loop point rather than starting from the beginning of the pattern. "
+                "If multiple points are specified, the last will be used."
+            )
+
+            storeName = "Stuttur"
+
+            @dataclass
+            class StoreValue:
+                pattern: list[int]
+                loop: int
+                notes: dict[int, note]
+                resetOnNewNotes: bool
+
+            @classmethod
+            def actuate(
+                cls, channel: Channel, player: Player, data: tuple[int, ...]
+            ) -> None | list[Message | MetaMessage]:
+                if len(data) == 0:
+                    channel.playbackState.effectData.pop(cls.storeName, None)
+                    return
+
+                def loop(loopData: tuple[int, int]):
+                    data = channel.playbackState.effectData.get(cls.storeName, None)
+                    if type(data) is not cls.StoreValue:
+                        return
+                    time, step = loopData
+
+                    # Precheck in case things get changed at the wrong time
+                    if step > len(data.pattern):
+                        step = data.loop
+                    wait = data.pattern[step]
+
+                    # Update playing notes
+                    newNotes = channel.playbackState.queuedNotes.copy()
+                    if len(newNotes) > 0:
+                        channel.playbackState.queuedNotes.clear()
+                        data.notes = newNotes
+                        if data.resetOnNewNotes:
+                            time = 0
+                            step = 0
+
+                    # Playback
+                    if time == 0:
+                        if step % 2 == 0:
+                            channel.playbackState.queuedNotes.update(data.notes)
+                        else:
+                            channel.playbackState.queuedNotes.update(
+                                {c: "stop" for c in data.notes.keys()}
+                            )
+
+                    # Timing
+                    time += 1
+                    if time >= wait:
+                        time = 0
+                        step += 1
+                        if step >= len(data.pattern):
+                            step = data.loop
+
+                    # Loop
+                    channel.scheduleEffect(1, loop, (time, step))
+
+                pattern: list[int] = list()
+                loopPoint = 0
+                count = 0
+                for n in data:
+                    if n == 0:
+                        loopPoint = count
+                        continue
+                    pattern.append(n // 0x10)
+                    pattern.append(n % 0x10)
+                    count += 2
+
+                running = cls.storeName in channel.playbackState.effectData
+                channel.playbackState.effectData[cls.storeName] = cls.StoreValue(
+                    pattern, loopPoint, dict(), True
+                )
+                if not running:
+                    loop((0, 0))
 
     class Pitch(EffectCategory):
         # 20-2F
