@@ -16,7 +16,6 @@ from interface.program.patternViewFrame import PatternViewFrame
 from interface.program.songDataView import SongDataView
 from structures import program  # This also inits the program object
 from structures.globalEvents import Copy, Cut, Paste, ProjectModified, SongReloaded
-from structures.globalEvents import Copy, Cut, Paste, ProjectModified, SongReloaded
 from structures.player import Player
 from structures.song import Song
 from utils import persistence
@@ -253,7 +252,11 @@ def menus():
             def loadRecents(value: list[str]):
                 if value is not persistence.USE_DEFAULT:
                     nonlocal recents
-                    recents.extend(value)
+                    recents = value
+                    if program.p.currentFile in recents:
+                        recents.remove(program.p.currentFile)
+                    if program.p.currentFile is not None:
+                        recents.insert(0, program.p.currentFile)
                 updateRecentMenu()
 
             def saveRecents():
