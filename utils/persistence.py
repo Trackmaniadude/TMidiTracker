@@ -2,6 +2,8 @@
 Storage for program configuration. More intended for remembering things between close and open than actual settings.
 """
 
+# TODO: this should probably be a class
+
 import json
 import logging
 from typing import Any, Callable, Protocol
@@ -26,6 +28,7 @@ handlers: dict[str, tuple[SAVE_FUNC, LOAD_FUNC]] = dict()
 
 
 def loadPersistence():
+    """Read values from the persistence file, and load them in (by calling their associated load functions)"""
     try:
         with open(PERSISTENCE_FILE, "r") as fp:
             data = json.load(fp)
@@ -47,14 +50,26 @@ def loadPersistence():
 
 
 def savePersistence():
+    """Save values to the persistence file (by calling their associated save functions)"""
     try:
         with open(PERSISTENCE_FILE, "w") as fp:
-            json.dump({key: save() for key, (save, load) in handlers.items()}, fp)
+            json.dump(
+                {key: save() for key, (save, load) in handlers.items()}, fp, indent=3
+            )
     except Exception as e:
         _logger.exception(e)
 
 
 def registerPersistence[T](key: str, save: SAVE_FUNC[T], load: LOAD_FUNC[T]):
+    """
+    Register a persistence value.
+
+    Save should be a callable returning an object that can be serialized by the default JSON serializer.
+
+    load should be a callable that takes in the same value that save returns.
+
+    load will be supplied with USE_DEFAULT if it's key is missing from persistence. (I have no idea how to type hint that)
+    """
     handlers[key] = (save, load)
 
 
