@@ -15,7 +15,7 @@ from interface.program.patternMatrix import PatternMatrix
 from interface.program.patternViewFrame import PatternViewFrame
 from interface.program.songDataView import SongDataView
 from structures import program  # This also inits the program object
-from structures.globalEvents import Copy, Cut, Paste, ProjectModified, SongReloaded
+from structures.globalEvents import Copy, Cut, Paste, ProjectModified
 from structures.player import Player
 from structures.song import Song
 from utils import persistence
@@ -23,13 +23,13 @@ from utils.constants import (
     CHANNEL_COUNT,
     MIDI_FILE_EXTENSION,
     MIDI_FILE_TK_LIST,
+    PROGRAM_NAME,
     PROJECT_FILE_EXTENSION,
     PROJECT_FILE_TK_LIST,
+    RECENT_LENGTH,
 )
 from utils.misc import incrementFilename
 from utils.tk import blockEventFromTypes
-
-PROGRAM_NAME = "TMidiTracker"
 
 # Program args and logging
 
@@ -283,8 +283,6 @@ def menus():
                 return o
 
             def updateRecentMenu():
-                RECENT_LENGTH = 10  # TODO: more proper location for config things
-
                 recentMenu.delete(0, "end")
                 for i, path in enumerate(recents):
                     if i >= RECENT_LENGTH:

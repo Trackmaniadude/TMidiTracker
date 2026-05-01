@@ -2,11 +2,15 @@
 
 # Try to avoid importing things here. Except maybe data types.
 
+PROGRAM_NAME = "TMidiTracker"
+
 PROJECT_FILE_EXTENSION = ".tmt"
 PROJECT_FILE_TK_LIST = [("TMT Project", PROJECT_FILE_EXTENSION)]
 
 MIDI_FILE_EXTENSION = ".mid"
 MIDI_FILE_TK_LIST = [("MIDI File", MIDI_FILE_EXTENSION)]
+
+RECENT_LENGTH = 10
 
 CHANNEL_COUNT = 16
 
