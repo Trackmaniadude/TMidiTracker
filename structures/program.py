@@ -7,6 +7,7 @@ from structures.globalEvents import ProjectModified, SongReloaded
 from structures.player import Player
 from structures.song import Song
 from utils.event import Event
+from utils.persistence import Persistence
 from utils.reactiveClass import ReactiveClass
 
 _logger = logging.getLogger(__name__)
@@ -54,6 +55,7 @@ class Program(ReactiveClass):
         # Files
         self.currentFile: str | None = None
         self.projectModified: bool = False
+        self.persistence = Persistence("PERSISTENCE")
 
         # Events
         self.setupContainerListen()

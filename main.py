@@ -18,7 +18,6 @@ from structures import program  # This also inits the program object
 from structures.globalEvents import Copy, Cut, Paste, ProjectModified
 from structures.player import Player
 from structures.song import Song
-from utils import persistence
 from utils.constants import (
     CHANNEL_COUNT,
     MIDI_FILE_EXTENSION,
@@ -29,6 +28,7 @@ from utils.constants import (
     RECENT_LENGTH,
 )
 from utils.misc import incrementFilename
+from utils.persistence import USE_DEFAULT
 from utils.tk import blockEventFromTypes
 
 # Program args and logging
@@ -89,14 +89,14 @@ def windowShape():
             root.geometry("1600x800")
         elif args.maximized:
             root.state("zoomed")
-        elif value is persistence.USE_DEFAULT:
+        elif value is USE_DEFAULT:
             root.state("zoomed")
         else:
             geo, state = value
             root.geometry(geo)
             root.state(state)
 
-    persistence.registerPersistence("WindowShape", save, load)
+    program.p.persistence.registerPersistence("WindowShape", save, load)
 
 
 windowShape()
@@ -250,7 +250,7 @@ def menus():
             """list[full path]"""
 
             def loadRecents(value: list[str]):
-                if value is not persistence.USE_DEFAULT:
+                if value is not USE_DEFAULT:
                     nonlocal recents
                     recents = value
                     if program.p.currentFile in recents:
@@ -262,7 +262,9 @@ def menus():
             def saveRecents():
                 return recents
 
-            persistence.registerPersistence("Recent Files", saveRecents, loadRecents)
+            program.p.persistence.registerPersistence(
+                "Recent Files", saveRecents, loadRecents
+            )
 
             def onSongChange():
                 if program.p.currentFile in recents:
@@ -496,7 +498,7 @@ def layoutSetup():
     layoutMenu()
 
     def loadLayout(value: str):
-        if value is persistence.USE_DEFAULT:
+        if value is USE_DEFAULT:
             newLayout = UILayouts.Layout3
         else:
             newLayout = UILayouts[value]
@@ -505,7 +507,7 @@ def layoutSetup():
     def saveLayout() -> str:
         return currentLayout.name
 
-    persistence.registerPersistence("Layout", saveLayout, loadLayout)
+    program.p.persistence.registerPersistence("Layout", saveLayout, loadLayout)
 
 
 layoutSetup()
@@ -569,11 +571,11 @@ except:
 
 
 def onClose():
-    persistence.savePersistence()
+    program.p.persistence.savePersistence()
     program.p.close()
     root.destroy()
 
 
 root.protocol("WM_DELETE_WINDOW", onClose)
-persistence.loadPersistence()
+program.p.persistence.loadPersistence()
 root.mainloop()
