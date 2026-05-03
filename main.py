@@ -31,6 +31,8 @@ from utils.misc import incrementFilename
 from utils.persistence import USE_DEFAULT
 from utils.tk import blockEventFromTypes
 
+# TODO: this file is a mess. fix it
+
 # Program args and logging
 
 parser = argparse.ArgumentParser(
@@ -38,7 +40,11 @@ parser = argparse.ArgumentParser(
     description="Midi tracker.",
 )
 
-parser.add_argument("-f", "--file", help="File to open on start.")
+fileGroup = parser.add_mutually_exclusive_group()
+fileGroup.add_argument("-f", "--file", help="File to open on start.")
+fileGroup.add_argument(
+    "-r", "--recent", help="Open last opened file.", action="store_true"
+)
 
 loggerGroup = parser.add_mutually_exclusive_group()
 loggerGroup.add_argument(
@@ -132,6 +138,9 @@ program.p.getAttributeChangedEvent("currentFile").connect(
 
 menubar = tk.Menu(root)
 root["menu"] = menubar
+
+recents: list[str] = list()
+"""list[full path]"""
 
 
 def menus():
@@ -246,12 +255,10 @@ def menus():
 
         def genRecentMenu():
             recentMenu = tk.Menu(menu)
-            recents: list[str] = list()
-            """list[full path]"""
 
             def loadRecents(value: list[str]):
+                global recents
                 if value is not USE_DEFAULT:
-                    nonlocal recents
                     recents = value
                     if program.p.currentFile in recents:
                         recents.remove(program.p.currentFile)
@@ -578,4 +585,13 @@ def onClose():
 
 root.protocol("WM_DELETE_WINDOW", onClose)
 program.p.persistence.loadPersistence()
+if args.recent:
+    try:
+        openFile = recents[0]
+        program.p.currentSong = Song.fromFile(openFile)
+        program.p.currentFile = openFile
+        program.p.projectModified = False
+        updateWindowTitle()
+    except:
+        pass
 root.mainloop()
