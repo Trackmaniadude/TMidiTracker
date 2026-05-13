@@ -74,7 +74,7 @@ else:
 _logger = logging.getLogger(__name__)
 
 
-# Setup TK
+# region TK Setup
 
 root = tk.Tk()
 program.p.tkRoot = root
@@ -111,6 +111,8 @@ from interface import theme
 
 theme.generate()
 
+# endregion
+
 
 def formatFileName(fn: str):
     return fn
@@ -134,7 +136,7 @@ program.p.getAttributeChangedEvent("currentFile").connect(
 )
 
 
-# Setup menus
+# region Menu Setup
 
 menubar = tk.Menu(root)
 root["menu"] = menubar
@@ -245,9 +247,26 @@ def menus():
                     program.p.projectModified = False
 
         def export():
+            defFilename: str | None = (
+                program.p.currentFile[
+                    program.p.currentFile.rfind("/")
+                    + 1 : program.p.currentFile.rfind(".")
+                ]
+                if program.p.currentFile is not None
+                else None
+            )  # Get project name from path
+            if (
+                program.p.currentSong.metadata.title != ""
+                and not program.p.currentSong.metadata.title.isspace()
+            ):
+                defFilename = program.p.currentSong.metadata.title
+
             filename = filedialog.asksaveasfilename(
-                filetypes=MIDI_FILE_TK_LIST, defaultextension=MIDI_FILE_EXTENSION
+                filetypes=MIDI_FILE_TK_LIST,
+                defaultextension=MIDI_FILE_EXTENSION,
+                initialfile=defFilename,
             )
+
             if filename == "":
                 return
             player = Player()
@@ -401,6 +420,8 @@ def menus():
 
 menus()
 
+# endregion
+
 
 def focus(event):
     try:
@@ -421,7 +442,7 @@ if args.debug:
     )
 
 
-# Setup interface
+# region Interface Setup
 
 mainframe: ttk.Frame = ttk.Frame()
 
@@ -517,6 +538,11 @@ def layoutSetup():
 
 layoutSetup()
 
+# endregion
+
+
+# region Keybinds
+
 
 # Global Keyboard Shortcuts
 # TODO: rebindable shortcuts
@@ -556,6 +582,8 @@ def makeKeybinds():
 
 
 makeKeybinds()
+
+# endregion
 
 
 # Load open files
