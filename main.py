@@ -102,7 +102,7 @@ def windowShape():
             root.geometry(geo)
             root.state(state)
 
-    program.p.persistence.registerPersistence("WindowShape", save, load)
+    program.p.persistence.register("WindowShape", save, load)
 
 
 windowShape()
@@ -269,9 +269,7 @@ def menus():
             def saveRecents():
                 return recents
 
-            program.p.persistence.registerPersistence(
-                "Recent Files", saveRecents, loadRecents
-            )
+            program.p.persistence.register("Recent Files", saveRecents, loadRecents)
 
             def onSongChange():
                 if program.p.currentFile in recents:
@@ -514,7 +512,7 @@ def layoutSetup():
     def saveLayout() -> str:
         return currentLayout.name
 
-    program.p.persistence.registerPersistence("Layout", saveLayout, loadLayout)
+    program.p.persistence.register("Layout", saveLayout, loadLayout)
 
 
 layoutSetup()
@@ -578,13 +576,13 @@ except:
 
 
 def onClose():
-    program.p.persistence.savePersistence()
+    program.p.persistence.save()
     program.p.close()
     root.destroy()
 
 
 root.protocol("WM_DELETE_WINDOW", onClose)
-program.p.persistence.loadPersistence()
+program.p.persistence.load()
 if args.recent:
     try:
         openFile = recents[0]

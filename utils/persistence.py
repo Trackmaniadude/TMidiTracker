@@ -27,7 +27,7 @@ class Persistence:
         self.filename = filename
         self.handlers: dict[str, tuple[SAVE_FUNC, LOAD_FUNC]] = dict()
 
-    def loadPersistence(self):
+    def load(self):
         """Read values from the persistence file, and load them in (by calling their associated load functions)"""
         try:
             with open(self.filename, "r") as fp:
@@ -48,7 +48,7 @@ class Persistence:
         except Exception as e:
             _logger.exception(e)
 
-    def savePersistence(self):
+    def save(self):
         """Save values to the persistence file (by calling their associated save functions)"""
         try:
             with open(self.filename, "w") as fp:
@@ -60,7 +60,7 @@ class Persistence:
         except Exception as e:
             _logger.exception(e)
 
-    def registerPersistence[T](self, key: str, save: SAVE_FUNC[T], load: LOAD_FUNC[T]):
+    def register[T](self, key: str, save: SAVE_FUNC[T], load: LOAD_FUNC[T]):
         """
         Register a persistence value.
 
@@ -85,8 +85,8 @@ if __name__ == "__main__":
     def save() -> int:
         return val
 
-    p.registerPersistence("val", save, load)
+    p.register("val", save, load)
     print(val)
-    p.loadPersistence()
+    p.load()
     print(val)
-    p.savePersistence()
+    p.save()
