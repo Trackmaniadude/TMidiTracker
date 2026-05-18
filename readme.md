@@ -38,5 +38,8 @@ Fluidsynth is a decent software to use if you have nothing else, and is cross pl
 ## Other
 - I haven't got around to that yet. Should be the same process, but you'll have to do what run.bat does manually. Also the program may still not work because it's untested elsewhere.
 
+# Uninstallation
+Delete the program folder.
+
 # Other Information
 no
