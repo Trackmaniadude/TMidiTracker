@@ -1,6 +1,13 @@
 # What is this
 I wanted to write MIDI files and existing tools weren't doing it for me so I did it myself. So: a MIDI tracker. It's built to make MIDI files. However, it's not a general MIDI editor.
 
+# Playback
+TMidiTracker operates purely in MIDI — it has no audio output of its own. You will need a MIDI device/software that supports General Midi in order to use this.
+
+Fluidsynth is a decent software to use if you have nothing else, and is cross platform. Windows also has its own synth (Microsoft GS Wavetable Synth) built in, although it's of notably low quality.
+ 
+(I may look into embedding fluidsynth at some point)
+
 # Installation
 ## Linux (WIP, MAY NOT WORK)
 <!-- - Install python3-tk
