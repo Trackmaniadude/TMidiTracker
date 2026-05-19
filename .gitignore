@@ -1,6 +1,5 @@
 .venv
 INSTALLED
-Makefile
 *.code-workspace
 __pycache__
 ideas.txt
