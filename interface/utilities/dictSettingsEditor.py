@@ -71,9 +71,7 @@ class DictSettingsEditor(HeaderFrame):
         self.__row += 1
         return row
 
-    def addValueEdit[
-        TExt, TInt
-    ](
+    def addValueEdit[TExt, TInt](
         self,
         key: str,
         entry: DSEEntry | None = None,

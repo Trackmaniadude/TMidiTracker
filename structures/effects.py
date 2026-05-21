@@ -650,7 +650,7 @@ class Effects:
                         if len(notes) > 0 or len(vels) > 0:
 
                             def delayCallback(
-                                data: tuple[dict[int, note], dict[int, velocity]]
+                                data: tuple[dict[int, note], dict[int, velocity]],
                             ):
                                 # Has to be defined in the loop body due to the schedule system indexing on the callback functions
                                 # TODO: investigate the impact of doing this vs some other identifier

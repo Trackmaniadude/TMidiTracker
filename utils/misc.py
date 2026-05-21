@@ -22,18 +22,14 @@ NO_DEFAULT = NoDefault.NO_DEFAULT
 
 
 @overload
-def minmax[
-    T: SupportsRichComparison
-](
+def minmax[T: SupportsRichComparison](
     iterable: Iterable[T], /, *, key: None = None, default: T | NoDefault = NO_DEFAULT
 ) -> tuple[T, T]:
     """Return the minimum and maximum of a container."""
 
 
 @overload
-def minmax[
-    T, C: SupportsRichComparison
-](
+def minmax[T, C: SupportsRichComparison](
     iterable: Iterable[T],
     /,
     *,
@@ -44,16 +40,16 @@ def minmax[
 
 
 @overload
-def minmax[
-    T1: SupportsRichComparison, T2: SupportsRichComparison
-](value1: T1, value2: T2, /, *, key: None = None) -> tuple[T1 | T2, T1 | T2]:
+def minmax[T1: SupportsRichComparison, T2: SupportsRichComparison](
+    value1: T1, value2: T2, /, *, key: None = None
+) -> tuple[T1 | T2, T1 | T2]:
     """Return the minimum and maximum of two values. Mostly useful if you're sampling two values but can't otherwise gaurantee their order."""
 
 
 @overload
-def minmax[
-    T1, T2, C: SupportsRichComparison
-](value1: T1, value2: T2, /, *, key: Callable[[T1 | T2], C]) -> tuple[T1 | T2, T1 | T2]:
+def minmax[T1, T2, C: SupportsRichComparison](
+    value1: T1, value2: T2, /, *, key: Callable[[T1 | T2], C]
+) -> tuple[T1 | T2, T1 | T2]:
     """Return the minimum and maximum of two values. Mostly useful if you're sampling two values but can't otherwise gaurantee their order."""
 
 
@@ -88,9 +84,9 @@ def intKey2dFromJson(key: str) -> tuple[int, int]:
     return (int(l[0]), int(l[1]))
 
 
-def collapse2dDict[
-    T
-](dct: dict[tuple[int, int], T], default: T = None) -> list[list[T]]:
+def collapse2dDict[T](
+    dct: dict[tuple[int, int], T], default: T = None
+) -> list[list[T]]:
     """Take a dict using keys of the form (int, int) and convert to a 2d array (list of lists). Makes more sense for dense matrices."""
     maxRows = max(k[0] for k in dct.keys()) + 1
     maxCols = max(k[1] for k in dct.keys()) + 1
