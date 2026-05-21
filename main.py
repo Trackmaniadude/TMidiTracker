@@ -183,7 +183,7 @@ def menus():
         @promptSave
         def open():
             filename = filedialog.askopenfilename(filetypes=PROJECT_FILE_TK_LIST)
-            if filename == "":
+            if filename == "" or filename == ():
                 return
             openFile(filename)
 
@@ -199,7 +199,7 @@ def menus():
             filename = filedialog.asksaveasfilename(
                 filetypes=PROJECT_FILE_TK_LIST, defaultextension=PROJECT_FILE_EXTENSION
             )
-            if filename == "":
+            if filename == "" or filename == ():
                 return
             try:
                 program.p.currentSong.toFile(filename)
@@ -267,7 +267,7 @@ def menus():
                 initialfile=defFilename,
             )
 
-            if filename == "":
+            if filename == "" or filename == ():
                 return
             player = Player()
             player.toFile(filename)
