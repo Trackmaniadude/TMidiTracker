@@ -1,5 +1,6 @@
 import argparse
 import logging
+import random
 import tkinter as tk
 import traceback
 from enum import Enum
@@ -30,6 +31,8 @@ from utils.constants import (
 from utils.misc import incrementFilename
 from utils.persistence import USE_DEFAULT
 from utils.tk import blockEventFromTypes
+
+from utils.fluidsynth import FLUIDSYNTH_EXISTS, Fluidsynth
 
 # TODO: this file is a mess. fix it
 
@@ -603,10 +606,16 @@ except:
         pass
 
 
+if FLUIDSYNTH_EXISTS:
+    fs_obj = Fluidsynth(f"TMidiTracker Internal")
+
+
 def onClose():
     program.p.persistence.save()
     program.p.close()
     root.destroy()
+    if FLUIDSYNTH_EXISTS:
+        fs_obj.close()
 
 
 root.protocol("WM_DELETE_WINDOW", onClose)
