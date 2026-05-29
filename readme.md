@@ -2,11 +2,12 @@
 I wanted to write MIDI files and existing tools weren't doing it for me so I did it myself. So: a MIDI tracker. It's built to make MIDI files. However, it's not a general MIDI editor.
 
 # Playback
-TMidiTracker operates purely in MIDI — it has no audio output of its own. You will need a MIDI device/software that supports General Midi in order to use this.
+TMidiTracker operates purely in MIDI — it technically has no audio output of its own. You will need a MIDI device/software that supports General Midi in order to use this.
 
-Fluidsynth is a decent software to use if you have nothing else, and is cross platform. Windows also has its own synth (Microsoft GS Wavetable Synth) built in, although it's of notably low quality.
- 
-(I may look into embedding fluidsynth at some point)
+On Windows, Microsoft GS Wavetable Synth will be available, so no extra work is needed.
+
+Fluidsynth is a recommended software if you don't have anything else preferred. The tracker also has integration with it, and will provide built in audio
+if Fluidsynth is detected on the system. (TODO: does this work on not Linux?)
 
 # Installation
 ## Linux (WIP, MAY NOT WORK)
@@ -30,6 +31,7 @@ Fluidsynth is a decent software to use if you have nothing else, and is cross pl
       - Install python3-devel
         - `dnf install python3-devel`
         - TODO: others (probably just on apt)
+    - I'm pretty sure what's happening here is there isn't a binary available, so it has to build it, and these are the tools it needs to do so.
 ## Windows
 - Install Python (built with 3.13.5, should work with newer)
 - Download and extract repository wherever you feel like.
@@ -38,8 +40,11 @@ Fluidsynth is a decent software to use if you have nothing else, and is cross pl
 ## Other
 - I haven't got around to that yet. Should be the same process, but you'll have to do what run.bat does manually. Also the program may still not work because it's untested elsewhere.
 
+## Optional Dependencies
+- Fluidsynth.
+  - This will allow the program to produce audio on its own, rather than needing a standalone device.
+  - If integration is working, there will be a port labeled "Internal Fluidsynth".
+  - Options related to Fluidsynth will also be exposed.
+
 # Uninstallation
 Delete the program folder.
-
-# Other Information
-no
