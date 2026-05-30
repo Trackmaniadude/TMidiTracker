@@ -39,6 +39,10 @@ class Fluidsynth:
     def __enter__(self):
         return self
 
+    def setGain(self, gain: float):
+        gain = max(0, min(5, gain))
+        self._interact(f"gain {gain}")
+
     def close(self):
         _logger.debug("Closing Fluidsynth")
         self._interact("quit")

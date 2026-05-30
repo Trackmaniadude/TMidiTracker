@@ -625,6 +625,7 @@ except:
 
 if FLUIDSYNTH_EXISTS:
     fs_obj = Fluidsynth(f"TMidiTracker Internal")
+    fs_obj.setGain(2)
 
 
 def onClose():
