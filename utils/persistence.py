@@ -25,7 +25,8 @@ class Persistence:
 
     def __init__(self, filename: str) -> None:
         self.filename = filename
-        self.handlers: dict[str, tuple[SAVE_FUNC, LOAD_FUNC]] = dict()
+        self.handlers = dict[str, tuple[SAVE_FUNC, LOAD_FUNC]]()
+        self.listeners = dict[str, list[LOAD_FUNC]]()
 
     def load(self):
         """Read values from the persistence file, and load them in (by calling their associated load functions)"""
@@ -35,6 +36,7 @@ class Persistence:
                 if type(data) is not dict:
                     raise Exception("Top level persistence must be dict!")
                 for key, (save, load) in self.handlers.items():
+                    # Main load
                     try:
                         val = data[key]
                         load(val)
@@ -43,6 +45,19 @@ class Persistence:
                             f"Could not load key '{key}' from persistence: {e.__class__.__name__}: {e}"
                         )
                         load(USE_DEFAULT)
+
+                    # Listener Load
+                    if key not in self.listeners:
+                        continue
+                    for listener in self.listeners[key]:
+                        try:
+                            val = data[key]
+                            listener(val)
+                        except Exception as e:
+                            _logger.warning(
+                                f"Could not load key '{key}' from persistence: {e.__class__.__name__}: {e}"
+                            )
+                            listener(USE_DEFAULT)
         except FileNotFoundError:
             pass
         except Exception as e:
@@ -71,6 +86,18 @@ class Persistence:
         load will be supplied with USE_DEFAULT if it's key is missing from persistence. (I have no idea how to type hint that)
         """
         self.handlers[key] = (save, load)
+
+    def listen(self, key: str, load: LOAD_FUNC):
+        """
+        Register a secondary persistence loader.
+
+        Listeners will be called after their corresponding handler is loaded (no order gauranteed beyond that).
+
+        Intended for values where items other than the main handler would like to know when loaded (such as menus).
+        """
+        if key not in self.listeners:
+            self.listeners[key] = list()
+        self.listeners[key].append(load)
 
 
 if __name__ == "__main__":
