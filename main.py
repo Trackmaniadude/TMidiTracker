@@ -4,6 +4,7 @@ import random
 import tkinter as tk
 import traceback
 from enum import Enum
+from pathlib import Path
 from tkinter import filedialog, font, messagebox, ttk
 
 import mido
@@ -384,10 +385,10 @@ def menus():
             program.p.songPlayer.togglePlayback()
 
         def refresh():
-            menu.delete(5, "end")
+            deviceMenu.delete(2, "end")
             ports = [None] + program.p.getAvailablePorts()
             for port in ports:
-                menu.add_radiobutton(
+                deviceMenu.add_radiobutton(
                     label=port if port is not None else "No Port",
                     command=createPortCommand(port),
                 )
@@ -400,10 +401,39 @@ def menus():
 
         menu.add_command(label="Play / Pause", command=pausePlay, accelerator="Space")
         menu.add_command(label="Reset Device", command=resetOutput)
-        menu.add_separator()
-        menu.add_command(label="Refresh", command=refresh)
-        menu.add_separator()
+
+        deviceMenu = tk.Menu(menu)
+        deviceMenu.add_command(label="Refresh", command=refresh)
+        deviceMenu.add_separator()
+        menu.add_cascade(label="Devices", menu=deviceMenu)
         refresh()
+
+        if FLUIDSYNTH_EXISTS:
+
+            def refreshFonts():
+                fontMenu.delete(2, "end")
+                # TODO: unhardcode
+                for child in Path("./soundfonts").resolve().iterdir():
+                    if not child.is_file():
+                        return
+                    if not child.name.endswith(".sf2"):
+                        return
+                    fontMenu.add_radiobutton(
+                        label=child.name,
+                        command=createFontCommand(child),
+                    )
+
+            def createFontCommand(path: Path):
+                def command(*_):
+                    fs_obj.loadSoundfont(path)
+
+                return command
+
+            fontMenu = tk.Menu(menu)
+            fontMenu.add_command(label="Refresh", command=refreshFonts)
+            fontMenu.add_separator()
+            menu.add_cascade(label="Soundfonts", menu=fontMenu)
+            refreshFonts()
 
     portMenu()
 
