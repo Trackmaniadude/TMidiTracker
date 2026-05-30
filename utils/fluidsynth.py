@@ -6,7 +6,6 @@ from subprocess import PIPE, Popen
 from uuid import uuid4
 
 _logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
 
 FLUIDSYNTH_COMMAND = "fluidsynth"
 FLUIDSYNTH_EXISTS = shutil.which(FLUIDSYNTH_COMMAND) is not None
