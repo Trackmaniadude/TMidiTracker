@@ -28,11 +28,10 @@ from utils.constants import (
     PROJECT_FILE_TK_LIST,
     RECENT_LENGTH,
 )
+from utils.fluidsynth import FLUIDSYNTH_EXISTS, Fluidsynth
 from utils.misc import incrementFilename
 from utils.persistence import USE_DEFAULT
 from utils.tk import blockEventFromTypes
-
-from utils.fluidsynth import FLUIDSYNTH_EXISTS, Fluidsynth
 
 # TODO: this file is a mess. fix it
 
@@ -377,19 +376,7 @@ def menus():
         def resetOutput():
             program.p.songPlayer.pause()  # If player is running, stop it
             p = program.p.currentPort.name
-            program.p.setPort(None)
-            program.p.setPort(p)
-            for channel in range(CHANNEL_COUNT):
-                program.p.currentPort.send(
-                    mido.Message(
-                        "control_change", channel=channel, control=120, value=0
-                    )
-                )
-                program.p.currentPort.send(
-                    mido.Message(
-                        "control_change", channel=channel, control=121, value=0
-                    )
-                )
+            mido.Message("reset")
             program.p.songPlayer.startLiveDaemon()  # Triggers resending internal init commands, since their
             # purpose is to modify the normal default device state
 
@@ -411,8 +398,8 @@ def menus():
 
             return command
 
-        menu.add_command(label="Pause/Play", command=pausePlay, accelerator="Space")
-        menu.add_command(label="Reset Output", command=resetOutput)
+        menu.add_command(label="Play / Pause", command=pausePlay, accelerator="Space")
+        menu.add_command(label="Reset Device", command=resetOutput)
         menu.add_separator()
         menu.add_command(label="Refresh", command=refresh)
         menu.add_separator()
