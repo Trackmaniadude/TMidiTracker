@@ -1,6 +1,7 @@
 import logging
 import random
 import tkinter as tk
+from pathlib import Path
 from typing import cast
 
 import mido
@@ -69,9 +70,23 @@ class Program(ReactiveClass):
 
         self.persistence.register("lastActivePort", savePort, loadPort)
 
+        # Fluidsynth
         if FLUIDSYNTH_EXISTS:
             self.fluidsynth = Fluidsynth(INTERNAL_FLUIDSYNTH_IDENTIFIER)
             self.fluidsynth.setGain(2)
+
+            def saveFont() -> str | None:
+                return (
+                    str(self.fluidsynth.lastLoadedSoundfont)
+                    if self.fluidsynth.lastLoadedSoundfont is not None
+                    else None
+                )
+
+            def loadFont(value: str | None):
+                if type(value) is str:
+                    self.fluidsynth.loadSoundfont(Path(value))
+
+            self.persistence.register("soundfont", saveFont, loadFont)
 
         # Player
         self.songPlayer: Player = Player()

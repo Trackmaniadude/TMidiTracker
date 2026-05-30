@@ -34,6 +34,7 @@ class Fluidsynth:
 
         # Font setting
         self.fontIndex = 1
+        self.lastLoadedSoundfont: Path | None = None
 
     def __enter__(self):
         return self
@@ -51,8 +52,9 @@ class Fluidsynth:
 
     def loadSoundfont(self, path: Path):
         self._interact(f"unload {self.fontIndex}")
-        self.fontIndex += 1
         self._interact(f'load "{path.resolve()}"')
+        self.fontIndex += 1
+        self.lastLoadedSoundfont = path
 
     def _interact(self, command: str):
         if self.process.stdin is None:
