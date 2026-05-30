@@ -29,7 +29,7 @@ from utils.constants import (
     PROJECT_FILE_TK_LIST,
     RECENT_LENGTH,
 )
-from utils.fluidsynth import FLUIDSYNTH_EXISTS, Fluidsynth
+from utils.fluidsynth import FLUIDSYNTH_EXISTS
 from utils.misc import incrementFilename
 from utils.persistence import USE_DEFAULT
 from utils.tk import blockEventFromTypes
@@ -370,7 +370,7 @@ def menus():
 
     editMenu()
 
-    def portMenu():
+    def playbackMenu():
         menu = tk.Menu(menubar)
         menubar.add_cascade(menu=menu, label="Playback")
 
@@ -409,6 +409,7 @@ def menus():
         refresh()
 
         if FLUIDSYNTH_EXISTS:
+            root.after(1000, refresh)  # Give time for Fluidsynth to boot up
 
             def refreshFonts():
                 fontMenu.delete(2, "end")
@@ -425,7 +426,7 @@ def menus():
 
             def createFontCommand(path: Path):
                 def command(*_):
-                    fs_obj.loadSoundfont(path)
+                    program.p.fluidsynth.loadSoundfont(path)
 
                 return command
 
@@ -435,7 +436,7 @@ def menus():
             menu.add_cascade(label="Soundfonts", menu=fontMenu)
             refreshFonts()
 
-    portMenu()
+    playbackMenu()
 
 
 menus()
@@ -623,17 +624,10 @@ except:
         pass
 
 
-if FLUIDSYNTH_EXISTS:
-    fs_obj = Fluidsynth(f"TMidiTracker Internal")
-    fs_obj.setGain(2)
-
-
 def onClose():
     program.p.persistence.save()
     program.p.close()
     root.destroy()
-    if FLUIDSYNTH_EXISTS:
-        fs_obj.close()
 
 
 root.protocol("WM_DELETE_WINDOW", onClose)
