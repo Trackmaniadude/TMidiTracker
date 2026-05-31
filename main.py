@@ -374,6 +374,8 @@ def menus():
         menu = tk.Menu(menubar)
         menubar.add_cascade(menu=menu, label="Playback")
 
+        deviceVar = tk.StringVar(root, value="No Port")
+
         def resetOutput():
             program.p.songPlayer.pause()  # If player is running, stop it
             p = program.p.currentPort.name
@@ -387,11 +389,25 @@ def menus():
         def refresh():
             deviceMenu.delete(2, "end")
             ports = [None] + program.p.getAvailablePorts()
+
             for port in ports:
+                if port is None:
+                    display = "No Port"
+                elif port.startswith(program.INTERNAL_FLUIDSYNTH_IDENTIFIER):
+                    display = "Internal Fluidsynth"
+                else:
+                    name = port[: port.find(":")]
+                    num = port[port.rfind(" ") :]
+                    display = f"{name} - {num}"
+
                 deviceMenu.add_radiobutton(
-                    label=port if port is not None else "No Port",
+                    label=display,
                     command=createPortCommand(port),
+                    variable=deviceVar,
                 )
+
+                if str(port) == str(program.p.currentPort.name):
+                    deviceVar.set(str(display))
 
         def createPortCommand(portname: str | None):
             def command(*_):
