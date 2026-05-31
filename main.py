@@ -442,11 +442,6 @@ def menus():
                         command=createFontCommand(child),
                         variable=fontVar,
                     )
-                    print(
-                        child,
-                        program.p.fluidsynth.lastLoadedSoundfont,
-                        child == program.p.fluidsynth.lastLoadedSoundfont,
-                    )
                     if child == program.p.fluidsynth.lastLoadedSoundfont:
                         fontVar.set(child.name)
 
