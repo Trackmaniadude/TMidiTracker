@@ -360,7 +360,7 @@ def menus():
             if focus is not None:
                 Paste.fire(focus)
 
-        menu.add_command(label="Cut", command=cut, accelerator="CTRL-X")
+        menu.add_command(label="Cut", command=cut, accelerator="CTRL-X", state="disabled")
         menu.add_command(label="Copy", command=copy, accelerator="CTRL-C")
         menu.add_command(label="Paste", command=paste, accelerator="CTRL-V")
 
