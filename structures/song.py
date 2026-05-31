@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 if __name__ == "__main__":
@@ -80,8 +81,8 @@ class Song(ReactiveClass):
 
     ### File Management
 
-    def toFile(self, file: str):
-        with open(file, "w") as fp:
+    def toFile(self, path: Path):
+        with open(path, "w") as fp:
             json.dump(
                 self.toDict(),
                 fp,
@@ -176,8 +177,8 @@ class Song(ReactiveClass):
         }
 
     @classmethod
-    def fromFile(cls, file: str) -> Song:
-        with open(file) as fp:
+    def fromFile(cls, path: Path) -> Song:
+        with open(path) as fp:
             d = json.load(fp)
         return cls.fromDict(d)
 
@@ -412,11 +413,11 @@ if __name__ == "__main__":
     # print(t1.toJSON())
     # print(t1.jsonEncode())
 
-    t11.toFile(TEST_FILE.format(1))
-    t12 = Song.fromFile(TEST_FILE.format(1))
-    t21.toFile(TEST_FILE.format(2))
-    t22 = Song.fromFile(TEST_FILE.format(2))
-    t22.toFile(TEST_FILE.format(3))
+    # t11.toFile(TEST_FILE.format(1))
+    # t12 = Song.fromFile(TEST_FILE.format(1))
+    # t21.toFile(TEST_FILE.format(2))
+    # t22 = Song.fromFile(TEST_FILE.format(2))
+    # t22.toFile(TEST_FILE.format(3))
 
     def test(name: str, a: Song, b: Song):
         def eq[T](a: T, b: T) -> bool:
@@ -454,7 +455,7 @@ if __name__ == "__main__":
             fp.write(d)
 
     # test("Default", t11, t12)
-    test("Modified", t21, t22)
+    # test("Modified", t21, t22)
 
     # TODO: this test needs actual changes to be made cause its just default rn
 

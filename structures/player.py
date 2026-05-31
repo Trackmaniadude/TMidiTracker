@@ -6,6 +6,7 @@ import logging
 import threading
 import time
 from itertools import chain
+from pathlib import Path
 from threading import Event, Thread
 
 from mido import Message, MetaMessage, MidiFile, MidiTrack
@@ -224,13 +225,15 @@ tempo={int(1000000 / s.clock) * ticksPerBeat}
 
         return out, ticksPerBeat
 
-    def toFile(self, filename: str):
+    def toFile(self, path: Path):
         """Use playOffline to save the song to file."""
         track = MidiTrack()
         messages, ticksPerBeat = self.playOffline()
         for message in messages:
             track.append(message)
-        MidiFile(type=0, ticks_per_beat=ticksPerBeat, tracks=[track]).save(filename)
+        MidiFile(type=0, ticks_per_beat=ticksPerBeat, tracks=[track]).save(
+            path.resolve()
+        )
 
     def startLiveDaemon(self):
         """Set this player to live playback mode."""

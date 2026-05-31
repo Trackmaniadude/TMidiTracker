@@ -117,8 +117,8 @@ theme.generate()
 # endregion
 
 
-def formatFileName(fn: str):
-    return fn
+def formatFileName(path: Path):
+    return path.name
 
 
 def updateWindowTitle():
@@ -144,8 +144,7 @@ program.p.getAttributeChangedEvent("currentFile").connect(
 menubar = tk.Menu(root)
 root["menu"] = menubar
 
-recents: list[str] = list()
-"""list[full path]"""
+recents = list[Path]()
 
 
 def menus():
@@ -171,16 +170,16 @@ def menus():
 
             return wrapped
 
-        def openFile(filename: str):
+        def openFile(path: Path):
             try:
-                program.p.currentSong = Song.fromFile(filename)
+                program.p.currentSong = Song.fromFile(path)
             except Exception as e:
                 messagebox.showerror(
                     "File Error",
-                    f"An error occurred while opening {filename}:\n{traceback.format_exception_only(e)}",
+                    f"An error occurred while opening {path}:\n{traceback.format_exception_only(e)}",
                 )
             else:
-                program.p.currentFile = filename
+                program.p.currentFile = path
                 program.p.projectModified = False
 
         @promptSave
@@ -188,7 +187,7 @@ def menus():
             filename = filedialog.askopenfilename(filetypes=PROJECT_FILE_TK_LIST)
             if filename == "" or filename == ():
                 return
-            openFile(filename)
+            openFile(Path(filename))
 
         # def openFile(filename)
 
@@ -204,8 +203,9 @@ def menus():
             )
             if filename == "" or filename == ():
                 return
+            path = Path(filename)
             try:
-                program.p.currentSong.toFile(filename)
+                program.p.currentSong.toFile(path)
             except Exception as e:
                 messagebox.showerror(
                     "File Error",
@@ -213,7 +213,7 @@ def menus():
                 )
             else:
                 program.p.projectModified = False
-                program.p.currentFile = filename
+                program.p.currentFile = path
 
         def save():
             if program.p.currentFile is None:
@@ -233,10 +233,8 @@ def menus():
             if program.p.currentFile is None:
                 saveAs()
             else:
-                program.p.currentFile = (
-                    incrementFilename(
-                        program.p.currentFile[: program.p.currentFile.rfind(".")]
-                    )
+                program.p.currentFile = Path(
+                    incrementFilename(str(program.p.currentFile))
                     + PROJECT_FILE_EXTENSION
                 )
                 try:
@@ -251,10 +249,7 @@ def menus():
 
         def export():
             defFilename: str | None = (
-                program.p.currentFile[
-                    program.p.currentFile.rfind("/")
-                    + 1 : program.p.currentFile.rfind(".")
-                ]
+                program.p.currentFile.name.partition(".")[0]
                 if program.p.currentFile is not None
                 else None
             )  # Get project name from path
@@ -273,23 +268,25 @@ def menus():
             if filename == "" or filename == ():
                 return
             player = Player()
-            player.toFile(filename)
+            player.toFile(Path(filename))
 
         def genRecentMenu():
             recentMenu = tk.Menu(menu)
 
             def loadRecents(value: list[str]):
-                global recents
                 if value is not USE_DEFAULT:
-                    recents = value
+                    # Check for missing files
+                    recents.clear()
+                    recents.extend(Path(dir) for dir in value)
+
                     if program.p.currentFile in recents:
                         recents.remove(program.p.currentFile)
                     if program.p.currentFile is not None:
                         recents.insert(0, program.p.currentFile)
                 updateRecentMenu()
 
-            def saveRecents():
-                return recents
+            def saveRecents() -> list[str]:
+                return [str(r) for r in recents]
 
             program.p.persistence.register("Recent Files", saveRecents, loadRecents)
 
@@ -316,9 +313,12 @@ def menus():
                 for i, path in enumerate(recents):
                     if i >= RECENT_LENGTH:
                         break
-                    recentMenu.add_command(
-                        label=path[path.rfind("/") + 1 :], command=openFileCommand(path)
-                    )
+                    if path.exists():
+                        recentMenu.add_command(
+                            label=path.name, command=openFileCommand(path)
+                        )
+                    else:
+                        recentMenu.add_command(label=path.name, state="disabled")
 
             return recentMenu
 
@@ -645,7 +645,7 @@ try:
     updateWindowTitle()
 except:
     try:
-        program.p.currentSong = Song.fromFile("startup.tmt")
+        program.p.currentSong = Song.fromFile(Path("startup.tmt"))
         program.p.currentFile = None
         program.p.projectModified = False
         updateWindowTitle()

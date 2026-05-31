@@ -34,7 +34,7 @@ class Program(ReactiveClass):
         super().__init__()
 
         # Files
-        self.currentFile: str | None = None
+        self.currentFile: Path | None = None
         self.projectModified: bool = False
         self.persistence = Persistence("PERSISTENCE")
 
