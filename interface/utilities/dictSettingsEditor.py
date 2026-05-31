@@ -48,6 +48,9 @@ class DictSettingsEditor(HeaderFrame):
         self.gridFrame = ttk.Frame(self.content)
         self.gridFrame.pack(side="top", fill="both", expand=True)
 
+        self.gridFrame.columnconfigure(0, pad=4)
+        self.gridFrame.columnconfigure(1, weight=1)
+
         self.transforms: dict[
             str, tuple[Callable[[Any], Any], Callable[[Any], Any]]
         ] = dict()
@@ -106,10 +109,6 @@ class DictSettingsEditor(HeaderFrame):
         elif tEntry.Shape == DSEShape.Large:
             tLabel.grid(row=row, column=0, columnspan=2, sticky="nesw")
             tEntry.grid(row=self.getNewRow(), column=0, columnspan=2, sticky="nesw")
-
-        # TODO: put in a better location
-        self.gridFrame.columnconfigure(0, pad=4)
-        self.gridFrame.columnconfigure(1, weight=1)
 
         self.__entries[key] = tEntry
 
