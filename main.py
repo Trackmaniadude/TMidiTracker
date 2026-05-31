@@ -427,6 +427,8 @@ def menus():
         if FLUIDSYNTH_EXISTS:
             root.after(1000, refresh)  # Give time for Fluidsynth to boot up
 
+            fontVar = tk.StringVar(root)
+
             def refreshFonts():
                 fontMenu.delete(2, "end")
                 # TODO: unhardcode
@@ -438,7 +440,15 @@ def menus():
                     fontMenu.add_radiobutton(
                         label=child.name,
                         command=createFontCommand(child),
+                        variable=fontVar,
                     )
+                    print(
+                        child,
+                        program.p.fluidsynth.lastLoadedSoundfont,
+                        child == program.p.fluidsynth.lastLoadedSoundfont,
+                    )
+                    if child == program.p.fluidsynth.lastLoadedSoundfont:
+                        fontVar.set(child.name)
 
             def createFontCommand(path: Path):
                 def command(*_):
@@ -451,6 +461,9 @@ def menus():
             fontMenu.add_separator()
             menu.add_cascade(label="Soundfonts", menu=fontMenu)
             refreshFonts()
+
+            # Slightly wonky, makes the auto load display properly.
+            program.p.persistence.listen("soundfont", lambda value: refreshFonts())
 
     playbackMenu()
 
