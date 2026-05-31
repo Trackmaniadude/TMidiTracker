@@ -62,7 +62,7 @@ class Program(ReactiveClass):
                     ports = cast(list[str], mido.get_output_names())  # type: ignore
                     for port in ports:
                         if port.startswith(value):
-                            if self.setPort(value):
+                            if self.setPort(port):
                                 return
                 self.tkRoot.after(AUTOPORT_TIME, tryOpenPort, t - 1)
 
