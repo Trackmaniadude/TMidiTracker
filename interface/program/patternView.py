@@ -49,7 +49,7 @@ class PatternViewLabel(ttk.Label):
     ):
         super().__init__(getattr(parent, mode.value.parentName))
         width = mode.value.width
-        self.config(text="", width=width, relief="solid", borderwidth=2)
+        self.config(text="", width=width, relief="raised", borderwidth=1)
 
         self.view = parent
         self.mode = mode
