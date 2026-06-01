@@ -15,10 +15,12 @@ from interface.program.instrumentList import InstrumentList
 from interface.program.patternList import PatternList
 from interface.program.patternMatrix import PatternMatrix
 from interface.program.patternViewFrame import PatternViewFrame
+from interface.program.settingsView import SettingsView
 from interface.program.songDataView import SongDataView
 from structures import program  # This also inits the program object
 from structures.globalEvents import Copy, Cut, Paste, ProjectModified
 from structures.player import Player
+from structures.settings import Settings
 from structures.song import Song
 from utils.constants import (
     CHANNEL_COUNT,
@@ -464,6 +466,32 @@ def menus():
 
     playbackMenu()
 
+    def settings():
+        window: tk.Toplevel | None = None
+
+        def openSettings():
+            nonlocal window
+            if window is None:
+                window = tk.Toplevel(root)
+                window.geometry("600x800")
+                window.title(f"{PROGRAM_NAME} - Settings")
+                view = SettingsView(window)
+                view.pack(fill="both", expand=True)
+
+                def close():
+                    nonlocal window
+                    if window is not None:
+                        window.destroy()
+                        window = None
+
+                window.protocol("WM_DELETE_WINDOW", close)
+            else:
+                window.lift()
+
+        menubar.add_command(label="Settings", command=openSettings)
+
+    settings()
+
 
 menus()
 
@@ -652,12 +680,14 @@ except:
 
 def onClose():
     program.p.persistence.save()
+    Settings.save()
     program.p.close()
     root.destroy()
 
 
 root.protocol("WM_DELETE_WINDOW", onClose)
 program.p.persistence.load()
+Settings.load()
 if args.recent:
     try:
         openFile = recents[0]
