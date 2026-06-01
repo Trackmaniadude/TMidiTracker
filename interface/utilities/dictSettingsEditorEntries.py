@@ -3,7 +3,9 @@
 import tkinter as tk
 from abc import ABC, abstractmethod
 from enum import Enum, auto
-from tkinter import ttk
+from pathlib import Path
+from tkinter import filedialog, ttk
+from typing import Literal, cast
 
 from interface.utilities.validatedEntry import (
     AbstractValidator,
@@ -129,7 +131,12 @@ class DSEEntries:
     class LargeTextbox(DSEEntry[str]):
         Shape = DSEShape.Large
 
-        def __init__(self, parent: tk.Misc | None = None, *, height: int = 4):
+        def __init__(
+            self,
+            parent: tk.Misc | None = None,
+            *,
+            height: int = 4,
+        ):
             super().__init__(parent)
             self.entry = tk.Text(self, width=0, height=height)
             self.entry.pack(fill="both", expand=True)
@@ -145,3 +152,65 @@ class DSEEntries:
 
         def get(self) -> str:
             return self.entry.get("0.0", "end")
+
+    @template
+    class Folder(DSEEntry[Path]):
+        # TODO: re-evaluate usefulness of relativeTo options
+        def __init__(
+            self,
+            parent: tk.Misc | None = None,
+            *,
+            relativeTo: (
+                Path | Literal["base", "normalized", "dynamic"] | None
+            ) = "dynamic",
+        ):
+            super().__init__(parent)
+
+            def choose():
+                dir = filedialog.askdirectory()
+                if dir == "" or dir == ():
+                    return
+                self.set(Path(dir))
+
+            self.relativeTo = relativeTo
+
+            # On the usage of Through() - I'd like a Path validator, but turns out validating paths is, well, hard. TODO:
+            self.entry = ValidatedEntry(ttk.Entry(self, width=0), Validators.Through())
+            self.entry.entry.pack(side="left", fill="both", expand=True)
+            # TODO: how to make image work/verify that its working
+            self.button = ttk.Button(
+                self,
+                width=2,
+                image=tk.PhotoImage(file="assets/folder.png"),
+                command=choose,
+            )
+            self.button.pack(side="right", fill="none", expand=False)
+            self.Changed = self.entry.Changed
+
+        def set(self, value: Path):
+            if self.relativeTo is None:
+                self.entry.value = str(value)
+                return
+
+            if self.relativeTo == "normalized":
+                self.entry.value = str(value.resolve())
+                return
+
+            if self.relativeTo == "dynamic":
+                try:
+                    self.entry.value = str(
+                        value.absolute().relative_to(Path.cwd().absolute())
+                    )
+                except ValueError:
+                    self.entry.value = str(value.absolute())
+                return
+
+            rel = (
+                Path.cwd() if self.relativeTo == "base" else cast(Path, self.relativeTo)
+            )
+            self.entry.value = str(
+                value.resolve().relative_to(rel.resolve(), walk_up=True)
+            )
+
+        def get(self) -> Path:
+            return Path(self.entry.value)
