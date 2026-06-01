@@ -1,9 +1,12 @@
 """Constants used by the program."""
 
+import random
+
 # Try to avoid importing things here. Except maybe data types.
 
 
 # region PROGRAM INFORMATION
+
 
 PROGRAM_NAME = "TMidiTracker"
 
@@ -13,7 +16,22 @@ PROJECT_FILE_TK_LIST = [("TMT Project", PROJECT_FILE_EXTENSION)]
 MIDI_FILE_EXTENSION = ".mid"
 MIDI_FILE_TK_LIST = [("MIDI File", MIDI_FILE_EXTENSION)]
 
-RECENT_LENGTH = 10
+RECENT_LIST_LENGTH = 10
+
+AUTOPORT_ATTEMPTS = 10
+"""Attempts to try and automatically connect to a port. Mostly to allow time for the internal Fluidsynth to boot up."""
+AUTOPORT_TIME = 200  # milliseconds
+"""Time between attempts to try and automatically connect to a port. Mostly to allow time for the internal Fluidsynth to boot up."""
+
+INTERNAL_FLUIDSYNTH_IDENTIFIER = (
+    f"TMidiTracker-Internal-Fluidsynth-{hex(random.randint(0x1000000, 0xFFFFFFFF))[2:]}"
+)
+"""Name of internal Fluidsynth port. Randomized as I don't know how to get this from Fluidsynth itself and therefor need a way to prevent collisions."""
+INTERNAL_FLUIDSYNTH_SAVE_IDENTIFIER = "INTERNAL_FLUIDSYNTH_SAVE_IDENTIFIER"
+"""Value used to indicate to persistence that the desired port is the internal Fluidsynth."""
+
+PERSISTENCE_FILE_NAME = "PERSISTENCE"
+SETTINGS_FILE_NAME = "SETTINGS"
 
 # endregion
 

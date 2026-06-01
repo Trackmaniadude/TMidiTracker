@@ -27,7 +27,7 @@ from utils.constants import (
     PROGRAM_NAME,
     PROJECT_FILE_EXTENSION,
     PROJECT_FILE_TK_LIST,
-    RECENT_LENGTH,
+    RECENT_LIST_LENGTH,
 )
 from utils.fluidsynth import FLUIDSYNTH_EXISTS
 from utils.misc import incrementFilename
@@ -311,7 +311,7 @@ def menus():
             def updateRecentMenu():
                 recentMenu.delete(0, "end")
                 for i, path in enumerate(recents):
-                    if i >= RECENT_LENGTH:
+                    if i >= RECENT_LIST_LENGTH:
                         break
                     if path.exists():
                         recentMenu.add_command(

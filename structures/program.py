@@ -9,20 +9,18 @@ import mido
 from structures.globalEvents import ProjectModified, SongReloaded
 from structures.player import Player
 from structures.song import Song
+from utils.constants import (
+    AUTOPORT_ATTEMPTS,
+    AUTOPORT_TIME,
+    INTERNAL_FLUIDSYNTH_IDENTIFIER,
+    INTERNAL_FLUIDSYNTH_SAVE_IDENTIFIER,
+    PERSISTENCE_FILE_NAME,
+)
 from utils.fluidsynth import FLUIDSYNTH_EXISTS, Fluidsynth
 from utils.persistence import USE_DEFAULT, Persistence
 from utils.reactiveClass import ReactiveClass
 
 _logger = logging.getLogger(__name__)
-
-
-AUTOPORT_ATTEMPTS = 10
-AUTOPORT_TIME = 200  # milliseconds
-
-INTERNAL_FLUIDSYNTH_IDENTIFIER = (
-    f"TMidiTracker-Internal-Fluidsynth-{hex(random.randint(0x1000000, 0xFFFFFFFF))[2:]}"
-)
-INTERNAL_FLUIDSYNTH_SAVE_IDENTIFIER = "INTERNAL_FLUIDSYNTH_SAVE_IDENTIFIER"
 
 
 class Program(ReactiveClass):
@@ -36,7 +34,7 @@ class Program(ReactiveClass):
         # Files
         self.currentFile: Path | None = None
         self.projectModified: bool = False
-        self.persistence = Persistence("PERSISTENCE")
+        self.persistence = Persistence(PERSISTENCE_FILE_NAME)
 
         # Ports
         self.currentPort: mido.ports.BaseOutput = mido.ports.BaseOutput(name="No Port")
