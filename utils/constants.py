@@ -2,6 +2,9 @@
 
 # Try to avoid importing things here. Except maybe data types.
 
+
+# region PROGRAM INFORMATION
+
 PROGRAM_NAME = "TMidiTracker"
 
 PROJECT_FILE_EXTENSION = ".tmt"
@@ -11,6 +14,11 @@ MIDI_FILE_EXTENSION = ".mid"
 MIDI_FILE_TK_LIST = [("MIDI File", MIDI_FILE_EXTENSION)]
 
 RECENT_LENGTH = 10
+
+# endregion
+
+
+# region MIDI CONSTANTS
 
 CHANNEL_COUNT = 16
 
@@ -33,6 +41,11 @@ DEFAULT_BEND_RANGE = 127  # Basically we want it at max
 BEND_STEPS_PER_SEMITONE = 8192 // DEFAULT_BEND_RANGE
 # Basically we want to set range to allow bending the entire range
 # That's still 50 ish points per note, which is enough
+
+# endregion
+
+
+# region OTHERS
 
 KEYBOARD_MAP: dict[str, int] = dict()
 """Map of keyboard keys to notes. (0 is C)"""
@@ -130,6 +143,9 @@ DRUM_NAMES = {
     80: "TRM",
     81: "TRO",
 }
+
+# endregion
+
 
 if __name__ == "__main__":
     for name, value in dict(globals()).items():
