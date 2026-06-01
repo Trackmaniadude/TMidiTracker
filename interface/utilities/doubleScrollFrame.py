@@ -210,7 +210,7 @@ class DScrollFrame(ttk.Frame):
                         child.winfo_width() for child in self.content.winfo_children()
                     )
                     self.content.config(
-                        width=width,
+                        width=max(width, self.winfo_width()),
                         height=self.content.winfo_height()
                         - self.__horizontal.winfo_height(),
                     )
@@ -238,7 +238,7 @@ class DScrollFrame(ttk.Frame):
                     )
                     self.content.config(
                         width=self.winfo_width() - self.__vertical.winfo_width(),
-                        height=height,
+                        height=max(height, self.winfo_height()),
                     )
 
 
