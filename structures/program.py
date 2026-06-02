@@ -153,6 +153,8 @@ class Program(ReactiveClass):
 
     def close(self):
         self.currentPort.close()
+        if FLUIDSYNTH_EXISTS:
+            self.fluidsynth.close()
 
 
 p = Program()
