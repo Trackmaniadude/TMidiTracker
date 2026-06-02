@@ -65,6 +65,10 @@ def StyleBase(base: str):
 
 # Colormap
 class Colors:
+    class Grid:
+        Highlight = "#FFFFFF"
+        Shadow = "#888888"
+
     class BG:
         Default = "#FFFFFF"
         Shade1 = "#EEEEEE"

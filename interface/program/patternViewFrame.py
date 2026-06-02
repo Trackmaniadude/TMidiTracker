@@ -14,6 +14,7 @@ from typing import Literal, cast
 import utils.misc as util
 import utils.tk as tkutil
 from interface.program.patternView import PatternView
+from interface.program.patternViewCanvas import PatternViewCanvas
 from interface.program.patternViewUtils import PVLM, PatternViewClipboardChannel, Target
 from interface.theme import MatrixSelector
 from interface.utilities.doubleScrollFrame import DScrollFrame
@@ -178,7 +179,7 @@ class PatternViewFrame(ttk.Frame):
         self.target: Target = Target(2, 3, PVLM.VELOCITY, 1)
         self.secondaryTarget: Target | None = None
 
-        self.views: list[PatternView] = list()
+        self.views: list[PatternViewCanvas] = list()
 
         self.clipboard: list[PatternViewClipboardChannel] = list()
 
@@ -277,8 +278,8 @@ class PatternViewFrame(ttk.Frame):
             pattern = s.getPatternByLocation(channel, program.p.currentMatrixRow)
             pattern.setEffect(row, col, None)
 
-        if refresh:
-            self.refreshLabels()
+        # if refresh:
+        #     self.refreshLabels()
 
     @property
     def clipboardSize(self):
@@ -373,7 +374,7 @@ class PatternViewFrame(ttk.Frame):
                         continue
                 pattern.setEffect(row, col, effect)
 
-        self.refreshLabels()
+        # self.refreshLabels()
 
     def getUsedIndicesInSelection(self):
         """Get all indices currently targeted that have an entry. Returns three lists of (channel, row, col), for notes, velocities, and effects."""
@@ -480,7 +481,7 @@ class PatternViewFrame(ttk.Frame):
             return
         view = self.views[viewIndex]
         view.pattern = program.p.currentSong.getPatternByLocation(channel, row)
-        view.refreshLabels()
+        # view.refreshLabels()
 
     def onMatrixRowChange(self, key, old, new):
         for i, view in enumerate(self.views):
@@ -488,7 +489,7 @@ class PatternViewFrame(ttk.Frame):
             view.pattern = program.p.currentSong.getPatternByLocation(
                 channel, program.p.currentMatrixRow
             )
-            view.refreshLabels()
+            # view.refreshLabels()
 
     def setTarget(
         self,
@@ -513,12 +514,12 @@ class PatternViewFrame(ttk.Frame):
 
         self.target = Target(channel, row, column, subcolumn)
 
-        if focus == True:
-            self.views[CHANNEL_ORDER_INVERSE[channel]].labelLookup[
-                row, column, subcolumn
-            ].focus()
-        for view in self.views:
-            view.refreshLabels()
+        # if focus == True:
+        #     self.views[CHANNEL_ORDER_INVERSE[channel]].labelLookup[
+        #         row, column, subcolumn
+        #     ].focus()
+        # for view in self.views:
+        #     view.refreshLabels()
 
     def stepTarget(
         self,
@@ -622,13 +623,13 @@ class PatternViewFrame(ttk.Frame):
     @tkutil.tkQueuedAction()
     def showChannels(self, fullRebuild: bool = False):
         currentChannelsShown = len(self.views)
-        newList = list()
+        newList = list[PatternViewCanvas]()
         if fullRebuild:
             for i in range(CHANNEL_COUNT):
                 if i < currentChannelsShown:
                     self.views[i].destroy()
                 if i <= program.p.currentSong.visibleChannels:
-                    view = PatternView(
+                    view = PatternViewCanvas(
                         self.__content,
                         self,
                         program.p.currentSong.getPatternById(CHANNEL_ORDER[i], 0),
@@ -644,7 +645,7 @@ class PatternViewFrame(ttk.Frame):
                         self.views[i].destroy()
                 else:
                     if i <= program.p.currentSong.visibleChannels:
-                        view = PatternView(
+                        view = PatternViewCanvas(
                             self.__content,
                             self,
                             program.p.currentSong.getPatternById(CHANNEL_ORDER[i], 0),
