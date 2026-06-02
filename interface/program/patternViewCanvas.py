@@ -57,6 +57,21 @@ class Tags:
     GRID_DARK = "GRID_DARK"
     HIGHLIGHT_MINOR = "HIGHLIGHT_MINOR"
     HIGHLIGHT_MAJOR = "HIGHLIGHT_MAJOR"
+    SELECTION = "SELECTION"
+    CURSOR = "CURSOR"
+
+# In stacking order, so top is highest.
+TAG_COLORS: dict[str, str] = {
+    Tags.GRID_LIGHT: Colors.Grid.Highlight,
+    Tags.GRID_DARK: Colors.Grid.Shadow,
+
+    Tags.SELECTION: Colors.Target.Default,
+    Tags.CURSOR: Colors.Target.Shade2,
+
+    Tags.HIGHLIGHT_MAJOR: Colors.BG.Shade2,
+    Tags.HIGHLIGHT_MINOR: Colors.BG.Shade1,
+}
+"""Colors for each tag, and also the order to stack them."""
 
 
 class PatternViewCanvas(ttk.Frame):
@@ -164,6 +179,34 @@ class PatternViewCanvas(ttk.Frame):
             connection.disconnect()
         return super().destroy()
 
+    @staticmethod
+    def row(row: int) -> tuple[int, int]:
+        """Get y coords of row. Returns (y1, y2)"""
+        y1 = row * ROW_HEIGHT
+        y2 = ((row + 1) * ROW_HEIGHT) - 1
+        return (y1, y2)
+
+    @staticmethod
+    def col(col: int, t: Literal["note", "velocity", "effect"]) -> tuple[int, int]:
+        """Get x coords of column. Returns (x1, x2)"""
+        if t == "note":
+            x1 = col * NOTEVEL_WIDTH
+            x2 = (col * NOTEVEL_WIDTH) + NOTE_WIDTH - 1
+        elif t == "velocity":
+            x1 = (col * NOTEVEL_WIDTH) + NOTE_WIDTH
+            x2 = ((col + 1) * NOTEVEL_WIDTH) - 1
+        elif t == "effect":
+            x1 = col * EFFECT_WIDTH
+            x2 = ((col + 1) * EFFECT_WIDTH) - 1
+        return (x1, x2)
+
+    @classmethod
+    def coords(cls, row: int, col: int, t: Literal["note", "velocity", "effect"]) -> tuple[int, int, int, int]:
+        """Get cell coordinates. Returns (x1, y1, x2, y2)"""
+        x1, x2 = cls.col(col, t)
+        y1, y2 = cls.row(row)
+        return (x1, y1, x2, y2)
+
     def buildLabels(self):
         """Build interface"""
         # Easier to just replace the frames
@@ -187,6 +230,7 @@ class PatternViewCanvas(ttk.Frame):
         self.noteCanvas.pack(fill="both", expand=True)
         self.effectCanvas.pack(fill="both", expand=True)
 
+        # Setup constant display items
         rows = program.p.currentSong.patternLength
         notes = self.pattern.channel.noteColumns
         effects = self.pattern.channel.effectColumns
@@ -195,8 +239,7 @@ class PatternViewCanvas(ttk.Frame):
         self.effectCanvas.config(width=EFFECT_WIDTH * effects, height=ROW_HEIGHT * rows)
 
         for row in range(rows):
-            y1 = row * ROW_HEIGHT
-            y2 = ((row + 1) * ROW_HEIGHT) - 1
+            y1, y2 = self.row(row)
             self.noteCanvas.create_line(0, y1, BIG, y1, tags=[Tags.GRID_LIGHT])
             self.noteCanvas.create_line(0, y2, BIG, y2, tags=[Tags.GRID_DARK])
             self.effectCanvas.create_line(0, y1, BIG, y1, tags=[Tags.GRID_LIGHT])
@@ -218,41 +261,25 @@ class PatternViewCanvas(ttk.Frame):
                 )
 
         for col in range(notes):
-            x1 = col * NOTEVEL_WIDTH
-            x2 = (col * NOTEVEL_WIDTH) + NOTE_WIDTH - 1
-            x3 = (col * NOTEVEL_WIDTH) + NOTE_WIDTH
-            x4 = ((col + 1) * NOTEVEL_WIDTH) - 1
+            x1, x2 = self.col(col, "note")
+            x3, x4 = self.col(col, "velocity")
             self.noteCanvas.create_line(x1, 0, x1, BIG, tags=[Tags.GRID_LIGHT])
             self.noteCanvas.create_line(x2, 0, x2, BIG, tags=[Tags.GRID_DARK])
             self.noteCanvas.create_line(x3, 0, x3, BIG, tags=[Tags.GRID_LIGHT])
             self.noteCanvas.create_line(x4, 0, x4, BIG, tags=[Tags.GRID_DARK])
 
         for col in range(effects):
-            x1 = col * EFFECT_WIDTH
-            x2 = ((col + 1) * EFFECT_WIDTH) - 1
+            x1, x2 = self.col(col, "effect")
             self.effectCanvas.create_line(x1, 0, x1, BIG, tags=[Tags.GRID_LIGHT])
             self.effectCanvas.create_line(x2, 0, x2, BIG, tags=[Tags.GRID_DARK])
 
-        self.__paint()
+        # Color and sync
+        for canvas in (self.noteCanvas, self.effectCanvas):
+            for tag, color in TAG_COLORS.items():
+                canvas.itemconfig(tag, fill=color)
+                canvas.tag_lower(tag)
 
         self.refreshLabels()
-
-    def __paint(self):
-        def p(c: tk.Canvas):
-            # Colors
-            c.itemconfig(Tags.HIGHLIGHT_MINOR, fill=Colors.BG.Shade1)
-            c.itemconfig(Tags.HIGHLIGHT_MAJOR, fill=Colors.BG.Shade2)
-            c.itemconfig(Tags.GRID_LIGHT, fill=Colors.Grid.Highlight)
-            c.itemconfig(Tags.GRID_DARK, fill=Colors.Grid.Shadow)
-
-            # Order
-            c.tag_raise(Tags.HIGHLIGHT_MINOR)
-            c.tag_raise(Tags.HIGHLIGHT_MAJOR)
-            c.tag_raise(Tags.GRID_DARK)
-            c.tag_raise(Tags.GRID_LIGHT)
-
-        p(self.noteCanvas)
-        p(self.effectCanvas)
 
     def refreshLabels(self):
         """Sync interface with model"""
