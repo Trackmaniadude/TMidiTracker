@@ -19,6 +19,7 @@ from tkinter import ttk
 
 import mido
 
+import utils.tk as tkutil
 from interface.theme import Colors
 from interface.utilities.prebuilts import Buttons
 from structures import program
@@ -234,6 +235,7 @@ class PatternViewCanvas(ttk.Frame):
         y1, y2 = cls.row(row)
         return (x1, y1, x2, y2)
 
+    @tkutil.tkQueuedAction()
     def buildLabels(self):
         """Build interface"""
         # Easier to just replace the frames
@@ -328,6 +330,7 @@ class PatternViewCanvas(ttk.Frame):
 
         self.refreshLabels()
 
+    @tkutil.tkQueuedAction()
     def refreshLabels(self):
         """Sync interface with model"""
         for (row, col), note in self.pattern.notes.items():
