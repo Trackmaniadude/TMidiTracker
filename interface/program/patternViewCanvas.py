@@ -35,21 +35,25 @@ from utils.constants import (
     NOTE_NAMES_SHARP,
     NOTES_PER_OCTAVE,
 )
+from utils.misc import hex2
 from utils.types_ import *
 
 _logger = logging.getLogger(__name__)
 
-ASPECT = 12 / 20
+ASPECT = 8 / 20
 FONT_SCALE = 0.5
 
-ROW_HEIGHT = 20
+ROW_HEIGHT = 21
 CHAR_WIDTH = int(ROW_HEIGHT * ASPECT)
 FONT_SIZE = int(ROW_HEIGHT * FONT_SCALE)
 
-NOTE_WIDTH = CHAR_WIDTH * 3
-VEL_WIDTH = CHAR_WIDTH * 2
+WIDTH_PAD = 4
+WIDTH_PAD_H = WIDTH_PAD // 2
+
+NOTE_WIDTH = (CHAR_WIDTH * 3) + WIDTH_PAD
+VEL_WIDTH = (CHAR_WIDTH * 2) + WIDTH_PAD
 NOTEVEL_WIDTH = NOTE_WIDTH + VEL_WIDTH
-EFFECT_WIDTH = CHAR_WIDTH * 4
+EFFECT_WIDTH = (CHAR_WIDTH * 6) + WIDTH_PAD
 
 
 BIG = 999999
@@ -69,7 +73,7 @@ TAG_COLORS: dict[str, str] = {
     Tags.GRID_LIGHT: Colors.Grid.Highlight,
     Tags.GRID_DARK: Colors.Grid.Shadow,
     Tags.SELECTION: Colors.Target.Default,
-    Tags.CURSOR: Colors.Target.Shade2,
+    Tags.CURSOR: Colors.Highlight.Default,
     Tags.HIGHLIGHT_MAJOR: Colors.BG.Shade2,
     Tags.HIGHLIGHT_MINOR: Colors.BG.Shade1,
 }
@@ -96,6 +100,7 @@ class ResourcePool[ID]:
     def free(self, id: ID):
         self.__used.remove(id)
         self.__freeFunc(id)
+        self.__free.add(id)
 
 
 class PatternViewCanvas(ttk.Frame):
@@ -197,6 +202,10 @@ class PatternViewCanvas(ttk.Frame):
             self.connections,
         )
 
+        program.p.getAttributeChangedEvent("currentPatternRow").connect(
+            lambda *_: self.onPatternRowChange(), self.connections
+        )
+
         ### Finish
         self.buildLabels()
 
@@ -235,6 +244,12 @@ class PatternViewCanvas(ttk.Frame):
         y1, y2 = cls.row(row)
         return (x1, y1, x2, y2)
 
+    def onPatternRowChange(self):
+        row = program.p.currentPatternRow
+        y1, y2 = self.row(row)
+        self.noteCanvas.coords(Tags.CURSOR, 0, y1, BIG, y2)
+        self.effectCanvas.coords(Tags.CURSOR, 0, y1, BIG, y2)
+
     @tkutil.tkQueuedAction()
     def buildLabels(self):
         """Build interface"""
@@ -272,7 +287,7 @@ class PatternViewCanvas(ttk.Frame):
             return (new, free)
 
         self.noteText = ResourcePool[int](*canvasPools(self.noteCanvas))
-        self.effectText = ResourcePool[int](*canvasPools(self.noteCanvas))
+        self.effectText = ResourcePool[int](*canvasPools(self.effectCanvas))
 
         # Setup constant display items
         rows = program.p.currentSong.patternLength
@@ -322,6 +337,11 @@ class PatternViewCanvas(ttk.Frame):
             self.effectCanvas.create_line(x1, 0, x1, BIG, tags=[Tags.GRID_LIGHT])
             self.effectCanvas.create_line(x2, 0, x2, BIG, tags=[Tags.GRID_DARK])
 
+        self.noteCanvas.create_rectangle(0, 0, 0, 0, tags=[Tags.CURSOR])
+        self.noteCanvas.create_rectangle(0, 0, 0, 0, tags=[Tags.SELECTION])
+        self.effectCanvas.create_rectangle(0, 0, 0, 0, tags=[Tags.CURSOR])
+        self.effectCanvas.create_rectangle(0, 0, 0, 0, tags=[Tags.SELECTION])
+
         # Color and sync
         for canvas in (self.noteCanvas, self.effectCanvas):
             for tag, color in TAG_COLORS.items():
@@ -333,12 +353,27 @@ class PatternViewCanvas(ttk.Frame):
     @tkutil.tkQueuedAction()
     def refreshLabels(self):
         """Sync interface with model"""
+        for (row, col, col_t), id in self.textLookup.copy().items():
+            if col_t == "note":
+                # if (row, col) in self.pattern.notes:
+                self.noteText.free(id)
+                del self.textLookup[row, col, col_t]
+            elif col_t == "velocity":
+                # if (row, col) in self.pattern.velocities:
+                self.noteText.free(id)
+                del self.textLookup[row, col, col_t]
+            elif col_t == "effect":
+                # if (row, col) in self.pattern.effects:
+                # if self.pattern.effects[row, col] != ():
+                self.effectText.free(id)
+                del self.textLookup[row, col, col_t]
+
         for (row, col), note in self.pattern.notes.items():
             id = self.textLookup.get((row, col, "note")) or self.noteText.get()
             self.textLookup[row, col, "note"] = id
 
             x, y, _, _ = self.coords(row, col, "note")
-            self.noteCanvas.coords(id, x + 2, y)
+            self.noteCanvas.coords(id, x + WIDTH_PAD_H, y)
             if self.pattern.channel.channel == DRUM_CHANNEL:
                 text = "STP" if note == "stop" else DRUM_NAMES[note]
             else:
@@ -354,7 +389,7 @@ class PatternViewCanvas(ttk.Frame):
             self.textLookup[row, col, "velocity"] = id
 
             x, y, _, _ = self.coords(row, col, "velocity")
-            self.noteCanvas.coords(id, x + 2, y)
+            self.noteCanvas.coords(id, x + WIDTH_PAD_H, y)
             self.noteCanvas.itemconfig(id, text=velocity)
 
         for (row, col), effect in self.pattern.effects.items():
@@ -362,8 +397,10 @@ class PatternViewCanvas(ttk.Frame):
             self.textLookup[row, col, "effect"] = id
 
             x, y, _, _ = self.coords(row, col, "effect")
-            self.effectCanvas.coords(id, x + 2, y)
-            self.effectCanvas.itemconfig(id, text=effect)
+            self.effectCanvas.coords(id, x + WIDTH_PAD_H, y)
+            self.effectCanvas.itemconfig(
+                id, text="".join(hex2(byte) for byte in effect)
+            )
 
     def setPattern(self, pattern: Pattern):
         self.pattern = pattern

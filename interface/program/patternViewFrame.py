@@ -486,10 +486,11 @@ class PatternViewFrame(ttk.Frame):
     def onMatrixRowChange(self, key, old, new):
         for i, view in enumerate(self.views):
             channel = CHANNEL_ORDER[i]
-            view.pattern = program.p.currentSong.getPatternByLocation(
-                channel, program.p.currentMatrixRow
+            view.setPattern(
+                program.p.currentSong.getPatternByLocation(
+                    channel, program.p.currentMatrixRow
+                )
             )
-            # view.refreshLabels()
 
     def setTarget(
         self,
@@ -655,12 +656,6 @@ class PatternViewFrame(ttk.Frame):
                     else:
                         pass
         self.views = newList
-
-    def setRow(self, row: int):
-        self.row = row
-
-        for channel, view in enumerate(self.views):
-            view.setPattern(program.p.currentSong.getPatternByLocation(channel, row))
 
     def refreshLabels(self):
         for view in self.views:

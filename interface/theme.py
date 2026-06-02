@@ -83,7 +83,7 @@ class Colors:
         Default = "#0044CC"
 
     class Highlight:
-        Default = "#FFFFCC"
+        Default = "#FFFFBB"
 
 
 # Styles
