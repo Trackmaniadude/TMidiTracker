@@ -1,6 +1,5 @@
 import argparse
 import logging
-import random
 import tkinter as tk
 import traceback
 from enum import Enum
@@ -23,13 +22,11 @@ from structures.player import Player
 from structures.settings import Settings
 from structures.song import Song
 from utils.constants import (
-    CHANNEL_COUNT,
     MIDI_FILE_EXTENSION,
     MIDI_FILE_TK_LIST,
     PROGRAM_NAME,
     PROJECT_FILE_EXTENSION,
     PROJECT_FILE_TK_LIST,
-    RECENT_LIST_LENGTH,
 )
 from utils.fluidsynth import FLUIDSYNTH_EXISTS
 from utils.misc import incrementFilename
@@ -186,7 +183,9 @@ def menus():
 
         @promptSave
         def open():
-            filename = filedialog.askopenfilename(filetypes=PROJECT_FILE_TK_LIST)
+            filename = filedialog.askopenfilename(
+                filetypes=PROJECT_FILE_TK_LIST, initialdir=Settings.projectDirectory
+            )
             if filename == "" or filename == ():
                 return
             openFile(Path(filename))
@@ -200,8 +199,22 @@ def menus():
             program.p.projectModified = False
 
         def saveAs():
+            projectTitle = program.p.currentSong.metadata.title
+            projectFile = program.p.currentFile
+            initialFilename = (
+                projectTitle
+                if not projectTitle.isspace()
+                else (
+                    projectFile.name.partition(".")[0]
+                    if projectFile is not None
+                    else None
+                )
+            )
             filename = filedialog.asksaveasfilename(
-                filetypes=PROJECT_FILE_TK_LIST, defaultextension=PROJECT_FILE_EXTENSION
+                filetypes=PROJECT_FILE_TK_LIST,
+                defaultextension=PROJECT_FILE_EXTENSION,
+                initialdir=Settings.projectDirectory,
+                initialfile=initialFilename,
             )
             if filename == "" or filename == ():
                 return
@@ -264,6 +277,7 @@ def menus():
             filename = filedialog.asksaveasfilename(
                 filetypes=MIDI_FILE_TK_LIST,
                 defaultextension=MIDI_FILE_EXTENSION,
+                initialdir=Settings.exportDirectory,
                 initialfile=defFilename,
             )
 
@@ -313,7 +327,7 @@ def menus():
             def updateRecentMenu():
                 recentMenu.delete(0, "end")
                 for i, path in enumerate(recents):
-                    if i >= RECENT_LIST_LENGTH:
+                    if i >= Settings.recentsLength:
                         break
                     if path.exists():
                         recentMenu.add_command(
@@ -435,8 +449,7 @@ def menus():
 
             def refreshFonts():
                 fontMenu.delete(2, "end")
-                # TODO: unhardcode
-                for child in Path("./soundfonts").resolve().iterdir():
+                for child in Settings.soundfontDirectory.resolve().iterdir():
                     if not child.is_file():
                         return
                     if not child.name.endswith(".sf2"):

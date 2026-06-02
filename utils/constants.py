@@ -16,8 +16,6 @@ PROJECT_FILE_TK_LIST = [("TMT Project", PROJECT_FILE_EXTENSION)]
 MIDI_FILE_EXTENSION = ".mid"
 MIDI_FILE_TK_LIST = [("MIDI File", MIDI_FILE_EXTENSION)]
 
-RECENT_LIST_LENGTH = 10
-
 AUTOPORT_ATTEMPTS = 10
 """Attempts to try and automatically connect to a port. Mostly to allow time for the internal Fluidsynth to boot up."""
 AUTOPORT_TIME = 200  # milliseconds

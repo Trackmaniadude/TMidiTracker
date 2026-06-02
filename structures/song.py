@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from structures.settings import Settings
+
 if __name__ == "__main__":
     import sys
 
@@ -30,7 +32,7 @@ _logger = logging.getLogger(__name__)
 @dataclass
 class SongMetadata:
     title: str = ""
-    author: str = ""
+    author: str = Settings.defaultAuthor
     genre: str = ""
     notes: str = ""
 
