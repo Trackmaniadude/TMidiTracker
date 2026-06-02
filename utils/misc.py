@@ -161,6 +161,41 @@ def hex2(n: int) -> str:
     return s
 
 
+BracketDictAccess = lambda v: v.__dict__
+"""
+Cursed little class that lets us modify a class's  __dict__ via [brackets].
+This is almost entirely so DictSettingsEditors can edit classes.
+"""
+if not TYPE_CHECKING:
+
+    class BracketDictAccess:
+        def __init__(self, target: type) -> None:
+            self.target = target
+
+            for name in dir(self.target.__dict__):
+                if name.startswith("_"):
+                    continue
+                if name in dir(self):
+                    continue
+
+                def a(name):
+                    setattr(
+                        self,
+                        name,
+                        lambda *args, **kwargs: getattr(self.target.__dict__, name)(
+                            *args, **kwargs
+                        ),
+                    )
+
+                a(name)
+
+        def __getitem__(self, key):
+            return getattr(self.target, key)
+
+        def __setitem__(self, key, value):
+            setattr(self.target, key, value)
+
+
 if __name__ == "__main__":
     print(hex2(0))
     print(hex2(6))

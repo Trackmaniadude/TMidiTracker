@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 
+from utils.misc import BracketDictAccess
+
 if __name__ == "__main__":
     import sys
 
@@ -22,7 +24,9 @@ class SettingsView(ttk.Frame):
         )
         self.sf.pack(fill="both", expand=True)
 
-        self.editor = DictSettingsEditor(self.sf.content, Settings.__dict__)
+        self.editor = DictSettingsEditor(
+            self.sf.content, BracketDictAccess(Settings), autoApply=True
+        )
         self.editor.pack(fill="both", expand=True)
 
         ################
