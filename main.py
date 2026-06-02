@@ -483,6 +483,7 @@ def menus():
                     if window is not None:
                         window.destroy()
                         window = None
+                        Settings.save()
 
                 window.protocol("WM_DELETE_WINDOW", close)
             else:
