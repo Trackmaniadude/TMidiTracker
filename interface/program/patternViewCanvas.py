@@ -4,7 +4,7 @@ Interface for editing the message data in a pattern.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Callable, Literal, cast
 
 from interface.program.patternViewUtils import PVLM, PatternViewLabelModes, Target
 from utils.event import Connection
@@ -39,9 +39,11 @@ from utils.types_ import *
 _logger = logging.getLogger(__name__)
 
 ASPECT = 12 / 20
+FONT_SCALE = 0.5
 
 ROW_HEIGHT = 20
 CHAR_WIDTH = int(ROW_HEIGHT * ASPECT)
+FONT_SIZE = int(ROW_HEIGHT * FONT_SCALE)
 
 NOTE_WIDTH = CHAR_WIDTH * 3
 VEL_WIDTH = CHAR_WIDTH * 2
@@ -60,18 +62,39 @@ class Tags:
     SELECTION = "SELECTION"
     CURSOR = "CURSOR"
 
+
 # In stacking order, so top is highest.
 TAG_COLORS: dict[str, str] = {
     Tags.GRID_LIGHT: Colors.Grid.Highlight,
     Tags.GRID_DARK: Colors.Grid.Shadow,
-
     Tags.SELECTION: Colors.Target.Default,
     Tags.CURSOR: Colors.Target.Shade2,
-
     Tags.HIGHLIGHT_MAJOR: Colors.BG.Shade2,
     Tags.HIGHLIGHT_MINOR: Colors.BG.Shade1,
 }
 """Colors for each tag, and also the order to stack them."""
+
+
+# TODO: Probably more effort than it was worth.
+# I should get that nice canvas up and running some time cause it does this for all
+class ResourcePool[ID]:
+    def __init__(self, get: Callable[[], ID], free: Callable[[ID], None]) -> None:
+        self.__free = set[ID]()
+        self.__used = set[ID]()
+        self.__newFunc = get
+        self.__freeFunc = free
+
+    def get(self) -> ID:
+        if len(self.__free) > 0:
+            id = self.__free.pop()
+        else:
+            id = self.__newFunc()
+        self.__used.add(id)
+        return id
+
+    def free(self, id: ID):
+        self.__used.remove(id)
+        self.__freeFunc(id)
 
 
 class PatternViewCanvas(ttk.Frame):
@@ -85,7 +108,7 @@ class PatternViewCanvas(ttk.Frame):
         self.pattern: Pattern = initialPattern
         self.viewFrame: PatternViewFrame = viewFrame
 
-        self.connections: list[Connection] = list()
+        self.connections = list[Connection]()
 
         ### Build Layout
         # Frames
@@ -95,6 +118,8 @@ class PatternViewCanvas(ttk.Frame):
         self.effectFrame = ttk.Frame(
             self, relief="sunken", borderwidth=2, width=0, height=0
         )
+        self.noteCanvas: tk.Canvas
+        self.effectCanvas: tk.Canvas
 
         # Labels
         self.noteLabel = ttk.Label(self, text=f"#{self.pattern.channel.channel + 1}")
@@ -201,7 +226,9 @@ class PatternViewCanvas(ttk.Frame):
         return (x1, x2)
 
     @classmethod
-    def coords(cls, row: int, col: int, t: Literal["note", "velocity", "effect"]) -> tuple[int, int, int, int]:
+    def coords(
+        cls, row: int, col: int, t: Literal["note", "velocity", "effect"]
+    ) -> tuple[int, int, int, int]:
         """Get cell coordinates. Returns (x1, y1, x2, y2)"""
         x1, x2 = cls.col(col, t)
         y1, y2 = cls.row(row)
@@ -230,6 +257,21 @@ class PatternViewCanvas(ttk.Frame):
         self.noteCanvas.pack(fill="both", expand=True)
         self.effectCanvas.pack(fill="both", expand=True)
 
+        def canvasPools(canvas: tk.Canvas):
+            def new() -> int:
+                return canvas.create_text(
+                    -BIG, -BIG, font=("TkFixedFont", FONT_SIZE), anchor="nw"
+                )
+
+            def free(id: int):
+                canvas.itemconfig(id, text="")
+                canvas.coords(id, -BIG, -BIG)
+
+            return (new, free)
+
+        self.noteText = ResourcePool[int](*canvasPools(self.noteCanvas))
+        self.effectText = ResourcePool[int](*canvasPools(self.noteCanvas))
+
         # Setup constant display items
         rows = program.p.currentSong.patternLength
         notes = self.pattern.channel.noteColumns
@@ -237,6 +279,11 @@ class PatternViewCanvas(ttk.Frame):
 
         self.noteCanvas.config(width=NOTEVEL_WIDTH * notes, height=ROW_HEIGHT * rows)
         self.effectCanvas.config(width=EFFECT_WIDTH * effects, height=ROW_HEIGHT * rows)
+
+        self.textLookup = dict[
+            tuple[int, int, Literal["note", "velocity", "effect"]], int
+        ]()
+        """(row, col, col_t) -> id"""
 
         for row in range(rows):
             y1, y2 = self.row(row)
@@ -283,8 +330,38 @@ class PatternViewCanvas(ttk.Frame):
 
     def refreshLabels(self):
         """Sync interface with model"""
+        for (row, col), note in self.pattern.notes.items():
+            id = self.textLookup.get((row, col, "note")) or self.noteText.get()
+            self.textLookup[row, col, "note"] = id
+
+            x, y, _, _ = self.coords(row, col, "note")
+            self.noteCanvas.coords(id, x + 2, y)
+            if self.pattern.channel.channel == DRUM_CHANNEL:
+                text = "STP" if note == "stop" else DRUM_NAMES[note]
+            else:
+                text = (
+                    "STP"
+                    if note == "stop"
+                    else f"{NOTE_NAMES_SHARP[note % NOTES_PER_OCTAVE]}{note // NOTES_PER_OCTAVE}"
+                )
+            self.noteCanvas.itemconfig(id, text=text)
+
+        for (row, col), velocity in self.pattern.velocities.items():
+            id = self.textLookup.get((row, col, "velocity")) or self.noteText.get()
+            self.textLookup[row, col, "velocity"] = id
+
+            x, y, _, _ = self.coords(row, col, "velocity")
+            self.noteCanvas.coords(id, x + 2, y)
+            self.noteCanvas.itemconfig(id, text=velocity)
+
+        for (row, col), effect in self.pattern.effects.items():
+            id = self.textLookup.get((row, col, "effect")) or self.effectText.get()
+            self.textLookup[row, col, "effect"] = id
+
+            x, y, _, _ = self.coords(row, col, "effect")
+            self.effectCanvas.coords(id, x + 2, y)
+            self.effectCanvas.itemconfig(id, text=effect)
 
     def setPattern(self, pattern: Pattern):
         self.pattern = pattern
-        self.buildLabels()
         self.refreshLabels()
