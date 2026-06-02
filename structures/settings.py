@@ -39,7 +39,7 @@ class Settings:
                 },
                 file,
                 default=default,
-                separators=(",", ":"),
+                indent=4,
             )
 
     @classmethod
