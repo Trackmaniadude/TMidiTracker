@@ -301,9 +301,11 @@ class PatternViewCanvas(ttk.Frame):
             if col_t == "effect":
                 self.noteCanvas.coords(Tags.TARGET, -BIG, -BIG, -BIG, -BIG)
                 self.effectCanvas.coords(Tags.TARGET, *self.coords(row, col, col_t))
+                self.noteCanvas.focus()
             else:
                 self.noteCanvas.coords(Tags.TARGET, *self.coords(row, col, col_t))
                 self.effectCanvas.coords(Tags.TARGET, -BIG, -BIG, -BIG, -BIG)
+                self.effectCanvas.focus()
         else:
             self.noteCanvas.coords(Tags.TARGET, -BIG, -BIG, -BIG, -BIG)
             self.effectCanvas.coords(Tags.TARGET, -BIG, -BIG, -BIG, -BIG)
@@ -391,6 +393,10 @@ class PatternViewCanvas(ttk.Frame):
             )
             canvas.bind(f"<{dir}>", f(dir, False, True))
             canvas.bind(f"<Shift-{dir}>", f(dir, True, False))
+
+        canvas.bind(
+            "<FocusOut>", lambda *_: canvas.coords(Tags.TARGET, -BIG, -BIG, -BIG, -BIG)
+        )
 
     @tkutil.tkQueuedAction()
     def buildLabels(self):
