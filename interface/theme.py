@@ -75,6 +75,7 @@ class Colors:
         Shade2 = "#CCCCCC"
 
     class Target:
+        Outline = "#000000"
         Default = "#DDDDFF"
         Shade1 = "#CCCCEE"
         Shade2 = "#AAAACC"

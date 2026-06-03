@@ -66,6 +66,7 @@ class Tags:
     HIGHLIGHT_MAJOR = "HIGHLIGHT_MAJOR"
     SELECTION = "SELECTION"
     CURSOR = "CURSOR"
+    TARGET = "TARGET"
 
 
 # In stacking order, so top is highest.
@@ -298,8 +299,30 @@ class PatternViewCanvas(ttk.Frame):
             key=lambda t: t.horizontalComparisonKeyView,
         )
 
+        lookup: dict[PatternViewLabelModes, Literal["note", "velocity", "effect"]] = {
+            PVLM.NOTE: "note",
+            PVLM.VELOCITY: "velocity",
+            PVLM.EFFECT: "effect",
+        }
+
         ch = CHANNEL_ORDER_INVERSE[self.channel]
         ch1, ch2 = CHANNEL_ORDER_INVERSE[t1.channel], CHANNEL_ORDER_INVERSE[t2.channel]
+
+        # Target
+        mainTarget = self.viewFrame.target
+        if ch == CHANNEL_ORDER_INVERSE[mainTarget.channel]:
+            col_t = lookup[mainTarget.column]
+            row = mainTarget.row
+            col = mainTarget.subcolumn
+            if col_t == "effect":
+                self.noteCanvas.coords(Tags.TARGET, -BIG, -BIG, -BIG, -BIG)
+                self.effectCanvas.coords(Tags.TARGET, *self.coords(row, col, col_t))
+            else:
+                self.noteCanvas.coords(Tags.TARGET, *self.coords(row, col, col_t))
+                self.effectCanvas.coords(Tags.TARGET, -BIG, -BIG, -BIG, -BIG)
+        else:
+            self.noteCanvas.coords(Tags.TARGET, -BIG, -BIG, -BIG, -BIG)
+            self.effectCanvas.coords(Tags.TARGET, -BIG, -BIG, -BIG, -BIG)
 
         # Do not show if selection does not cross this channel
         if ch < ch1:
@@ -310,12 +333,6 @@ class PatternViewCanvas(ttk.Frame):
             self.noteCanvas.coords(Tags.SELECTION, -BIG, -BIG, -BIG, -BIG)
             self.effectCanvas.coords(Tags.SELECTION, -BIG, -BIG, -BIG, -BIG)
             return
-
-        lookup: dict[PatternViewLabelModes, Literal["note", "velocity", "effect"]] = {
-            PVLM.NOTE: "note",
-            PVLM.VELOCITY: "velocity",
-            PVLM.EFFECT: "effect",
-        }
 
         c1 = t1.subcolumn
         c2 = t2.subcolumn
@@ -459,16 +476,25 @@ class PatternViewCanvas(ttk.Frame):
             self.effectCanvas.create_line(x1, 0, x1, BIG, tags=[Tags.GRID_LIGHT])
             self.effectCanvas.create_line(x2, 0, x2, BIG, tags=[Tags.GRID_DARK])
 
-        self.noteCanvas.create_rectangle(0, 0, 0, 0, tags=[Tags.CURSOR], width=0)
-        self.noteCanvas.create_rectangle(0, 0, 0, 0, tags=[Tags.SELECTION], width=0)
-        self.effectCanvas.create_rectangle(0, 0, 0, 0, tags=[Tags.CURSOR], width=0)
-        self.effectCanvas.create_rectangle(0, 0, 0, 0, tags=[Tags.SELECTION], width=0)
-
         # Color and sync
         for canvas in (self.noteCanvas, self.effectCanvas):
+            canvas.create_rectangle(-BIG, -BIG, -BIG, -BIG, tags=[Tags.CURSOR], width=0)
+            canvas.create_rectangle(
+                -BIG, -BIG, -BIG, -BIG, tags=[Tags.SELECTION], width=0
+            )
+            canvas.create_rectangle(
+                -BIG,
+                -BIG,
+                -BIG,
+                -BIG,
+                tags=[Tags.TARGET],
+                width=2,
+                outline=Colors.Target.Outline,
+            )
             for tag, color in TAG_COLORS.items():
                 canvas.itemconfig(tag, fill=color)
                 canvas.tag_lower(tag)
+            canvas.tag_raise(Tags.TARGET)
 
         self.refreshLabels()
 
