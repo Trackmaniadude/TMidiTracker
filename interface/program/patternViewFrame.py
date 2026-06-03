@@ -527,8 +527,7 @@ class PatternViewFrame(ttk.Frame):
         stepPattern: bool = True,
         *,
         direction: Literal["Up", "Down", "Left", "Right"] = "Down",
-        focus: bool = False,
-        moveSecondary: bool = False,
+        boxSelect: bool = False,
     ):
         if direction == "Up":
             newPatternRow = self.target.row - step
@@ -541,7 +540,7 @@ class PatternViewFrame(ttk.Frame):
                         newPatternRow = 0
                 else:
                     newPatternRow = 0
-            self.setTarget(row=newPatternRow, focus=focus, setSecondary=moveSecondary)
+            self.setTarget(row=newPatternRow, boxSelect=boxSelect)
 
         elif direction == "Down":
             newPatternRow = self.target.row + step
@@ -557,7 +556,7 @@ class PatternViewFrame(ttk.Frame):
                         newPatternRow = program.p.currentSong.patternLength - 1
                 else:
                     newPatternRow = program.p.currentSong.patternLength - 1
-            self.setTarget(row=newPatternRow, focus=focus, setSecondary=moveSecondary)
+            self.setTarget(row=newPatternRow, boxSelect=boxSelect)
 
         elif direction == "Left":  # TODO: variable step
             currentChannel = CHANNEL_ORDER_INVERSE[self.target.channel]
@@ -568,7 +567,7 @@ class PatternViewFrame(ttk.Frame):
                     self.setTarget(
                         column=PVLM.VELOCITY,
                         subcolumn=self.target.subcolumn - 1,
-                        setSecondary=moveSecondary,
+                        boxSelect=boxSelect,
                     )
                 else:  # Move to LEFT channel
                     if currentChannel > 0:
@@ -576,20 +575,20 @@ class PatternViewFrame(ttk.Frame):
                             channel=CHANNEL_ORDER[currentChannel - 1],
                             column=PVLM.EFFECT,
                             subcolumn=currentChannelObj.effectColumns - 1,
-                            setSecondary=moveSecondary,
+                            boxSelect=boxSelect,
                         )
             elif self.target.column == PVLM.VELOCITY:
-                self.setTarget(column=PVLM.NOTE, setSecondary=moveSecondary)
+                self.setTarget(column=PVLM.NOTE, boxSelect=boxSelect)
             elif self.target.column == PVLM.EFFECT:
                 if self.target.subcolumn > 0:
                     self.setTarget(
-                        subcolumn=self.target.subcolumn - 1, setSecondary=moveSecondary
+                        subcolumn=self.target.subcolumn - 1, boxSelect=boxSelect
                     )
                 else:
                     self.setTarget(
                         column=PVLM.VELOCITY,
                         subcolumn=currentChannelObj.noteColumns - 1,
-                        setSecondary=moveSecondary,
+                        boxSelect=boxSelect,
                     )
 
         elif direction == "Right":  # TODO: variable step
@@ -597,19 +596,17 @@ class PatternViewFrame(ttk.Frame):
             currentChannelObj = program.p.currentSong.channels[currentChannel]
 
             if self.target.column == PVLM.NOTE:
-                self.setTarget(column=PVLM.VELOCITY, setSecondary=moveSecondary)
+                self.setTarget(column=PVLM.VELOCITY, boxSelect=boxSelect)
             elif self.target.column == PVLM.VELOCITY:
                 if (
                     self.target.subcolumn >= currentChannelObj.noteColumns - 1
                 ):  # Move to EFFECT column
-                    self.setTarget(
-                        column=PVLM.EFFECT, subcolumn=0, setSecondary=moveSecondary
-                    )
+                    self.setTarget(column=PVLM.EFFECT, subcolumn=0, boxSelect=boxSelect)
                 else:
                     self.setTarget(
                         column=PVLM.NOTE,
                         subcolumn=self.target.subcolumn + 1,
-                        setSecondary=moveSecondary,
+                        boxSelect=boxSelect,
                     )
             elif self.target.column == PVLM.EFFECT:  # Move to RIGHT channel
                 if currentChannel < program.p.currentSong.visibleChannels:
@@ -617,7 +614,7 @@ class PatternViewFrame(ttk.Frame):
                         channel=CHANNEL_ORDER[currentChannel + 1],
                         column=PVLM.NOTE,
                         subcolumn=0,
-                        setSecondary=moveSecondary,
+                        boxSelect=boxSelect,
                     )
 
     @tkutil.tkQueuedAction()

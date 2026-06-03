@@ -270,22 +270,6 @@ class PatternViewCanvas(ttk.Frame):
         col, t = self.colInv(x, c)
         return (row, col, t)
 
-    def onClick(self, c: tk.Canvas, boxSelect: bool):
-        def f(event: tk.Event):
-            x = event.x
-            y = event.y
-            row, col, col_t = self.cell(x, y, c)
-            lookup = {
-                "note": PVLM.NOTE,
-                "velocity": PVLM.VELOCITY,
-                "effect": PVLM.EFFECT,
-            }
-            self.viewFrame.setTarget(
-                self.channel, row, lookup[col_t], col, boxSelect=boxSelect
-            )
-
-        return f
-
     def onPatternRowChange(self):
         row = program.p.currentPatternRow
         y1, y2 = self.row(row)
@@ -380,6 +364,34 @@ class PatternViewCanvas(ttk.Frame):
     def channel(self):
         return self.pattern.channel.channel
 
+    def canvasBindings(self, canvas: tk.Canvas):
+        def onClick(boxSelect: bool):
+            def f(event: tk.Event):
+                x = event.x
+                y = event.y
+                row, col, col_t = self.cell(x, y, canvas)
+                lookup = {
+                    "note": PVLM.NOTE,
+                    "velocity": PVLM.VELOCITY,
+                    "effect": PVLM.EFFECT,
+                }
+                self.viewFrame.setTarget(
+                    self.channel, row, lookup[col_t], col, boxSelect=boxSelect
+                )
+
+            return f
+
+        canvas.bind("<Button-1>", onClick(False))
+        canvas.bind("<Shift-Button-1>", onClick(True))
+
+        for dir in ("Up", "Down", "Left", "Right"):
+            # Nonsense because scoping again
+            f = lambda d, s, p: lambda *_: self.viewFrame.stepTarget(
+                1, p, direction=d, boxSelect=s
+            )
+            canvas.bind(f"<{dir}>", f(dir, False, True))
+            canvas.bind(f"<Shift-{dir}>", f(dir, True, False))
+
     @tkutil.tkQueuedAction()
     def buildLabels(self):
         """Build interface"""
@@ -404,13 +416,8 @@ class PatternViewCanvas(ttk.Frame):
         self.noteCanvas.pack(fill="both", expand=True)
         self.effectCanvas.pack(fill="both", expand=True)
 
-        # Bindings
-        def b(c: tk.Canvas):
-            c.bind("<Button-1>", self.onClick(c, False))
-            c.bind("<Shift-Button-1>", self.onClick(c, True))
-
-        b(self.noteCanvas)
-        b(self.effectCanvas)
+        self.canvasBindings(self.noteCanvas)
+        self.canvasBindings(self.effectCanvas)
 
         # Drawing
         def canvasPools(canvas: tk.Canvas):
