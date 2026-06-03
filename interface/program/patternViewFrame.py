@@ -27,7 +27,7 @@ from utils.constants import (
     CHANNEL_ORDER_INVERSE,
     DRUM_CHANNEL,
 )
-from utils.event import Connection
+from utils.event import Connection, Event
 from utils.misc import flatten, minmax
 
 _logger = logging.getLogger(__name__)
@@ -177,7 +177,7 @@ class PatternViewFrame(ttk.Frame):
         self.row = 0
 
         self.target: Target = Target(2, 3, PVLM.VELOCITY, 1)
-        self.secondaryTarget: Target | None = None
+        self.secondaryTarget: Target = self.target
 
         self.views: list[PatternViewCanvas] = list()
 
@@ -191,6 +191,8 @@ class PatternViewFrame(ttk.Frame):
 
         # Events
         self.songConnections: list[Connection] = list()
+
+        self.TargetChanged = Event()
 
         def setupSongEventListeners():
             for con in self.songConnections:
@@ -374,6 +376,7 @@ class PatternViewFrame(ttk.Frame):
                         continue
                 pattern.setEffect(row, col, effect)
 
+        self.TargetChanged.fire()
         # self.refreshLabels()
 
     def getUsedIndicesInSelection(self):
@@ -499,21 +502,17 @@ class PatternViewFrame(ttk.Frame):
         column: PVLM | None = None,
         subcolumn: int | None = None,
         *,
-        focus: bool = False,
-        setSecondary: bool = False,
+        boxSelect: bool = False,
     ):
         channel = channel if channel is not None else self.target.channel
         row = row if row is not None else self.target.row
         column = column if column is not None else self.target.column
         subcolumn = subcolumn if subcolumn is not None else self.target.subcolumn
 
-        if setSecondary:
-            if self.secondaryTarget is None:
-                self.secondaryTarget = self.target
-        else:
-            self.secondaryTarget = None
-
         self.target = Target(channel, row, column, subcolumn)
+        if not boxSelect:
+            self.secondaryTarget = self.target
+        self.TargetChanged.fire()
 
         # if focus == True:
         #     self.views[CHANNEL_ORDER_INVERSE[channel]].labelLookup[

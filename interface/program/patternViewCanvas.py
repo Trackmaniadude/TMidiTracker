@@ -35,7 +35,7 @@ from utils.constants import (
     NOTE_NAMES_SHARP,
     NOTES_PER_OCTAVE,
 )
-from utils.misc import hex2
+from utils.misc import hex2, minmax
 from utils.types_ import *
 
 _logger = logging.getLogger(__name__)
@@ -128,7 +128,7 @@ class PatternViewCanvas(ttk.Frame):
         self.effectCanvas: tk.Canvas
 
         # Labels
-        self.noteLabel = ttk.Label(self, text=f"#{self.pattern.channel.channel + 1}")
+        self.noteLabel = ttk.Label(self, text=f"#{self.channel + 1}")
         self.effectLabel = ttk.Label(self, text="")
 
         # Controls
@@ -193,6 +193,7 @@ class PatternViewCanvas(ttk.Frame):
             )
         )
 
+        # Event Listens
         StructureChanged.connect(
             lambda changes: (
                 (self.buildLabels(), self.refreshLabels())
@@ -206,6 +207,10 @@ class PatternViewCanvas(ttk.Frame):
             lambda *_: self.onPatternRowChange(), self.connections
         )
 
+        self.viewFrame.TargetChanged.connect(
+            lambda *_: self.onTargetChange(), self.connections
+        )
+
         ### Finish
         self.buildLabels()
 
@@ -214,15 +219,15 @@ class PatternViewCanvas(ttk.Frame):
             connection.disconnect()
         return super().destroy()
 
-    @staticmethod
-    def row(row: int) -> tuple[int, int]:
+    def row(self, row: int) -> tuple[int, int]:
         """Get y coords of row. Returns (y1, y2)"""
         y1 = row * ROW_HEIGHT
         y2 = ((row + 1) * ROW_HEIGHT) - 1
         return (y1, y2)
 
-    @staticmethod
-    def col(col: int, t: Literal["note", "velocity", "effect"]) -> tuple[int, int]:
+    def col(
+        self, col: int, t: Literal["note", "velocity", "effect"]
+    ) -> tuple[int, int]:
         """Get x coords of column. Returns (x1, x2)"""
         if t == "note":
             x1 = col * NOTEVEL_WIDTH
@@ -235,20 +240,128 @@ class PatternViewCanvas(ttk.Frame):
             x2 = ((col + 1) * EFFECT_WIDTH) - 1
         return (x1, x2)
 
-    @classmethod
     def coords(
-        cls, row: int, col: int, t: Literal["note", "velocity", "effect"]
+        self, row: int, col: int, t: Literal["note", "velocity", "effect"]
     ) -> tuple[int, int, int, int]:
         """Get cell coordinates. Returns (x1, y1, x2, y2)"""
-        x1, x2 = cls.col(col, t)
-        y1, y2 = cls.row(row)
+        x1, x2 = self.col(col, t)
+        y1, y2 = self.row(row)
         return (x1, y1, x2, y2)
+
+    def rowInv(self, y: int) -> int:
+        return y // ROW_HEIGHT
+
+    def colInv(
+        self, x: int, c: tk.Canvas
+    ) -> tuple[int, Literal["note", "velocity", "effect"]]:
+        if c == self.noteCanvas:
+            col = x // NOTEVEL_WIDTH
+            return (col, "note" if x % NOTEVEL_WIDTH < NOTE_WIDTH else "velocity")
+        elif c == self.effectCanvas:
+            return (x // EFFECT_WIDTH, "effect")
+        raise Exception
+
+    def cell(
+        self, x: int, y: int, c: tk.Canvas
+    ) -> tuple[int, int, Literal["note", "velocity", "effect"]]:
+        """Get cell from coordinates. Returns (row, col)"""
+        row = self.rowInv(y)
+        col, t = self.colInv(x, c)
+        return (row, col, t)
+
+    def onClick(self, c: tk.Canvas, boxSelect: bool):
+        def f(event: tk.Event):
+            x = event.x
+            y = event.y
+            row, col, col_t = self.cell(x, y, c)
+            lookup = {
+                "note": PVLM.NOTE,
+                "velocity": PVLM.VELOCITY,
+                "effect": PVLM.EFFECT,
+            }
+            self.viewFrame.setTarget(
+                self.channel, row, lookup[col_t], col, boxSelect=boxSelect
+            )
+
+        return f
 
     def onPatternRowChange(self):
         row = program.p.currentPatternRow
         y1, y2 = self.row(row)
         self.noteCanvas.coords(Tags.CURSOR, 0, y1, BIG, y2)
         self.effectCanvas.coords(Tags.CURSOR, 0, y1, BIG, y2)
+
+    def onTargetChange(self):
+        t1, t2 = minmax(
+            self.viewFrame.target,
+            self.viewFrame.secondaryTarget,
+            key=lambda t: t.horizontalComparisonKeyView,
+        )
+
+        ch = CHANNEL_ORDER_INVERSE[self.channel]
+        ch1, ch2 = CHANNEL_ORDER_INVERSE[t1.channel], CHANNEL_ORDER_INVERSE[t2.channel]
+
+        # Do not show if selection does not cross this channel
+        if ch < ch1:
+            self.noteCanvas.coords(Tags.SELECTION, -BIG, -BIG, -BIG, -BIG)
+            self.effectCanvas.coords(Tags.SELECTION, -BIG, -BIG, -BIG, -BIG)
+            return
+        if ch > ch2:
+            self.noteCanvas.coords(Tags.SELECTION, -BIG, -BIG, -BIG, -BIG)
+            self.effectCanvas.coords(Tags.SELECTION, -BIG, -BIG, -BIG, -BIG)
+            return
+
+        lookup: dict[PatternViewLabelModes, Literal["note", "velocity", "effect"]] = {
+            PVLM.NOTE: "note",
+            PVLM.VELOCITY: "velocity",
+            PVLM.EFFECT: "effect",
+        }
+
+        c1 = t1.subcolumn
+        c2 = t2.subcolumn
+
+        ct1 = lookup[t1.column]
+        ct2 = lookup[t2.column]
+
+        r1, r2 = minmax(t1.row, t2.row)
+
+        y1, _ = self.row(r1)
+        _, y2 = self.row(r2)
+
+        if ch > ch1:
+            # Lower selection is in a channel to the left
+            x1n = 0
+            x1e = 0
+        elif ch == ch1:
+            if ct1 == "effect":
+                x1n = BIG
+                x1e = self.col(c1, ct1)[0]
+            else:
+                x1n = self.col(c1, ct1)[0]
+                x1e = 0
+        else:
+            raise Exception()
+
+        if ch < ch2:
+            # Upper selection is in a channel to the right
+            x2n = BIG
+            x2e = BIG
+        elif ch == ch2:
+            if ct2 == "effect":
+                x2n = BIG
+                x2e = self.col(c2, ct2)[1]
+            else:
+                x2n = self.col(c2, ct2)[1]
+                x2e = 0
+        else:
+            raise Exception()
+
+        self.noteCanvas.coords(Tags.SELECTION, x1n, y1, x2n, y2)
+        self.effectCanvas.coords(Tags.SELECTION, x1e, y1, x2e, y2)
+
+    @property
+    def channel(self):
+        return self.pattern.channel.channel
 
     @tkutil.tkQueuedAction()
     def buildLabels(self):
@@ -274,6 +387,15 @@ class PatternViewCanvas(ttk.Frame):
         self.noteCanvas.pack(fill="both", expand=True)
         self.effectCanvas.pack(fill="both", expand=True)
 
+        # Bindings
+        def b(c: tk.Canvas):
+            c.bind("<Button-1>", self.onClick(c, False))
+            c.bind("<Shift-Button-1>", self.onClick(c, True))
+
+        b(self.noteCanvas)
+        b(self.effectCanvas)
+
+        # Drawing
         def canvasPools(canvas: tk.Canvas):
             def new() -> int:
                 return canvas.create_text(
@@ -311,17 +433,17 @@ class PatternViewCanvas(ttk.Frame):
 
             if row % program.p.currentSong.majorSubdiv == 0:
                 self.noteCanvas.create_rectangle(
-                    0, y1, BIG, y2, tags=[Tags.HIGHLIGHT_MAJOR]
+                    0, y1, BIG, y2, tags=[Tags.HIGHLIGHT_MAJOR], width=0
                 )
                 self.effectCanvas.create_rectangle(
-                    0, y1, BIG, y2, tags=[Tags.HIGHLIGHT_MAJOR]
+                    0, y1, BIG, y2, tags=[Tags.HIGHLIGHT_MAJOR], width=0
                 )
             elif row % program.p.currentSong.minorSubdiv == 0:
                 self.noteCanvas.create_rectangle(
-                    0, y1, BIG, y2, tags=[Tags.HIGHLIGHT_MINOR]
+                    0, y1, BIG, y2, tags=[Tags.HIGHLIGHT_MINOR], width=0
                 )
                 self.effectCanvas.create_rectangle(
-                    0, y1, BIG, y2, tags=[Tags.HIGHLIGHT_MINOR]
+                    0, y1, BIG, y2, tags=[Tags.HIGHLIGHT_MINOR], width=0
                 )
 
         for col in range(notes):
@@ -337,10 +459,10 @@ class PatternViewCanvas(ttk.Frame):
             self.effectCanvas.create_line(x1, 0, x1, BIG, tags=[Tags.GRID_LIGHT])
             self.effectCanvas.create_line(x2, 0, x2, BIG, tags=[Tags.GRID_DARK])
 
-        self.noteCanvas.create_rectangle(0, 0, 0, 0, tags=[Tags.CURSOR])
-        self.noteCanvas.create_rectangle(0, 0, 0, 0, tags=[Tags.SELECTION])
-        self.effectCanvas.create_rectangle(0, 0, 0, 0, tags=[Tags.CURSOR])
-        self.effectCanvas.create_rectangle(0, 0, 0, 0, tags=[Tags.SELECTION])
+        self.noteCanvas.create_rectangle(0, 0, 0, 0, tags=[Tags.CURSOR], width=0)
+        self.noteCanvas.create_rectangle(0, 0, 0, 0, tags=[Tags.SELECTION], width=0)
+        self.effectCanvas.create_rectangle(0, 0, 0, 0, tags=[Tags.CURSOR], width=0)
+        self.effectCanvas.create_rectangle(0, 0, 0, 0, tags=[Tags.SELECTION], width=0)
 
         # Color and sync
         for canvas in (self.noteCanvas, self.effectCanvas):
@@ -374,7 +496,7 @@ class PatternViewCanvas(ttk.Frame):
 
             x, y, _, _ = self.coords(row, col, "note")
             self.noteCanvas.coords(id, x + WIDTH_PAD_H, y)
-            if self.pattern.channel.channel == DRUM_CHANNEL:
+            if self.channel == DRUM_CHANNEL:
                 text = "STP" if note == "stop" else DRUM_NAMES[note]
             else:
                 text = (

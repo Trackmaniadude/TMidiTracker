@@ -49,6 +49,16 @@ class Target:
             (self.subcolumn * 2) + (1 if c == PVLM.VELOCITY else 0),
         )
 
+    @property
+    def horizontalComparisonKeyView(self):
+        """(Channel #, is in effect column, column # (even is note, odd is velocity))"""
+        c = self.column
+        return (
+            CHANNEL_ORDER_INVERSE[self.channel],
+            c == PVLM.EFFECT,
+            (self.subcolumn * 2) + (1 if c == PVLM.VELOCITY else 0),
+        )
+
     @staticmethod
     def columnGreaterThan(a: Target, b: Target) -> bool:
         return a.horizontalComparisonKey > b.horizontalComparisonKey
