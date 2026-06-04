@@ -23,7 +23,7 @@ import utils.tk as tkutil
 from interface.theme import Colors
 from interface.utilities.prebuilts import Buttons
 from structures import program
-from structures.globalEvents import StructureChanged
+from structures.globalEvents import Copy, Cut, Paste, StructureChanged
 from utils.constants import (
     CHANNEL_ORDER_INVERSE,
     DRUM_CHANNEL,
@@ -621,6 +621,11 @@ class PatternViewCanvas(ttk.Frame):
         canvas.bind("<minus>", lambda *_: adjust(-1, 0))
         canvas.bind("<Control-equal>", lambda *_: adjust(1, 1))
         canvas.bind("<Control-minus>", lambda *_: adjust(-1, 1))
+
+        # Copy/Pase
+        canvas.bind("<Control-x>", lambda *_: Cut.fire(self))
+        canvas.bind("<Control-c>", lambda *_: Copy.fire(self))
+        canvas.bind("<Control-v>", lambda *_: Paste.fire(self))
 
     @tkutil.tkQueuedAction()
     def buildLabels(self):
