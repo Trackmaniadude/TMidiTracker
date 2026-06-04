@@ -116,6 +116,9 @@ class PatternViewCanvas(ttk.Frame):
         self.viewFrame: PatternViewFrame = viewFrame
 
         self.connections = list[Connection]()
+        """Connections that exist for the lifetime of the view."""
+        self.patternConnections = list[Connection]()
+        """Connections from the current target pattern. Are swapped out with the pattern."""
 
         ### Build Layout
         # Frames
@@ -214,6 +217,7 @@ class PatternViewCanvas(ttk.Frame):
 
         ### Finish
         self.buildLabels()
+        self.setPattern(initialPattern)
 
     def destroy(self) -> None:
         for connection in self.connections:
@@ -574,6 +578,7 @@ class PatternViewCanvas(ttk.Frame):
     @tkutil.tkQueuedAction()
     def refreshLabels(self):
         """Sync interface with model"""
+        # TODO: only update necessary ones (if this proves to be a performance issue)
         for (row, col, col_t), id in self.textLookup.copy().items():
             if col_t == "note":
                 # if (row, col) in self.pattern.notes:
@@ -623,6 +628,33 @@ class PatternViewCanvas(ttk.Frame):
                 id, text="".join(hex2(byte) for byte in effect)
             )
 
+    def setupPatternListen(self):
+        def onNoteChange():
+            pass
+
+        def onVelocityChange():
+            pass
+
+        def onEffectChange():
+            pass
+
+        def onAllChange():
+            self.refreshLabels()
+
+        self.pattern.getAttributeChangedEvent("notes").connect(
+            lambda *_: (onNoteChange(), onAllChange()), self.patternConnections
+        )
+        self.pattern.getAttributeChangedEvent("velocities").connect(
+            lambda *_: (onVelocityChange(), onAllChange()), self.patternConnections
+        )
+        self.pattern.getAttributeChangedEvent("effects").connect(
+            lambda *_: (onEffectChange(), onAllChange()), self.patternConnections
+        )
+
     def setPattern(self, pattern: Pattern):
+        for con in self.patternConnections:
+            con.disconnect()
+        self.patternConnections.clear()
         self.pattern = pattern
+        self.setupPatternListen()
         self.refreshLabels()
