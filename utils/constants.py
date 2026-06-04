@@ -58,6 +58,8 @@ BEND_STEPS_PER_SEMITONE = 8192 // DEFAULT_BEND_RANGE
 # Basically we want to set range to allow bending the entire range
 # That's still 50 ish points per note, which is enough
 
+MAX_VELOCITY = 0x7F
+
 # endregion
 
 

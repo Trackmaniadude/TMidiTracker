@@ -30,12 +30,13 @@ from utils.constants import (
     DRUM_NAMES,
     HEX_KEYMAP,
     KEYBOARD_MAP,
+    MAX_VELOCITY,
     NOTE_DELTAS,
     NOTE_NAMES_FLAT,
     NOTE_NAMES_SHARP,
     NOTES_PER_OCTAVE,
 )
-from utils.misc import hex2, minmax
+from utils.misc import clamp, hex2, minmax
 from utils.types_ import *
 
 _logger = logging.getLogger(__name__)
@@ -119,6 +120,10 @@ class PatternViewCanvas(ttk.Frame):
         """Connections that exist for the lifetime of the view."""
         self.patternConnections = list[Connection]()
         """Connections from the current target pattern. Are swapped out with the pattern."""
+
+        self.entryTarget: Target | None = None
+        self.entryText: str = ""
+        self.entryId: int = -1
 
         ### Build Layout
         # Frames
@@ -224,6 +229,8 @@ class PatternViewCanvas(ttk.Frame):
             connection.disconnect()
         return super().destroy()
 
+    # region Indexing
+
     def row(self, row: int) -> tuple[int, int]:
         """Get y coords of row. Returns (y1, y2)"""
         y1 = row * ROW_HEIGHT
@@ -274,6 +281,8 @@ class PatternViewCanvas(ttk.Frame):
         col, t = self.colInv(x, c)
         return (row, col, t)
 
+    # endregion
+
     def onPatternRowChange(self):
         row = program.p.currentPatternRow
         y1, y2 = self.row(row)
@@ -281,6 +290,12 @@ class PatternViewCanvas(ttk.Frame):
         self.effectCanvas.coords(Tags.CURSOR, 0, y1, BIG, y2)
 
     def onTargetChange(self):
+        self.targetVisual()
+        if self.entryTarget is not None:
+            if self.target != self.entryTarget:
+                self.finalizeEntry()
+
+    def targetVisual(self):
         t1, t2 = minmax(
             self.viewFrame.target,
             self.viewFrame.secondaryTarget,
@@ -374,6 +389,25 @@ class PatternViewCanvas(ttk.Frame):
     def target(self):
         return self.viewFrame.target
 
+    def finalizeEntry(self):
+        target = self.entryTarget
+        if target is None:
+            return
+
+        # Velocity
+        if target.column == PVLM.VELOCITY:
+            value = int(self.entryText, base=16)
+            value = clamp(value, 0, MAX_VELOCITY)
+            self.pattern.setVelocity(target.row, target.subcolumn, value)
+
+        # Effect
+
+        # Reset Entry
+        self.entryTarget = None
+        self.entryText = ""  # Technically don't need to as entrytarget is the marker
+        self.entryId = -1
+        self.refreshLabels()
+
     def canvasBindings(self, canvas: tk.Canvas):
         def onClick(boxSelect: bool):
             def f(event: tk.Event):
@@ -423,8 +457,55 @@ class PatternViewCanvas(ttk.Frame):
             canvas.bind(f"<KeyPress-{key}>", noteOn)
             canvas.bind(f"<KeyRelease-{key}>", noteOff)
 
+        def createVelocityEventHandlers(key: str):
+            if canvas != self.noteCanvas:
+                return
+
+            def e(*_):
+                if self.target.column != PVLM.VELOCITY:
+                    return
+                if self.entryTarget is None:
+                    # begin entry
+                    self.entryTarget = self.viewFrame.target
+
+                    row = self.entryTarget.row
+                    col = self.entryTarget.subcolumn
+
+                    id = (
+                        self.textLookup.get((row, col, "velocity"))
+                        or self.noteText.get()
+                    )
+                    self.textLookup[row, col, "velocity"] = id
+
+                    x, y, _, _ = self.coords(row, col, "velocity")
+                    self.noteCanvas.coords(id, x + WIDTH_PAD_H, y)
+
+                    self.entryText = key
+                    self.entryId = id
+
+                    self.noteCanvas.itemconfig(id, text=self.entryText)
+                else:
+                    self.entryText += key
+                    self.noteCanvas.itemconfig(self.entryId, text=self.entryText)
+                    enter()
+
+            canvas.bind(key, e, "+")
+
+        def createEffectEventHandlers(key: str):
+            if canvas != self.effectCanvas:
+                return
+
+            def e(*_):
+                if self.target.column != PVLM.EFFECT:
+                    return
+
+            canvas.bind(key, e, "+")
+
         for key, noteOffset in KEYBOARD_MAP.items():
             createNoteEventHandlers(key, noteOffset)
+        for key in HEX_KEYMAP:
+            createVelocityEventHandlers(key)
+            createEffectEventHandlers(key)
 
         def delete():
             if self.target.column == PVLM.NOTE:
@@ -454,9 +535,14 @@ class PatternViewCanvas(ttk.Frame):
                 self.pattern.setNote(self.target.row, self.target.subcolumn, "stop")
                 self.viewFrame.stepTarget(program.p.stepSize, stepPattern=False)
 
+        def enter():
+            # No separate behavior as that is handled on target leave
+            self.viewFrame.stepTarget(program.p.stepSize, stepPattern=False)
+
         canvas.bind(f"<Tab>", lambda *_: stop())
         canvas.bind(f"<BackSpace>", lambda *_: backspace())
         canvas.bind(f"<Delete>", lambda *_: delete())
+        canvas.bind(f"<Return>", lambda *_: enter())
 
         # Keyboard navigation
         for dir in ("Up", "Down", "Left", "Right"):
