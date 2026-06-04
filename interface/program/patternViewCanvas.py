@@ -387,6 +387,32 @@ class PatternViewCanvas(ttk.Frame):
         canvas.bind("<Button-1>", onClick(False))
         canvas.bind("<Shift-Button-1>", onClick(True))
 
+        # Note entry and playback
+        def createNoteEventHandlers(key: str, noteOffset: int):
+            def noteOn(*_):
+                if not program.p.playbackInEdit:
+                    return
+                note = (program.p.currentOctave * NOTES_PER_OCTAVE) + noteOffset
+                message = mido.Message(
+                    "note_on", channel=self.channel, note=note, velocity=64
+                )
+                program.p.currentPort.send(message)
+
+            def noteOff(*_):
+                if not program.p.playbackInEdit:
+                    return
+                note = (program.p.currentOctave * NOTES_PER_OCTAVE) + noteOffset
+                message = mido.Message(
+                    "note_off", channel=self.channel, note=note, velocity=0
+                )
+                program.p.currentPort.send(message)
+
+            canvas.bind(f"<KeyPress-{key}>", noteOn)
+            canvas.bind(f"<KeyRelease-{key}>", noteOff)
+
+        for key, noteOffset in KEYBOARD_MAP.items():
+            createNoteEventHandlers(key, noteOffset)
+
         # Keyboard navigation
         for dir in ("Up", "Down", "Left", "Right"):
             # Nonsense because scoping again
