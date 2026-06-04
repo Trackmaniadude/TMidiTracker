@@ -105,6 +105,7 @@ class ResourcePool[ID]:
         self.__free.add(id)
 
 
+# TODO: clean up this class, it feels a bit messy
 class PatternViewCanvas(ttk.Frame):
     """Display/edit the data of a single pattern."""
 
@@ -734,7 +735,7 @@ class PatternViewCanvas(ttk.Frame):
 
             x, y, _, _ = self.coords(row, col, "velocity")
             self.noteCanvas.coords(id, x + WIDTH_PAD_H, y)
-            self.noteCanvas.itemconfig(id, text=velocity)
+            self.noteCanvas.itemconfig(id, text=hex2(velocity))
 
         for (row, col), effect in self.pattern.effects.items():
             id = self.textLookup.get((row, col, "effect")) or self.effectText.get()
