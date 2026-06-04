@@ -43,14 +43,18 @@ def minmax[T, C: SupportsRichComparison](
 def minmax[T1: SupportsRichComparison, T2: SupportsRichComparison](
     value1: T1, value2: T2, /, *, key: None = None
 ) -> tuple[T1 | T2, T1 | T2]:
-    """Return the minimum and maximum of two values. Mostly useful if you're sampling two values but can't otherwise gaurantee their order."""
+    """Return the minimum and maximum of two values. Mostly useful if you're sampling two values but can't otherwise gaurantee their order.
+    
+    If a == b (or key(a) == key(b)), returns (a, b)"""
 
 
 @overload
 def minmax[T1, T2, C: SupportsRichComparison](
     value1: T1, value2: T2, /, *, key: Callable[[T1 | T2], C]
 ) -> tuple[T1 | T2, T1 | T2]:
-    """Return the minimum and maximum of two values. Mostly useful if you're sampling two values but can't otherwise gaurantee their order."""
+    """Return the minimum and maximum of two values. Mostly useful if you're sampling two values but can't otherwise gaurantee their order.
+    
+    If a == b (or key(a) == key(b)), returns (a, b)"""
 
 
 def minmax(a: Any, b: Any = None, /, *, key: Any = None, default: Any = NO_DEFAULT):
@@ -60,6 +64,12 @@ def minmax(a: Any, b: Any = None, /, *, key: Any = None, default: Any = NO_DEFAU
             return (min(a, key=key), max(a, key=key))
         else:
             return (min(a, key=key, default=default), max(a, key=key, default=default))
+    if key is not None:
+        if key(a) == key(b):
+            return (a, b)
+    else:
+        if a == b:
+            return (a, b)
     return (min(a, b, key=key), max(a, b, key=key))
 
 
