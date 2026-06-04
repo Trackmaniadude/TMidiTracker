@@ -539,7 +539,6 @@ class PatternViewCanvas(ttk.Frame):
     @tkutil.tkQueuedAction()
     def refreshLabels(self):
         """Sync interface with model"""
-        print("A", self.channel)
         for (row, col, col_t), id in self.textLookup.copy().items():
             if col_t == "note":
                 # if (row, col) in self.pattern.notes:
