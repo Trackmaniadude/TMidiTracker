@@ -100,9 +100,16 @@ class ResourcePool[ID]:
         return id
 
     def free(self, id: ID):
-        self.__used.remove(id)
+        self.__used.discard(id)
         self.__freeFunc(id)
         self.__free.add(id)
+
+
+PVLM_TO_STR: dict[PatternViewLabelModes, Literal["note", "velocity", "effect"]] = {
+    PVLM.NOTE: "note",
+    PVLM.VELOCITY: "velocity",
+    PVLM.EFFECT: "effect",
+}
 
 
 # TODO: clean up this class, it feels a bit messy
@@ -302,20 +309,13 @@ class PatternViewCanvas(ttk.Frame):
             self.viewFrame.secondaryTarget,
             key=lambda t: t.horizontalComparisonKeyView,
         )
-
-        lookup: dict[PatternViewLabelModes, Literal["note", "velocity", "effect"]] = {
-            PVLM.NOTE: "note",
-            PVLM.VELOCITY: "velocity",
-            PVLM.EFFECT: "effect",
-        }
-
         ch = CHANNEL_ORDER_INVERSE[self.channel]
         ch1, ch2 = CHANNEL_ORDER_INVERSE[t1.channel], CHANNEL_ORDER_INVERSE[t2.channel]
 
         # Target
         mainTarget = self.viewFrame.target
         if ch == CHANNEL_ORDER_INVERSE[mainTarget.channel]:
-            col_t = lookup[mainTarget.column]
+            col_t = PVLM_TO_STR[mainTarget.column]
             row = mainTarget.row
             col = mainTarget.subcolumn
             if col_t == "effect":
@@ -343,8 +343,8 @@ class PatternViewCanvas(ttk.Frame):
         c1 = t1.subcolumn
         c2 = t2.subcolumn
 
-        ct1 = lookup[t1.column]
-        ct2 = lookup[t2.column]
+        ct1 = PVLM_TO_STR[t1.column]
+        ct2 = PVLM_TO_STR[t2.column]
 
         r1, r2 = minmax(t1.row, t2.row)
 
@@ -402,12 +402,43 @@ class PatternViewCanvas(ttk.Frame):
             self.pattern.setVelocity(target.row, target.subcolumn, value)
 
         # Effect
+        if target.column == PVLM.EFFECT:
+            if self.entryText == "":
+                self.pattern.setEffect(target.row, target.subcolumn, None)
+                return
+            values = list[int]()
+            t = self.entryText
+            if len(t) % 2 == 1:
+                t = "0" + t
+            values = tuple(int(t[i : i + 2], 16) for i in range(0, len(t), 2))
+            self.pattern.setEffect(target.row, target.subcolumn, values)
 
         # Reset Entry
         self.entryTarget = None
         self.entryText = ""  # Technically don't need to as entrytarget is the marker
         self.entryId = -1
         self.refreshLabels()
+
+    def initEntry(self, target: Target | None = None):
+        self.entryTarget = target or self.target
+
+        row = self.entryTarget.row
+        col = self.entryTarget.subcolumn
+        col_t = PVLM_TO_STR[self.entryTarget.column]
+
+        canvas = self.effectCanvas if col_t == "effect" else self.noteCanvas
+
+        id = self.textLookup.get((row, col, col_t)) or (
+            self.effectText.get() if col_t == "effect" else self.noteText.get()
+        )
+        self.textLookup[row, col, col_t] = id
+
+        x, y, _, _ = self.coords(row, col, col_t)
+        canvas.coords(id, x + WIDTH_PAD_H, y)
+        canvas.itemconfig(id, text="")
+
+        self.entryText = ""
+        self.entryId = id
 
     def canvasBindings(self, canvas: tk.Canvas):
         def onClick(boxSelect: bool):
@@ -467,24 +498,9 @@ class PatternViewCanvas(ttk.Frame):
                     return
                 if self.entryTarget is None:
                     # begin entry
-                    self.entryTarget = self.viewFrame.target
-
-                    row = self.entryTarget.row
-                    col = self.entryTarget.subcolumn
-
-                    id = (
-                        self.textLookup.get((row, col, "velocity"))
-                        or self.noteText.get()
-                    )
-                    self.textLookup[row, col, "velocity"] = id
-
-                    x, y, _, _ = self.coords(row, col, "velocity")
-                    self.noteCanvas.coords(id, x + WIDTH_PAD_H, y)
-
-                    self.entryText = key
-                    self.entryId = id
-
-                    self.noteCanvas.itemconfig(id, text=self.entryText)
+                    self.initEntry()
+                    self.entryText += key
+                    self.noteCanvas.itemconfig(self.entryId, text=self.entryText)
                 else:
                     self.entryText += key
                     self.noteCanvas.itemconfig(self.entryId, text=self.entryText)
@@ -499,6 +515,14 @@ class PatternViewCanvas(ttk.Frame):
             def e(*_):
                 if self.target.column != PVLM.EFFECT:
                     return
+                if self.entryTarget is None:
+                    # begin entry
+                    self.initEntry()
+                    self.entryText += key
+                    self.effectCanvas.itemconfig(self.entryId, text=self.entryText)
+                else:
+                    self.entryText += key
+                    self.effectCanvas.itemconfig(self.entryId, text=self.entryText)
 
             canvas.bind(key, e, "+")
 
@@ -529,7 +553,24 @@ class PatternViewCanvas(ttk.Frame):
                 self.pattern.setVelocity(target, self.target.subcolumn, None)
                 self.viewFrame.setTarget(row=target)
             elif self.target.column == PVLM.EFFECT:
-                pass
+                # If we're on a blank space, just backspace as normal.
+                # If we're on a filled space, start editing it.
+                effect = self.pattern.getEffect(self.target.row, self.target.subcolumn)
+                if effect == ():
+                    effect = None
+                if effect is None:
+                    target = max(0, self.target.row - program.p.stepSize)
+                    self.pattern.setEffect(target, self.target.subcolumn, None)
+                    self.viewFrame.setTarget(row=target)
+                else:
+                    if self.entryTarget is None:
+                        self.initEntry()
+                        t = "".join(hex2(byte) for byte in effect)
+                        self.entryText = t[:-1]
+                        self.effectCanvas.itemconfig(self.entryId, text=self.entryText)
+                    else:
+                        self.entryText = self.entryText[:-1]
+                        self.effectCanvas.itemconfig(self.entryId, text=self.entryText)
 
         def stop():
             if self.target.column == PVLM.NOTE:
