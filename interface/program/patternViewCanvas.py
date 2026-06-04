@@ -383,9 +383,11 @@ class PatternViewCanvas(ttk.Frame):
 
             return f
 
+        # Mouse interaction
         canvas.bind("<Button-1>", onClick(False))
         canvas.bind("<Shift-Button-1>", onClick(True))
 
+        # Keyboard navigation
         for dir in ("Up", "Down", "Left", "Right"):
             # Nonsense because scoping again
             f = lambda d, s, p: lambda *_: self.viewFrame.stepTarget(
@@ -397,6 +399,29 @@ class PatternViewCanvas(ttk.Frame):
         canvas.bind(
             "<FocusOut>", lambda *_: canvas.coords(Tags.TARGET, -BIG, -BIG, -BIG, -BIG)
         )
+
+        # Increment/Decrement
+        def adjust(dir: Literal[-1, 1], scale: int):
+            if self.viewFrame.target.column == PVLM.NOTE:
+                notes, _, _ = self.viewFrame.getUsedIndicesInSelection()
+                for channel, row, column in notes:
+                    pattern = program.p.currentSong.getPatternByLocation(
+                        channel, program.p.currentMatrixRow
+                    )
+                    currentNote = pattern.getNote(row, column)
+                    if currentNote is None:
+                        break
+                    if currentNote == "stop":
+                        break
+                    pattern.setNote(
+                        row, column, currentNote + (NOTE_DELTAS[scale] * dir)
+                    )
+                self.viewFrame.refreshLabels()
+
+        canvas.bind("<equal>", lambda *_: adjust(1, 0))
+        canvas.bind("<minus>", lambda *_: adjust(-1, 0))
+        canvas.bind("<Control-equal>", lambda *_: adjust(1, 1))
+        canvas.bind("<Control-minus>", lambda *_: adjust(-1, 1))
 
     @tkutil.tkQueuedAction()
     def buildLabels(self):
@@ -514,6 +539,7 @@ class PatternViewCanvas(ttk.Frame):
     @tkutil.tkQueuedAction()
     def refreshLabels(self):
         """Sync interface with model"""
+        print("A", self.channel)
         for (row, col, col_t), id in self.textLookup.copy().items():
             if col_t == "note":
                 # if (row, col) in self.pattern.notes:
