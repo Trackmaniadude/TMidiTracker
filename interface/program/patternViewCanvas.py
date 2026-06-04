@@ -395,7 +395,7 @@ class PatternViewCanvas(ttk.Frame):
         canvas.bind("<Button-1>", onClick(False))
         canvas.bind("<Shift-Button-1>", onClick(True))
 
-        # Note entry and playback
+        # Entries
         def createNoteEventHandlers(key: str, noteOffset: int):
             def noteOn(*_):
                 if self.target.column != PVLM.NOTE:
@@ -425,6 +425,26 @@ class PatternViewCanvas(ttk.Frame):
 
         for key, noteOffset in KEYBOARD_MAP.items():
             createNoteEventHandlers(key, noteOffset)
+
+        def delete():
+            if self.target.column == PVLM.NOTE:
+                self.pattern.setNote(self.target.row, self.target.subcolumn, None)
+                self.viewFrame.stepTarget(program.p.stepSize, stepPattern=False)
+
+        def backspace():
+            if self.target.column == PVLM.NOTE:
+                target = max(0, self.target.row - program.p.stepSize)
+                self.pattern.setNote(target, self.target.subcolumn, None)
+                self.viewFrame.setTarget(row=target)
+
+        def stop():
+            if self.target.column == PVLM.NOTE:
+                self.pattern.setNote(self.target.row, self.target.subcolumn, "stop")
+                self.viewFrame.stepTarget(program.p.stepSize, stepPattern=False)
+
+        canvas.bind(f"<Tab>", lambda *_: stop())
+        canvas.bind(f"<BackSpace>", lambda *_: backspace())
+        canvas.bind(f"<Delete>", lambda *_: delete())
 
         # Keyboard navigation
         for dir in ("Up", "Down", "Left", "Right"):
