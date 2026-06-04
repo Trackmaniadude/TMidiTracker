@@ -28,6 +28,7 @@ from utils.constants import (
     NOTE_NAMES_FLAT,
     NOTE_NAMES_SHARP,
     NOTES_PER_OCTAVE,
+    VALUE_DELTAS,
 )
 from utils.event import Connection
 from utils.misc import clamp, hex2, minmax
@@ -614,11 +615,26 @@ class PatternViewCanvas(ttk.Frame):
                         row, column, currentNote + (NOTE_DELTAS[scale] * dir)
                     )
                 self.viewFrame.refreshLabels()
+            elif self.viewFrame.target.column == PVLM.VELOCITY:
+                _, velocities, _ = self.viewFrame.getUsedIndicesInSelection()
+                for channel, row, column in velocities:
+                    pattern = program.p.currentSong.getPatternByLocation(
+                        channel, program.p.currentMatrixRow
+                    )
+                    currentVelocity = pattern.getVelocity(row, column)
+                    if currentVelocity is None:
+                        break
+                    pattern.setVelocity(
+                        row, column, currentVelocity + (VALUE_DELTAS[scale] * dir)
+                    )
+                self.viewFrame.refreshLabels()
 
         canvas.bind("<equal>", lambda *_: adjust(1, 0))
         canvas.bind("<minus>", lambda *_: adjust(-1, 0))
         canvas.bind("<Control-equal>", lambda *_: adjust(1, 1))
         canvas.bind("<Control-minus>", lambda *_: adjust(-1, 1))
+        canvas.bind("<plus>", lambda *_: adjust(1, 2))
+        canvas.bind("<underscore>", lambda *_: adjust(-1, 2))
 
         # Copy/Pase
         canvas.bind("<Control-x>", lambda *_: Cut.fire(self))
