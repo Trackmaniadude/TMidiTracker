@@ -5,6 +5,11 @@ from enum import Enum
 from functools import total_ordering
 from typing import Callable
 
+if __name__ == "__main__":
+    import sys
+
+    sys.path.append(".")
+
 from utils.constants import (
     CHANNEL_ORDER_INVERSE,
     DRUM_CHANNEL,
@@ -150,3 +155,8 @@ class PatternViewLabelModes(Enum):
 
 
 PVLM = PatternViewLabelModes
+
+if __name__ == "__main__":
+    t1 = Target(2, 2, PVLM.NOTE, 2)
+    t2 = Target(2, 4, PVLM.NOTE, 2)
+    print(t1 == t2)
