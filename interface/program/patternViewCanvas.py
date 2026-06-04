@@ -430,12 +430,24 @@ class PatternViewCanvas(ttk.Frame):
             if self.target.column == PVLM.NOTE:
                 self.pattern.setNote(self.target.row, self.target.subcolumn, None)
                 self.viewFrame.stepTarget(program.p.stepSize, stepPattern=False)
+            elif self.target.column == PVLM.VELOCITY:
+                self.pattern.setVelocity(self.target.row, self.target.subcolumn, None)
+                self.viewFrame.stepTarget(program.p.stepSize, stepPattern=False)
+            elif self.target.column == PVLM.EFFECT:
+                self.pattern.setEffect(self.target.row, self.target.subcolumn, None)
+                self.viewFrame.stepTarget(program.p.stepSize, stepPattern=False)
 
         def backspace():
             if self.target.column == PVLM.NOTE:
                 target = max(0, self.target.row - program.p.stepSize)
                 self.pattern.setNote(target, self.target.subcolumn, None)
                 self.viewFrame.setTarget(row=target)
+            elif self.target.column == PVLM.VELOCITY:
+                target = max(0, self.target.row - program.p.stepSize)
+                self.pattern.setVelocity(target, self.target.subcolumn, None)
+                self.viewFrame.setTarget(row=target)
+            elif self.target.column == PVLM.EFFECT:
+                pass
 
         def stop():
             if self.target.column == PVLM.NOTE:
