@@ -223,6 +223,12 @@ class PatternViewCanvas(ttk.Frame):
             lambda *_: self.onPatternRowChange(), self.connections
         )
 
+        # Changing the song initiates a patternViewFrame rebuild, so we don't have to worry about this going out of sync.
+        # Ideally.
+        program.p.currentSong.getAttributeChangedEvent("patternMatrix").connect(
+            self.onPatternChange, self.connections
+        )
+
         self.viewFrame.TargetChanged.connect(
             lambda *_: self.onTargetChange(), self.connections
         )
@@ -289,6 +295,16 @@ class PatternViewCanvas(ttk.Frame):
         return (row, col, t)
 
     # endregion
+
+    def onPatternChange(self, key, old, new):
+        col, row = (
+            key  # TODO: go back through and make everything the same order of row, col
+        )
+        if col != self.channel:
+            return
+        if row != program.p.currentMatrixRow:
+            return
+        self.setPattern(program.p.currentSong.getPatternByLocation(col, row))
 
     def onPatternRowChange(self):
         row = program.p.currentPatternRow
