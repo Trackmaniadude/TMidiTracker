@@ -1,8 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
 
-from utils.misc import BracketDictAccess
-
 if __name__ == "__main__":
     import sys
 
@@ -13,6 +11,7 @@ from interface.utilities.dictSettingsEditorEntries import DSEEntries
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from structures.settings import Settings
 from utils.fluidsynth import FLUIDSYNTH_EXISTS
+from utils.misc import BracketDictAccess
 
 
 class SettingsView(ttk.Frame):
