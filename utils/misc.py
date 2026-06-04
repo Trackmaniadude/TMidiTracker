@@ -44,7 +44,7 @@ def minmax[T1: SupportsRichComparison, T2: SupportsRichComparison](
     value1: T1, value2: T2, /, *, key: None = None
 ) -> tuple[T1 | T2, T1 | T2]:
     """Return the minimum and maximum of two values. Mostly useful if you're sampling two values but can't otherwise gaurantee their order.
-    
+
     If a == b (or key(a) == key(b)), returns (a, b)"""
 
 
@@ -53,7 +53,7 @@ def minmax[T1, T2, C: SupportsRichComparison](
     value1: T1, value2: T2, /, *, key: Callable[[T1 | T2], C]
 ) -> tuple[T1 | T2, T1 | T2]:
     """Return the minimum and maximum of two values. Mostly useful if you're sampling two values but can't otherwise gaurantee their order.
-    
+
     If a == b (or key(a) == key(b)), returns (a, b)"""
 
 
