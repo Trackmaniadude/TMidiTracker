@@ -100,7 +100,7 @@ class Program(ReactiveClass):
         """How many rows to step after making an entry. 0 to disable."""
         self.currentOctave: int = 4
         """Base octave for entering notes."""
-        self.allowEditingPattern: bool = False
+        self.allowEditingPattern: bool = True
         """Allow making edits to the program, or just treat inputs as keyboard playing."""
         self.playbackInEdit: bool = True
         """When entering a note, play it."""
