@@ -396,24 +396,25 @@ class PatternViewCanvas(ttk.Frame):
             def noteOn(*_):
                 if self.target.column != PVLM.NOTE:
                     return
-                if not program.p.playbackInEdit:
-                    return
                 note = (program.p.currentOctave * NOTES_PER_OCTAVE) + noteOffset
-                message = mido.Message(
-                    "note_on", channel=self.channel, note=note, velocity=64
-                )
-                program.p.currentPort.send(message)
+                if program.p.playbackInEdit:
+                    message = mido.Message(
+                        "note_on", channel=self.channel, note=note, velocity=64
+                    )
+                    program.p.currentPort.send(message)
+                if program.p.allowEditingPattern:
+                    self.pattern.setNote(self.target.row, self.target.subcolumn, note)
+                    self.viewFrame.stepTarget(program.p.stepSize)
 
             def noteOff(*_):
                 if self.target.column != PVLM.NOTE:
                     return
-                if not program.p.playbackInEdit:
-                    return
                 note = (program.p.currentOctave * NOTES_PER_OCTAVE) + noteOffset
-                message = mido.Message(
-                    "note_off", channel=self.channel, note=note, velocity=0
-                )
-                program.p.currentPort.send(message)
+                if program.p.playbackInEdit:
+                    message = mido.Message(
+                        "note_off", channel=self.channel, note=note, velocity=0
+                    )
+                    program.p.currentPort.send(message)
 
             canvas.bind(f"<KeyPress-{key}>", noteOn)
             canvas.bind(f"<KeyRelease-{key}>", noteOff)
