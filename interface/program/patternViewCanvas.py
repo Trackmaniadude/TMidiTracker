@@ -366,6 +366,10 @@ class PatternViewCanvas(ttk.Frame):
     def channel(self):
         return self.pattern.channel.channel
 
+    @property
+    def target(self):
+        return self.viewFrame.target
+
     def canvasBindings(self, canvas: tk.Canvas):
         def onClick(boxSelect: bool):
             def f(event: tk.Event):
@@ -390,6 +394,8 @@ class PatternViewCanvas(ttk.Frame):
         # Note entry and playback
         def createNoteEventHandlers(key: str, noteOffset: int):
             def noteOn(*_):
+                if self.target.column != PVLM.NOTE:
+                    return
                 if not program.p.playbackInEdit:
                     return
                 note = (program.p.currentOctave * NOTES_PER_OCTAVE) + noteOffset
@@ -399,6 +405,8 @@ class PatternViewCanvas(ttk.Frame):
                 program.p.currentPort.send(message)
 
             def noteOff(*_):
+                if self.target.column != PVLM.NOTE:
+                    return
                 if not program.p.playbackInEdit:
                     return
                 note = (program.p.currentOctave * NOTES_PER_OCTAVE) + noteOffset
