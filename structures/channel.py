@@ -4,15 +4,9 @@ Contains channel information and channel playback state.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable
-
-if TYPE_CHECKING:
-    from structures.pattern import Pattern
-    from structures.song import Song
-    from structures.player import Player
-
-import logging
 
 import mido
 
@@ -27,6 +21,11 @@ from utils.constants import (
 from utils.misc import clamp
 from utils.reactiveClass import ReactiveClass
 from utils.types_ import note, velocity
+
+if TYPE_CHECKING:
+    from structures.pattern import Pattern
+    from structures.player import Player
+    from structures.song import Song
 
 _logger = logging.getLogger(__name__)
 

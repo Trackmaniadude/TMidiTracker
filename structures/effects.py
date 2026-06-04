@@ -17,16 +17,15 @@ if __name__ == "__main__":
 
     sys.path.append(".")
 
+import logging
 from typing import TYPE_CHECKING, NamedTuple
+
+from structures import program
+from utils.types_ import note, velocity
 
 if TYPE_CHECKING:
     from structures.channel import Channel
     from structures.player import Player
-
-import logging
-
-from structures import program
-from utils.types_ import note, velocity
 
 _logger = logging.getLogger(__name__)
 

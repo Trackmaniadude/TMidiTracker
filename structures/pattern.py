@@ -4,19 +4,18 @@ Pattern object. Contains message data.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from structures.song import Song
-    from structures.channel import Channel
-
 import logging
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 from structures import program
 from utils.misc import clamp, intKey2dFromJson, intKey2dToJson
 from utils.reactiveClass import ReactiveClass
 from utils.types_ import *
+
+if TYPE_CHECKING:
+    from structures.channel import Channel
+    from structures.song import Song
 
 _logger = logging.getLogger(__name__)
 

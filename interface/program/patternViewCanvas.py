@@ -4,22 +4,15 @@ Interface for editing the message data in a pattern.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Literal, cast
-
-from interface.program.patternViewUtils import PVLM, PatternViewLabelModes, Target
-from utils.event import Connection
-
-if TYPE_CHECKING:
-    from structures.pattern import Pattern
-    from interface.program.patternViewFrame import PatternViewFrame
-
 import logging
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING, Callable, Literal, cast
 
 import mido
 
 import utils.tk as tkutil
+from interface.program.patternViewUtils import PVLM, PatternViewLabelModes, Target
 from interface.theme import Colors
 from interface.utilities.prebuilts import Buttons
 from structures import program
@@ -36,8 +29,13 @@ from utils.constants import (
     NOTE_NAMES_SHARP,
     NOTES_PER_OCTAVE,
 )
+from utils.event import Connection
 from utils.misc import clamp, hex2, minmax
 from utils.types_ import *
+
+if TYPE_CHECKING:
+    from interface.program.patternViewFrame import PatternViewFrame
+    from structures.pattern import Pattern
 
 _logger = logging.getLogger(__name__)
 

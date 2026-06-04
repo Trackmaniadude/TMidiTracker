@@ -2,18 +2,17 @@
 Show the internal state of each channel.
 """
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from structures.channel import Channel
-
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from structures import program
 from utils.constants import CHANNEL_ORDER_INVERSE
 from utils.reactiveClass import ReactiveClassView
+
+if TYPE_CHECKING:
+    from structures.channel import Channel
 
 
 class ChannelDebug(ttk.Frame):

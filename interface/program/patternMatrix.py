@@ -4,26 +4,24 @@ View/editor for the pattern matrix.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Literal, cast
-
-from utils.event import Connection
-from utils.misc import clamp
-from utils.tk import tkQueuedAction
-
-if TYPE_CHECKING:
-    from structures.song import Song
-    from structures.channel import Channel
-    from structures.pattern import Pattern
-
 import logging
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING, Callable, Literal, cast
 
 from interface.theme import MatrixSelector
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from structures import program
 from structures.globalEvents import SongReloaded, StructureChanged
 from utils.constants import CHANNEL_ORDER, CHANNEL_ORDER_INVERSE, PATTERN_DELTAS
+from utils.event import Connection
+from utils.misc import clamp
+from utils.tk import tkQueuedAction
+
+if TYPE_CHECKING:
+    from structures.channel import Channel
+    from structures.pattern import Pattern
+    from structures.song import Song
 
 _logger = logging.getLogger(__name__)
 
