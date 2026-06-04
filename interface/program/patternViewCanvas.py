@@ -631,10 +631,10 @@ class PatternViewCanvas(ttk.Frame):
 
         canvas.bind("<equal>", lambda *_: adjust(1, 0))
         canvas.bind("<minus>", lambda *_: adjust(-1, 0))
-        canvas.bind("<Control-equal>", lambda *_: adjust(1, 1))
-        canvas.bind("<Control-minus>", lambda *_: adjust(-1, 1))
-        canvas.bind("<plus>", lambda *_: adjust(1, 2))
-        canvas.bind("<underscore>", lambda *_: adjust(-1, 2))
+        canvas.bind("<plus>", lambda *_: adjust(1, 1))
+        canvas.bind("<underscore>", lambda *_: adjust(-1, 1))
+        canvas.bind("<Control-equal>", lambda *_: adjust(1, 2))
+        canvas.bind("<Control-minus>", lambda *_: adjust(-1, 2))
 
         # Copy/Pase
         canvas.bind("<Control-x>", lambda *_: Cut.fire(self))
