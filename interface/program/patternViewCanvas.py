@@ -175,7 +175,7 @@ class PatternViewCanvas(ttk.Frame):
                     "noteColumns",
                     getattr(self.pattern.channel, "noteColumns") - 1,
                 ),
-                self.buildLabels(),
+                self.buildStaticElements(),
             )
         )
         self.noteAdd.config(
@@ -185,7 +185,7 @@ class PatternViewCanvas(ttk.Frame):
                     "noteColumns",
                     getattr(self.pattern.channel, "noteColumns") + 1,
                 ),
-                self.buildLabels(),
+                self.buildStaticElements(),
             )
         )
         self.effectDel.config(
@@ -195,7 +195,7 @@ class PatternViewCanvas(ttk.Frame):
                     "effectColumns",
                     getattr(self.pattern.channel, "effectColumns") - 1,
                 ),
-                self.buildLabels(),
+                self.buildStaticElements(),
             )
         )
         self.effectAdd.config(
@@ -205,14 +205,14 @@ class PatternViewCanvas(ttk.Frame):
                     "effectColumns",
                     getattr(self.pattern.channel, "effectColumns") + 1,
                 ),
-                self.buildLabels(),
+                self.buildStaticElements(),
             )
         )
 
         # Event Listens
         StructureChanged.connect(
             lambda changes: (
-                (self.buildLabels(), self.refreshLabels())
+                (self.buildStaticElements(), self.refresh())
                 if "patternLength" in changes
                 else None
             ),
@@ -234,7 +234,7 @@ class PatternViewCanvas(ttk.Frame):
         )
 
         ### Finish
-        self.buildLabels()
+        self.buildStaticElements()
         self.setPattern(initialPattern)
 
     def destroy(self) -> None:
@@ -313,12 +313,12 @@ class PatternViewCanvas(ttk.Frame):
         self.effectCanvas.coords(Tags.CURSOR, 0, y1, BIG, y2)
 
     def onTargetChange(self):
-        self.targetVisual()
+        self.doTargetVisual()
         if self.entryTarget is not None:
             if self.target != self.entryTarget:
                 self.finalizeEntry()
 
-    def targetVisual(self):
+    def doTargetVisual(self):
         t1, t2 = minmax(
             self.viewFrame.target,
             self.viewFrame.secondaryTarget,
@@ -432,7 +432,7 @@ class PatternViewCanvas(ttk.Frame):
         self.entryTarget = None
         self.entryText = ""  # Technically don't need to as entrytarget is the marker
         self.entryId = -1
-        self.refreshLabels()
+        self.refresh()
 
     def initEntry(self, target: Target | None = None):
         self.entryTarget = target or self.target
@@ -630,7 +630,7 @@ class PatternViewCanvas(ttk.Frame):
                     pattern.setNote(
                         row, column, currentNote + (NOTE_DELTAS[scale] * dir)
                     )
-                self.viewFrame.refreshLabels()
+                self.viewFrame.refresh()
             elif self.viewFrame.target.column == PVLM.VELOCITY:
                 _, velocities, _ = self.viewFrame.getUsedIndicesInSelection()
                 for channel, row, column in velocities:
@@ -643,7 +643,7 @@ class PatternViewCanvas(ttk.Frame):
                     pattern.setVelocity(
                         row, column, currentVelocity + (VALUE_DELTAS[scale] * dir)
                     )
-                self.viewFrame.refreshLabels()
+                self.viewFrame.refresh()
 
         canvas.bind("<equal>", lambda *_: adjust(1, 0))
         canvas.bind("<minus>", lambda *_: adjust(-1, 0))
@@ -658,7 +658,7 @@ class PatternViewCanvas(ttk.Frame):
         canvas.bind("<Control-v>", lambda *_: Paste.fire(self))
 
     @tkutil.tkQueuedAction()
-    def buildLabels(self):
+    def buildStaticElements(self):
         """Build interface"""
         # Easier to just replace the frames
         if hasattr(self, "noteCanvas"):
@@ -768,10 +768,10 @@ class PatternViewCanvas(ttk.Frame):
                 canvas.tag_lower(tag)
             canvas.tag_raise(Tags.TARGET)
 
-        self.refreshLabels()
+        self.refresh()
 
     @tkutil.tkQueuedAction()
-    def refreshLabels(self):
+    def refresh(self):
         """Sync interface with model"""
         # TODO: only update necessary ones (if this proves to be a performance issue)
         for (row, col, col_t), id in self.textLookup.copy().items():
@@ -834,7 +834,7 @@ class PatternViewCanvas(ttk.Frame):
             pass
 
         def onAllChange():
-            self.refreshLabels()
+            self.refresh()
 
         self.pattern.getAttributeChangedEvent("notes").connect(
             lambda *_: (onNoteChange(), onAllChange()), self.patternConnections
@@ -852,4 +852,4 @@ class PatternViewCanvas(ttk.Frame):
         self.patternConnections.clear()
         self.pattern = pattern
         self.setupPatternListen()
-        self.refreshLabels()
+        self.refresh()

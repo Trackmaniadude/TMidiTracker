@@ -652,6 +652,6 @@ class PatternViewFrame(ttk.Frame):
                         pass
         self.views = newList
 
-    def refreshLabels(self):
+    def refresh(self):
         for view in self.views:
-            view.refreshLabels()
+            view.refresh()
