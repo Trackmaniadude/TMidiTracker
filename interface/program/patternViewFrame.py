@@ -13,7 +13,6 @@ from typing import Literal, cast
 
 import utils.misc as util
 import utils.tk as tkutil
-from interface.program.patternView import PatternView
 from interface.program.patternViewCanvas import PatternViewCanvas
 from interface.program.patternViewUtils import PVLM, PatternViewClipboardChannel, Target
 from interface.theme import MatrixSelector
