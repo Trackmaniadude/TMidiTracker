@@ -701,7 +701,6 @@ def onClose():
 
 root.protocol("WM_DELETE_WINDOW", onClose)
 program.p.persistence.load()
-Settings.load()
 if args.recent:
     try:
         openFile = recents[0]
