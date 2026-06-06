@@ -6,8 +6,9 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
+from functools import cached_property
 from tkinter import ttk
-from typing import TYPE_CHECKING, Callable, Literal, cast
+from typing import TYPE_CHECKING, Callable, Literal
 
 import mido
 
@@ -55,8 +56,9 @@ VEL_WIDTH = (CHAR_WIDTH * 2) + WIDTH_PAD
 NOTEVEL_WIDTH = NOTE_WIDTH + VEL_WIDTH
 EFFECT_WIDTH = (CHAR_WIDTH * 6) + WIDTH_PAD
 
-
 BIG = 999999
+
+EFFECT_COL_MIN_WIDTH = 3
 
 
 class Tags:
@@ -261,8 +263,8 @@ class PatternViewCanvas(ttk.Frame):
             x1 = (col * NOTEVEL_WIDTH) + NOTE_WIDTH
             x2 = ((col + 1) * NOTEVEL_WIDTH) - 1
         elif t == "effect":
-            x1 = col * EFFECT_WIDTH
-            x2 = ((col + 1) * EFFECT_WIDTH) - 1
+            x1 = sum(self.effectWidths[:col])
+            x2 = sum(self.effectWidths[: col + 1]) - 1
         return (x1, x2)
 
     def coords(
@@ -283,7 +285,12 @@ class PatternViewCanvas(ttk.Frame):
             col = x // NOTEVEL_WIDTH
             return (col, "note" if x % NOTEVEL_WIDTH < NOTE_WIDTH else "velocity")
         elif c == self.effectCanvas:
-            return (x // EFFECT_WIDTH, "effect")
+            xt = 0
+            for col, w in enumerate(self.effectWidths):
+                xt += w
+                if x < xt:
+                    return (col, "effect")
+            return (0, "effect")
         raise Exception
 
     def cell(
@@ -535,9 +542,11 @@ class PatternViewCanvas(ttk.Frame):
                     self.initEntry()
                     self.entryText += key
                     self.effectCanvas.itemconfig(self.entryId, text=self.entryText)
+                    self.refresh()
                 else:
                     self.entryText += key
                     self.effectCanvas.itemconfig(self.entryId, text=self.entryText)
+                    self.refresh()
 
             canvas.bind(key, e, "+")
 
@@ -583,9 +592,11 @@ class PatternViewCanvas(ttk.Frame):
                         t = "".join(hex2(byte) for byte in effect)
                         self.entryText = t[:-1]
                         self.effectCanvas.itemconfig(self.entryId, text=self.entryText)
+                        self.refresh()
                     else:
                         self.entryText = self.entryText[:-1]
                         self.effectCanvas.itemconfig(self.entryId, text=self.entryText)
+                        self.refresh()
 
         def stop():
             if self.target.column == PVLM.NOTE:
@@ -745,8 +756,12 @@ class PatternViewCanvas(ttk.Frame):
 
         for col in range(effects):
             x1, x2 = self.col(col, "effect")
-            self.effectCanvas.create_line(x1, 0, x1, BIG, tags=[Tags.GRID_LIGHT])
-            self.effectCanvas.create_line(x2, 0, x2, BIG, tags=[Tags.GRID_DARK])
+            self.effectCanvas.create_line(
+                x1, 0, x1, BIG, tags=[Tags.GRID_LIGHT, f"{col}-1"]
+            )
+            self.effectCanvas.create_line(
+                x2, 0, x2, BIG, tags=[Tags.GRID_DARK, f"{col}-2"]
+            )
 
         # Color and sync
         for canvas in (self.noteCanvas, self.effectCanvas):
@@ -770,10 +785,34 @@ class PatternViewCanvas(ttk.Frame):
 
         self.refresh()
 
+    @cached_property
+    def effectWidths(self):
+        """Pixel widths of each effect column, in order."""
+        cols = self.pattern.channel.effectColumns
+        maxWidths: list[int] = [EFFECT_COL_MIN_WIDTH for i in range(cols)]
+        for (row, col), effect in self.pattern.effects.items():
+            if col >= cols:  # If there's stale data off the side
+                continue
+            if (
+                self.target is not None
+                and row == self.target.row
+                and col == self.target.subcolumn
+                and self.target.column == PVLM.EFFECT
+            ):
+                maxWidths[col] = max(maxWidths[col], (len(self.entryText) + 1) // 2)
+            else:
+                maxWidths[col] = max(maxWidths[col], len(effect))
+        return tuple((2 * w * CHAR_WIDTH) + WIDTH_PAD for w in maxWidths)
+
     @tkutil.tkQueuedAction()
     def refresh(self):
         """Sync interface with model"""
+        # Invalidate cached effect widths
+        if hasattr(self, "effectWidths"):
+            del self.effectWidths
         # TODO: only update necessary ones (if this proves to be a performance issue)
+
+        # Free ~~changed~~ all text items
         for (row, col, col_t), id in self.textLookup.copy().items():
             if col_t == "note":
                 # if (row, col) in self.pattern.notes:
@@ -789,6 +828,7 @@ class PatternViewCanvas(ttk.Frame):
                 self.effectText.free(id)
                 del self.textLookup[row, col, col_t]
 
+        # Put notes in place
         for (row, col), note in self.pattern.notes.items():
             id = self.textLookup.get((row, col, "note")) or self.noteText.get()
             self.textLookup[row, col, "note"] = id
@@ -805,6 +845,7 @@ class PatternViewCanvas(ttk.Frame):
                 )
             self.noteCanvas.itemconfig(id, text=text)
 
+        # Put velocities in place
         for (row, col), velocity in self.pattern.velocities.items():
             id = self.textLookup.get((row, col, "velocity")) or self.noteText.get()
             self.textLookup[row, col, "velocity"] = id
@@ -813,15 +854,38 @@ class PatternViewCanvas(ttk.Frame):
             self.noteCanvas.coords(id, x + WIDTH_PAD_H, y)
             self.noteCanvas.itemconfig(id, text=hex2(velocity))
 
-        for (row, col), effect in self.pattern.effects.items():
+        # Put effects in place
+        e = self.pattern.effects.copy()
+        if (
+            self.target is not None
+        ):  # Add target to list, makes entry work if entering in an empty space.
+            if self.target.column == PVLM.EFFECT:
+                e[self.target.row, self.target.subcolumn] = ()
+        for (row, col), effect in e.items():
             id = self.textLookup.get((row, col, "effect")) or self.effectText.get()
             self.textLookup[row, col, "effect"] = id
 
             x, y, _, _ = self.coords(row, col, "effect")
             self.effectCanvas.coords(id, x + WIDTH_PAD_H, y)
-            self.effectCanvas.itemconfig(
-                id, text="".join(hex2(byte) for byte in effect)
-            )
+            if (
+                self.target is not None
+                and row == self.target.row
+                and col == self.target.subcolumn
+                and self.target.column == PVLM.EFFECT
+            ):
+                text = self.entryText
+            else:
+                text = "".join(hex2(byte) for byte in effect)
+            self.effectCanvas.itemconfig(id, text=text)
+
+        # Effect width
+        self.effectCanvas.configure(width=sum(self.effectWidths))
+
+        # Relocate effect vertical lines
+        for col in range(self.pattern.channel.effectColumns):
+            x1, x2 = self.col(col, "effect")
+            self.effectCanvas.coords(f"{col}-1", x1, 0, x1, BIG)
+            self.effectCanvas.coords(f"{col}-2", x2, 0, x2, BIG)
 
     def setupPatternListen(self):
         def onNoteChange():
