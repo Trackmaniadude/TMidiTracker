@@ -5,7 +5,12 @@ from abc import ABC, abstractmethod
 from enum import Enum, auto
 from pathlib import Path
 from tkinter import filedialog, ttk
-from typing import Literal, cast
+from typing import Any, Literal, cast
+
+if __name__ == "__main__":
+    import sys
+
+    sys.path.append(".")
 
 from interface.utilities.validatedEntry import (
     AbstractValidator,
@@ -214,3 +219,71 @@ class DSEEntries:
 
         def get(self) -> Path:
             return Path(self.entry.value)
+
+    @template
+    class Boolean(DSEEntry[bool]):
+        def __init__(
+            self,
+            parent: tk.Misc | None = None,
+        ):
+            super().__init__(parent)
+            self.variable = tk.BooleanVar(self)
+            self.entry = ttk.Checkbutton(
+                self, variable=self.variable, command=lambda: self.Changed.fire()
+            )
+            self.entry.pack(fill="both", expand=True)
+            self.Changed = Event[[]]()
+
+        def set(self, value: bool):
+            self.variable.set(value)
+
+        def get(self) -> bool:
+            return self.variable.get()
+
+
+if __name__ == "__main__":
+    from interface.utilities.dictSettingsEditor import DictSettingsEditor
+    from interface.utilities.dictSettingsEditorEntries import (
+        DSEEntries,  # For some reason it fails to render without???
+    )
+    from interface.utilities.doubleScrollFrame import DScrollFrame
+
+    root = tk.Tk()
+    root.geometry("400x800")
+    root.title("TESTING")
+
+    def focus(event):
+        try:
+            event.widget.focus_set()
+        except AttributeError:
+            pass
+
+    root.bind_all("<Button-1>", focus)
+
+    dct = {
+        name: None for name, entry in DSEEntries.__dict__.items() if type(entry) is type
+    }
+
+    frame = DScrollFrame(root, mode="VERTICAL", propagationMode="frameDrivesContent")
+    frame.pack(fill="both", expand=True)
+
+    editor = DictSettingsEditor(
+        frame.content, dct, autoApply=True, label="DictSettingsEditorEntries Testing"
+    )
+    editor.pack(fill="both", expand=True)
+
+    for name, entry in reversed(DSEEntries.__dict__.items()):
+        if type(entry) is not type:
+            continue
+        try:
+            editor.addValueEdit(name, entry())
+        except Exception as e:
+            print(f"{name} failed to init: {e}")
+
+    def onChange(keys):
+        for key in keys:
+            print(key, dct[key])
+
+    editor.Applied.connect(onChange)
+
+    root.mainloop()
