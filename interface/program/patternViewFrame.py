@@ -559,7 +559,7 @@ class PatternViewFrame(ttk.Frame):
 
         elif direction == "Left":  # TODO: variable step
             currentChannel = CHANNEL_ORDER_INVERSE[self.target.channel]
-            currentChannelObj = program.p.currentSong.channels[currentChannel]
+            currentChannelObj = program.p.currentSong.channels[self.target.channel]
 
             if self.target.column == PVLM.NOTE:
                 if self.target.subcolumn > 0:
@@ -570,10 +570,12 @@ class PatternViewFrame(ttk.Frame):
                     )
                 else:  # Move to LEFT channel
                     if currentChannel > 0:
+                        nextChannel = CHANNEL_ORDER[currentChannel - 1]
+                        nextChannelObj = program.p.currentSong.channels[nextChannel]
                         self.setTarget(
-                            channel=CHANNEL_ORDER[currentChannel - 1],
+                            channel=nextChannel,
                             column=PVLM.EFFECT,
-                            subcolumn=currentChannelObj.effectColumns - 1,
+                            subcolumn=nextChannelObj.effectColumns - 1,
                             boxSelect=boxSelect,
                         )
             elif self.target.column == PVLM.VELOCITY:
@@ -592,7 +594,7 @@ class PatternViewFrame(ttk.Frame):
 
         elif direction == "Right":  # TODO: variable step
             currentChannel = CHANNEL_ORDER_INVERSE[self.target.channel]
-            currentChannelObj = program.p.currentSong.channels[currentChannel]
+            currentChannelObj = program.p.currentSong.channels[self.target.channel]
 
             if self.target.column == PVLM.NOTE:
                 self.setTarget(column=PVLM.VELOCITY, boxSelect=boxSelect)
@@ -609,12 +611,18 @@ class PatternViewFrame(ttk.Frame):
                     )
             elif self.target.column == PVLM.EFFECT:  # Move to RIGHT channel
                 if currentChannel < program.p.currentSong.visibleChannels:
-                    self.setTarget(
-                        channel=CHANNEL_ORDER[currentChannel + 1],
-                        column=PVLM.NOTE,
-                        subcolumn=0,
-                        boxSelect=boxSelect,
-                    )
+                    if self.target.subcolumn < currentChannelObj.effectColumns - 1:
+                        self.setTarget(
+                            subcolumn=self.target.subcolumn + 1,
+                            boxSelect=boxSelect,
+                        )
+                    else:
+                        self.setTarget(
+                            channel=CHANNEL_ORDER[currentChannel + 1],
+                            column=PVLM.NOTE,
+                            subcolumn=0,
+                            boxSelect=boxSelect,
+                        )
 
     @tkutil.tkQueuedAction()
     def showChannels(self, fullRebuild: bool = False):
