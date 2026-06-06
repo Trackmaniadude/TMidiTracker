@@ -8,6 +8,7 @@ import mido
 
 from structures.globalEvents import ProjectModified, SongReloaded
 from structures.player import Player
+from structures.settings import Settings
 from structures.song import Song
 from utils.constants import (
     AUTOPORT_ATTEMPTS,
@@ -81,8 +82,17 @@ class Program(ReactiveClass):
                 )
 
             def loadFont(value: str | None):
-                if type(value) is str:
-                    self.fluidsynth.loadSoundfont(Path(value))
+                if Settings.preferredSoundfont is None:
+                    return
+                elif Settings.preferredSoundfont == "USE LAST":
+                    if type(value) is str:
+                        path = Path(value)
+                        if path.exists():
+                            self.fluidsynth.loadSoundfont(path)
+                else:
+                    path = Settings.preferredSoundfont
+                    if path.exists():
+                        self.fluidsynth.loadSoundfont(path)
 
             self.persistence.register("soundfont", saveFont, loadFont)
 

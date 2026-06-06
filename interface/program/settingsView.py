@@ -38,9 +38,35 @@ class SettingsView(ttk.Frame):
             "recentsLength", DSEEntries.Integer(min=1, max=50), "Max Recents"
         ).addValueEdit("defaultAuthor", DSEEntries.SmallTextbox(), "Default Author")
 
+        ################
+
         if FLUIDSYNTH_EXISTS:
+            fonts = ["Last", "Internal"]
+            lookup = {
+                "Last": "USE LAST",
+                "Internal": None,
+            }
+            lookdown = {
+                "USE LAST": "Last",
+                None: "Internal",
+            }
+            for child in Settings.soundfontDirectory.iterdir():
+                if not child.is_file():
+                    return
+                if not child.name.endswith(".sf2"):
+                    return
+                dir = str(child.name)
+                fonts.append(dir)
+                lookup[dir] = child
+                lookdown[child] = dir
             self.editor.addSubEditor("Fluidsynth").addValueEdit(
                 "soundfontDirectory", DSEEntries.Folder(), "Soundfonts"
+            ).addValueEdit(
+                "preferredSoundfont",
+                DSEEntries.List(values=fonts),
+                "Preferred Soundfont",
+                transformIn=lambda v: lookdown.get(v, "Last"),
+                transformOut=lambda v: (lookup.get(v, "USE LAST")),
             )
 
 
@@ -50,7 +76,7 @@ if __name__ == "__main__":
     root.geometry("400x500")
 
     view = SettingsView(root)
-    view.pack(fill="none", expand=False)
+    view.pack(fill="both", expand=True)
 
     root.mainloop()
 

@@ -449,7 +449,7 @@ def menus():
 
             def refreshFonts():
                 fontMenu.delete(2, "end")
-                for child in Settings.soundfontDirectory.resolve().iterdir():
+                for child in Settings.soundfontDirectory.iterdir():
                     if not child.is_file():
                         return
                     if not child.name.endswith(".sf2"):
