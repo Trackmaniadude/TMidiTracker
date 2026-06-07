@@ -51,6 +51,8 @@ class Fluidsynth:
         self.close()
 
     def loadSoundfont(self, path: Path):
+        if not path.exists():
+            return  # TODO: tell user?
         self._interact(f"unload {self.fontIndex}")
         self._interact(f'load "{path.resolve()}"')
         self.fontIndex += 1
