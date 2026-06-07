@@ -17,7 +17,7 @@ from interface.program.patternViewFrame import PatternViewFrame
 from interface.program.settingsView import SettingsView
 from interface.program.songDataView import SongDataView
 from structures import program  # This also inits the program object
-from structures.globalEvents import Copy, Cut, Paste, ProjectModified
+from structures.globalEvents import Copy, Cut, Paste, ProjectModified, SoundfontChanged
 from structures.player import Player
 from structures.settings import Settings
 from structures.song import Song
@@ -474,8 +474,7 @@ def menus():
             menu.add_cascade(label="Soundfonts", menu=fontMenu)
             refreshFonts()
 
-            # Slightly wonky, makes the auto load display properly.
-            program.p.persistence.listen("soundfont", lambda value: refreshFonts())
+            SoundfontChanged.connect(lambda _: refreshFonts())
 
     playbackMenu()
 

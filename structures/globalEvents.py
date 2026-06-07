@@ -1,6 +1,7 @@
 """Event list"""
 
 import tkinter as tk
+from pathlib import Path
 
 from utils.event import Event
 
@@ -12,6 +13,8 @@ SongReloaded: Event[[]] = Event("SongReloaded")
 """Fired when program.currentSong is changed. Intended for reloading the interface."""
 ProjectModified: Event[[]] = Event("ProjectModified")
 """Fired on any change that should mark the project as modified."""
+SoundfontChanged = Event[[Path]]()
+"""soundfont: Path - When the currently loaded soundfont is changed."""
 
 Cut: Event[tk.Misc] = Event("Cut")
 """Fired when the cut command is used. Argument is currently focused widget."""

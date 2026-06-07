@@ -5,6 +5,8 @@ from pathlib import Path
 from subprocess import PIPE, Popen
 from uuid import uuid4
 
+from structures.globalEvents import SoundfontChanged
+
 _logger = logging.getLogger(__name__)
 
 FLUIDSYNTH_COMMAND = "fluidsynth"
@@ -57,6 +59,7 @@ class Fluidsynth:
         self._interact(f'load "{path.resolve()}"')
         self.fontIndex += 1
         self.lastLoadedSoundfont = path
+        SoundfontChanged.fire(path)
 
     def _interact(self, command: str):
         if self.process.stdin is None:
