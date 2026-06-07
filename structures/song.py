@@ -10,9 +10,7 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
-
-from structures.settings import Settings
+from typing import Any, Callable
 
 if __name__ == "__main__":
     import sys
@@ -22,6 +20,7 @@ if __name__ == "__main__":
 from structures import program
 from structures.channel import Channel
 from structures.pattern import Pattern
+from structures.settings import Settings
 from utils.constants import CHANNEL_COUNT, CHANNEL_ORDER, CHANNEL_ORDER_INVERSE
 from utils.misc import collapse2dDict, intKey2dFromJson, intKey2dToJson
 from utils.reactiveClass import ReactiveClass, ReactiveContainerJSONEncoder
@@ -66,6 +65,8 @@ class Song(ReactiveClass):
         """Pattern lookup. (channel number, pattern number) -> Pattern"""
         self.patternMatrix: dict[tuple[int, int], int] = dict()
         """Locational pattern reference. (channel (x), row (y)) -> pattern number"""
+
+        self.preferredSoundfont: Path | None = None
 
         # Pre-pop default patterns
         for row in range(self.visibleMatrixRows):
@@ -143,7 +144,7 @@ class Song(ReactiveClass):
             return out
 
         return {
-            "format": 0,
+            "format": 0,  # Increase any time loading an older file would require a conversion
             "metadata": {
                 "title": self.metadata.title,
                 "author": self.metadata.author,
@@ -174,7 +175,12 @@ class Song(ReactiveClass):
             "interfaceData": {
                 "highlightedMatrixItems": [
                     intKey2dToJson(v) for v in self.highlightedMatrixItems
-                ]
+                ],
+                "preferredSoundfont": (
+                    None
+                    if self.preferredSoundfont is None
+                    else str(self.preferredSoundfont)
+                ),
             },
         }
 
@@ -184,24 +190,54 @@ class Song(ReactiveClass):
             d = json.load(fp)
         return cls.fromDict(d)
 
+    def loadValue(
+        self,
+        key: str,
+        read: dict,
+        path: list[str],
+        *,
+        write: object = None,
+        transform: Callable = lambda v: v,
+    ):
+        """Helper to load in values from file."""
+        #  TODO: notify user of load fails
+        if write is None:
+            write = self
+        value = read
+        try:
+            for s in path:
+                value = value[s]
+            final = transform(value)
+        except:
+            return
+        else:
+            setattr(write, key, final)
+
     @classmethod
     def fromDict(cls, dct: dict[str, Any]) -> Song:
         s = Song()
 
-        s.metadata.title = dct["metadata"]["title"]
-        s.metadata.author = dct["metadata"]["author"]
-        s.metadata.genre = dct["metadata"]["genre"]
-        s.metadata.notes = dct["metadata"]["notes"]
+        s.loadValue("title", dct, ["metadata", "title"], write=s.metadata)
+        s.loadValue("author", dct, ["metadata", "author"], write=s.metadata)
+        s.loadValue("genre", dct, ["metadata", "genre"], write=s.metadata)
+        s.loadValue("notes", dct, ["metadata", "notes"], write=s.metadata)
 
-        s.visibleChannels = dct["structure"]["visibleChannels"]
-        s.visibleMatrixRows = dct["structure"]["visibleMatrixRows"]
-        s.patternLength = dct["structure"]["patternLength"]
-        s.majorSubdiv = dct["structure"]["majorSubdiv"]
-        s.minorSubdiv = dct["structure"]["minorSubdiv"]
+        s.loadValue("visibleChannels", dct, ["structure", "visibleChannels"])
+        s.loadValue("visibleMatrixRows", dct, ["structure", "visibleMatrixRows"])
+        s.loadValue("patternLength", dct, ["structure", "patternLength"])
+        s.loadValue("majorSubdiv", dct, ["structure", "majorSubdiv"])
+        s.loadValue("minorSubdiv", dct, ["structure", "minorSubdiv"])
 
-        s.clock = dct["timing"]["clock"]
-        s.groove = dct["timing"]["groove"]
-        s.syncGrooveToPattern = dct["timing"]["syncGrooveToPattern"]
+        s.loadValue("clock", dct, ["timing", "clock"])
+        s.loadValue("groove", dct, ["timing", "groove"])
+        s.loadValue("syncGrooveToPattern", dct, ["timing", "syncGrooveToPattern"])
+
+        s.loadValue(
+            "preferredSoundfont",
+            dct,
+            ["interfaceData", "preferredSoundfont"],
+            transform=lambda v: None if v is None else Path(v),
+        )
 
         for channelData in dct["songData"]["channelData"]:
             channel = s.channels[channelData["channel"]]
