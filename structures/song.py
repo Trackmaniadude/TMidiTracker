@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
+from utils.fluidsynth import FLUIDSYNTH_EXISTS
+
 if __name__ == "__main__":
     import sys
 
@@ -238,6 +240,9 @@ class Song(ReactiveClass):
             ["interfaceData", "preferredSoundfont"],
             transform=lambda v: None if v is None else Path(v),
         )
+        if FLUIDSYNTH_EXISTS:
+            if s.preferredSoundfont is not None:
+                program.p.fluidsynth.loadSoundfont(s.preferredSoundfont)
 
         for channelData in dct["songData"]["channelData"]:
             channel = s.channels[channelData["channel"]]
