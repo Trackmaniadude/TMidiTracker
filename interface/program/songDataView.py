@@ -1,6 +1,7 @@
 """View and edit song metadata."""
 
 import tkinter as tk
+from pathlib import Path
 from tkinter import ttk
 
 from interface.utilities.dictSettingsEditor import DictSettingsEditor
@@ -11,7 +12,9 @@ from interface.utilities.validatedEntry import Validators
 from interface.utilities.validatedEntryPrebuilts import Prebuilts
 from structures import program
 from structures.globalEvents import SongReloaded, StructureChanged, TimingChanged
+from structures.settings import Settings
 from utils.event import Connection
+from utils.fluidsynth import FLUIDSYNTH_EXISTS
 
 
 class SongDataView(ttk.Frame):
@@ -34,12 +37,15 @@ class SongDataView(ttk.Frame):
             autoApply=True,
             collapsible=True,
         )
-        metadataEdit.collapse()
-        metadataEdit.pack(side="top", fill="x", expand=False)
-        metadataEdit.addValueEdit("title", DSEEntries.SmallTextbox(), "Title")
-        metadataEdit.addValueEdit("author", DSEEntries.SmallTextbox(), "Author")
-        metadataEdit.addValueEdit("genre", DSEEntries.SmallTextbox(), "Genre")
-        metadataEdit.addValueEdit("notes", DSEEntries.LargeTextbox(), "Notes")
+
+        def doMetadataEdit():
+            metadataEdit.pack(side="top", fill="x", expand=False)
+            metadataEdit.addValueEdit("title", DSEEntries.SmallTextbox(), "Title")
+            metadataEdit.addValueEdit("author", DSEEntries.SmallTextbox(), "Author")
+            metadataEdit.addValueEdit("genre", DSEEntries.SmallTextbox(), "Genre")
+            metadataEdit.addValueEdit("notes", DSEEntries.LargeTextbox(), "Notes")
+
+        doMetadataEdit()
 
         ### Timing
         timeEdit = DictSettingsEditor(
@@ -65,7 +71,6 @@ class SongDataView(ttk.Frame):
                 else:
                     return s
 
-            timeEdit.collapse()
             timeEdit.pack(side="top", fill="x", expand=False)
             timeEdit.addValueEdit(
                 "clock",
@@ -105,25 +110,61 @@ class SongDataView(ttk.Frame):
             autoApply=True,
             collapsible=True,
         )
-        # structureEdit.collapse()
-        structureEdit.pack(side="top", fill="x", expand=False)
-        structureEdit.addValueEdit(
-            "visibleChannels", DSEEntries.Integer(min=0, max=14), "Pitched Channels"
-        )
-        structureEdit.addValueEdit(
-            "patternLength", DSEEntries.Integer(min=1, max=255), "Pattern Size"
-        )
-        structureEdit.addValueEdit(
-            "majorSubdiv", DSEEntries.Integer(min=1, max=10000), "Major Subdivision"
-        )
-        structureEdit.addValueEdit(
-            "minorSubdiv",
-            DSEEntries.Integer(min=1, max=10000),
-            "Minor Subdivision",
-        )
-        structureEdit.Applied.connect(
-            lambda changes: StructureChanged.fire(changes), self.connections
-        )
+
+        def doStructureEdit():
+            # structureEdit.collapse()
+            structureEdit.pack(side="top", fill="x", expand=False)
+            structureEdit.addValueEdit(
+                "visibleChannels", DSEEntries.Integer(min=0, max=14), "Pitched Channels"
+            )
+            structureEdit.addValueEdit(
+                "patternLength", DSEEntries.Integer(min=1, max=255), "Pattern Size"
+            )
+            structureEdit.addValueEdit(
+                "majorSubdiv", DSEEntries.Integer(min=1, max=10000), "Major Subdivision"
+            )
+            structureEdit.addValueEdit(
+                "minorSubdiv",
+                DSEEntries.Integer(min=1, max=10000),
+                "Minor Subdivision",
+            )
+            structureEdit.Applied.connect(
+                lambda changes: StructureChanged.fire(changes), self.connections
+            )
+
+        doStructureEdit()
+
+        ### Fluidsynth
+        fsEdit = None
+        if FLUIDSYNTH_EXISTS:
+            fsEdit = DictSettingsEditor(
+                self.content,
+                program.p.currentSong.__dict__,
+                "Fluidsynth",
+                autoApply=True,
+                collapsible=True,
+            )
+
+            def doFsEdit():
+                fsEdit.pack(side="top", fill="x", expand=False)
+
+                fonts: dict[None | Path, str] = {
+                    None: "None",
+                }
+                for child in Settings.soundfontDirectory.iterdir():
+                    if not child.is_file():
+                        return
+                    if not child.name.endswith(".sf2"):
+                        return
+                    fonts[child] = str(child.name)
+
+                fsEdit.addValueEdit(
+                    "preferredSoundfont",
+                    DSEEntries.List(values=fonts),
+                    "Preferred Soundfont",
+                )
+
+            doFsEdit()
 
         # Rebinding
         def reload():
@@ -133,6 +174,9 @@ class SongDataView(ttk.Frame):
             timeEdit.revert()
             structureEdit.rebind(program.p.currentSong.__dict__)
             structureEdit.revert()
+            if fsEdit is not None:
+                fsEdit.rebind(program.p.currentSong.__dict__)
+                fsEdit.revert()
 
         SongReloaded.connect(lambda *_: reload(), self.connections)
 
