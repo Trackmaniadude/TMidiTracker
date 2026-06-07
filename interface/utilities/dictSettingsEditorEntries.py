@@ -40,6 +40,8 @@ class DSEEntry[T](ttk.Frame, Templateable, ABC):
 class DSEEntries:
     @template
     class Float(DSEEntry[float]):
+        """Entry for a float value."""
+
         def __init__(
             self,
             parent: tk.Misc | None = None,
@@ -67,6 +69,8 @@ class DSEEntries:
 
     @template
     class Integer(DSEEntry[int]):
+        """Entry for an integer value."""
+
         def __init__(
             self,
             parent: tk.Misc | None = None,
@@ -95,6 +99,8 @@ class DSEEntries:
 
     @template
     class List[T](DSEEntry[T]):
+        """Entry for a selection from a list. Can be given a dict to map between internal and display values."""
+
         def __init__(
             self,
             parent: tk.Misc | None = None,
@@ -124,6 +130,8 @@ class DSEEntries:
 
     @template
     class SmallTextbox(DSEEntry[str]):
+        """Entry for plain text."""
+
         def __init__(
             self,
             parent: tk.Misc | None = None,
@@ -143,6 +151,8 @@ class DSEEntries:
 
     @template
     class LargeTextbox(DSEEntry[str]):
+        """Entry for plain text. Provides a large entry area."""
+
         Shape = DSEShape.Large
 
         def __init__(
@@ -169,6 +179,8 @@ class DSEEntries:
 
     @template
     class Folder(DSEEntry[Path]):
+        """Entry for a Path pointing to a folder/directory."""
+
         # TODO: re-evaluate usefulness of relativeTo options
         def __init__(
             self,
@@ -231,6 +243,8 @@ class DSEEntries:
 
     @template
     class Boolean(DSEEntry[bool]):
+        """Entry for a boolean value."""
+
         def __init__(
             self,
             parent: tk.Misc | None = None,
