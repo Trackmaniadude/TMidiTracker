@@ -41,12 +41,7 @@ class SettingsView(ttk.Frame):
         ################
 
         if FLUIDSYNTH_EXISTS:
-            fonts = ["Last", "Internal"]
-            lookup = {
-                "Last": "USE LAST",
-                "Internal": None,
-            }
-            lookdown = {
+            fonts = {
                 "USE LAST": "Last",
                 None: "Internal",
             }
@@ -55,18 +50,13 @@ class SettingsView(ttk.Frame):
                     return
                 if not child.name.endswith(".sf2"):
                     return
-                dir = str(child.name)
-                fonts.append(dir)
-                lookup[dir] = child
-                lookdown[child] = dir
+                fonts[child] = str(child.name)
             self.editor.addSubEditor("Fluidsynth").addValueEdit(
                 "soundfontDirectory", DSEEntries.Folder(), "Soundfonts"
             ).addValueEdit(
                 "preferredSoundfont",
                 DSEEntries.List(values=fonts),
                 "Preferred Soundfont",
-                transformIn=lambda v: lookdown.get(v, "Last"),
-                transformOut=lambda v: (lookup.get(v, "USE LAST")),
             )
 
 
