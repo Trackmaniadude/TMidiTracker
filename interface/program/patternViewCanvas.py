@@ -327,15 +327,15 @@ class PatternViewCanvas(ttk.Frame):
 
     def doTargetVisual(self):
         t1, t2 = minmax(
-            self.viewFrame.target,
-            self.viewFrame.secondaryTarget,
+            self.target,
+            self.target2,
             key=lambda t: t.horizontalComparisonKeyView,
         )
         ch = CHANNEL_ORDER_INVERSE[self.channel]
         ch1, ch2 = CHANNEL_ORDER_INVERSE[t1.channel], CHANNEL_ORDER_INVERSE[t2.channel]
 
         # Target
-        mainTarget = self.viewFrame.target
+        mainTarget = self.target
         if ch == CHANNEL_ORDER_INVERSE[mainTarget.channel]:
             col_t = PVLM_TO_STR[mainTarget.column]
             row = mainTarget.row
@@ -411,6 +411,10 @@ class PatternViewCanvas(ttk.Frame):
     @property
     def target(self):
         return self.viewFrame.target
+
+    @property
+    def target2(self):
+        return self.viewFrame.secondaryTarget
 
     def finalizeEntry(self):
         target = self.entryTarget
@@ -557,15 +561,36 @@ class PatternViewCanvas(ttk.Frame):
             createEffectEventHandlers(key)
 
         def delete():
-            if self.target.column == PVLM.NOTE:
-                self.pattern.setNote(self.target.row, self.target.subcolumn, None)
-                self.viewFrame.stepTarget(program.p.stepSize, stepPattern=False)
-            elif self.target.column == PVLM.VELOCITY:
-                self.pattern.setVelocity(self.target.row, self.target.subcolumn, None)
-                self.viewFrame.stepTarget(program.p.stepSize, stepPattern=False)
-            elif self.target.column == PVLM.EFFECT:
-                self.pattern.setEffect(self.target.row, self.target.subcolumn, None)
-                self.viewFrame.stepTarget(program.p.stepSize, stepPattern=False)
+            if self.target == self.target2:
+                if self.target.column == PVLM.NOTE:
+                    self.pattern.setNote(self.target.row, self.target.subcolumn, None)
+                    self.viewFrame.stepTarget(program.p.stepSize, stepPattern=False)
+                elif self.target.column == PVLM.VELOCITY:
+                    self.pattern.setVelocity(
+                        self.target.row, self.target.subcolumn, None
+                    )
+                    self.viewFrame.stepTarget(program.p.stepSize, stepPattern=False)
+                elif self.target.column == PVLM.EFFECT:
+                    self.pattern.setEffect(self.target.row, self.target.subcolumn, None)
+                    self.viewFrame.stepTarget(program.p.stepSize, stepPattern=False)
+            else:
+                notes, velocities, effects = self.viewFrame.getUsedIndicesInSelection()
+                for channel, row, column in notes:
+                    pattern = program.p.currentSong.getPatternByLocation(
+                        channel, program.p.currentMatrixRow
+                    )
+                    pattern.setNote(row, column, None)
+                for channel, row, column in velocities:
+                    pattern = program.p.currentSong.getPatternByLocation(
+                        channel, program.p.currentMatrixRow
+                    )
+                    pattern.setVelocity(row, column, None)
+                for channel, row, column in effects:
+                    pattern = program.p.currentSong.getPatternByLocation(
+                        channel, program.p.currentMatrixRow
+                    )
+                    pattern.setEffect(row, column, None)
+                self.viewFrame.refresh()
 
         def backspace():
             if self.target.column == PVLM.NOTE:
@@ -627,7 +652,7 @@ class PatternViewCanvas(ttk.Frame):
 
         # Increment/Decrement
         def adjust(dir: Literal[-1, 1], scale: int):
-            if self.viewFrame.target.column == PVLM.NOTE:
+            if self.target.column == PVLM.NOTE:
                 notes, _, _ = self.viewFrame.getUsedIndicesInSelection()
                 for channel, row, column in notes:
                     pattern = program.p.currentSong.getPatternByLocation(
@@ -642,7 +667,7 @@ class PatternViewCanvas(ttk.Frame):
                         row, column, currentNote + (NOTE_DELTAS[scale] * dir)
                     )
                 self.viewFrame.refresh()
-            elif self.viewFrame.target.column == PVLM.VELOCITY:
+            elif self.target.column == PVLM.VELOCITY:
                 _, velocities, _ = self.viewFrame.getUsedIndicesInSelection()
                 for channel, row, column in velocities:
                     pattern = program.p.currentSong.getPatternByLocation(
