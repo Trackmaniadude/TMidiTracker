@@ -123,7 +123,12 @@ class DSEEntries:
             self.Changed = self.entry.Changed
 
         def set(self, value: T):
-            self.entry.value = self.lookup[value]  # pyright: ignore[reportArgumentType]
+            try:
+                self.entry.value = self.lookup[
+                    value
+                ]  # pyright: ignore[reportArgumentType]
+            except:
+                pass  # TODO: should this tell the user something went wrong
 
         def get(self) -> T:
             return self.lookdown[self.entry.value]  # pyright: ignore[reportReturnType]
