@@ -207,15 +207,16 @@ if __name__ == "__main__":
         "settingFloat": 0.5,
         "settingBool": True,
         "settingList": "the j",
+        "settingList2": 2,
         "settingSmallText1": "the j",
-        "settingSmallText2": "jhe t",
+        "settingSmallText2": "the j",
         "settingLargeText": "engineer gaming",
         "tfTest": 4,
     }
 
     root = tk.Tk()
     root.title("TEST")
-    root.geometry("300x500")
+    root.geometry("400x800")
 
     def focus(event):
         try:
@@ -263,6 +264,12 @@ if __name__ == "__main__":
     q.addValueEdit(
         "settingList",
         DSEEntries.List(values=["the j", "bargain bin basement burger", "quenth"]),
+    )
+    q.addValueEdit(
+        "settingList2",
+        DSEEntries.List(
+            values={1: "the j", 2: "bargain bin basement burger", 3: "quenth"}
+        ),
     )
     q.addValueEdit("settingSmallText1", DSEEntries.SmallTextbox())
     q.addValueEdit("settingSmallText2", DSEEntries.SmallTextbox())

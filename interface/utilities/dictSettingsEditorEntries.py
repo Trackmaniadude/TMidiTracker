@@ -94,24 +94,33 @@ class DSEEntries:
             return int(self.entry.value)
 
     @template
-    class List(DSEEntry[str]):
+    class List[T](DSEEntry[T]):
         def __init__(
             self,
             parent: tk.Misc | None = None,
             *,
-            values: list[str],
+            values: list[str] | dict[T, str],
         ):
             super().__init__(parent)
-            self.entry = Prebuilts.List(self, values)
+            if type(values) is list:
+                self.lookup = {e: e for e in values}
+                self.lookdown = {e: e for e in values}
+                self.entry = Prebuilts.List(self, values)
+            elif type(values) is dict:
+                self.lookup = {k: v for k, v in values.items()}
+                self.lookdown = {v: k for k, v in values.items()}
+                self.entry = Prebuilts.List(self, list(values.values()))
+            else:
+                raise TypeError(f"List entry got {type(values)}, expected list or dict")
             self.entry.entry.pack(fill="both", expand=True)
             self.entry.entry.config(width=0)
             self.Changed = self.entry.Changed
 
-        def set(self, value: str):
-            self.entry.value = value
+        def set(self, value: T):
+            self.entry.value = self.lookup[value]  # pyright: ignore[reportArgumentType]
 
-        def get(self) -> str:
-            return str(self.entry.value)
+        def get(self) -> T:
+            return self.lookdown[self.entry.value]  # pyright: ignore[reportReturnType]
 
     @template
     class SmallTextbox(DSEEntry[str]):
