@@ -85,6 +85,9 @@ class Channel(ReactiveClass):
         self.noteColumns = 2
         self.effectColumns = 1
 
+        self.muted = False
+        self.name = f"#{channel+1}"
+
         self.playbackState = ChannelPlaybackState()
         self.tickState: int | None = None
         """Subtick counter. Set to None once all steps are completed."""
@@ -101,6 +104,7 @@ class Channel(ReactiveClass):
             "channel": self.channel,
             "noteColumns": self.noteColumns,
             "effectColumns": self.effectColumns,
+            "name": self.name,
         }
 
     @classmethod
@@ -108,6 +112,35 @@ class Channel(ReactiveClass):
         out = Channel(song, channel)
         # TODO:
         return out
+
+    def loadValue(
+        self,
+        key: str,
+        read: dict,
+        path: list[str],
+        *,
+        write: object = None,
+        transform: Callable = lambda v: v,
+    ):
+        """Helper to load in values from file."""
+        #  TODO: notify user of load fails
+        if write is None:
+            write = self
+        value = read
+        try:
+            for s in path:
+                value = value[s]
+            final = transform(value)
+        except:
+            return
+        else:
+            setattr(write, key, final)
+
+    def updateFromDict(self, dct: dict[str, Any]):
+        self.loadValue("channel", dct, ["channel"])
+        self.loadValue("noteColumns", dct, ["noteColumns"])
+        self.loadValue("effectColumns", dct, ["effectColumns"])
+        self.loadValue("name", dct, ["name"])
 
     def __repr__(self) -> str:
         return f"Channel(channel: {self.channel}, noteColumns: {self.noteColumns}, effectColumns: {self.effectColumns})"
@@ -265,6 +298,8 @@ class Channel(ReactiveClass):
                                     "note_off", channel=self.channel, note=prevNote
                                 )
                             )
+                    if self.muted:
+                        continue
                     self.playbackState.columnNotes[col] = note
                     self.playbackState.activeNotes.add(note)
                     velocity = self.playbackState.velocities.get(col, 64)

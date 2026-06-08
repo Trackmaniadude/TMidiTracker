@@ -3,6 +3,7 @@
 import tkinter as tk
 from itertools import chain
 from tkinter import ttk
+from typing import Any, Callable
 
 
 class _AutoTest:
@@ -33,6 +34,28 @@ class Buttons(_AutoTest):
     class Right(ttk.Button):
         def __init__(self, parent: tk.Misc):
             super().__init__(parent, text="▶", width=2)
+
+    class Toggle(tk.Button):
+        def __init__(self, parent: tk.Misc, command: Callable[[]] = lambda: None):
+            super().__init__(parent, width=2, borderwidth=2, relief="raised")
+            self.__state: bool = False
+
+            def press():
+                self.__setstate(not self.__state)
+                self.command()
+
+            self.config(command=press)
+            self.command: Callable[[], Any] = command
+
+        def __setstate(self, state: bool):
+            self.__state = state
+            self.config(relief="groove" if self.__state else "raised")
+
+        def getState(self):
+            return self.__state
+
+        def setState(self, state: bool):
+            self.__state = state
 
 
 if __name__ == "__main__":

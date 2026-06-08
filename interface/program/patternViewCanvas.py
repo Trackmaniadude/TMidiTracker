@@ -16,6 +16,8 @@ import utils.tk as tkutil
 from interface.program.patternViewUtils import PVLM, PatternViewLabelModes, Target
 from interface.theme import Colors
 from interface.utilities.prebuilts import Buttons
+from interface.utilities.validatedEntry import ValidatedEntry, Validators
+from interface.utilities.validatedEntryPrebuilts import Prebuilts
 from structures import program
 from structures.globalEvents import Copy, Cut, Paste, StructureChanged
 from utils.constants import (
@@ -120,7 +122,7 @@ class PatternViewCanvas(ttk.Frame):
     def __init__(
         self, parent: tk.Misc, viewFrame: PatternViewFrame, initialPattern: Pattern
     ):
-        super().__init__(parent, borderwidth=2, relief="raised")
+        super().__init__(parent, borderwidth=1, padding=2, relief="raised")
 
         self.pattern: Pattern = initialPattern
         self.viewFrame: PatternViewFrame = viewFrame
@@ -136,6 +138,7 @@ class PatternViewCanvas(ttk.Frame):
 
         ### Build Layout
         # Frames
+        topFrame1 = ttk.Frame(self)
         self.noteFrame = ttk.Frame(
             self, relief="sunken", borderwidth=2, width=0, height=0
         )
@@ -146,26 +149,43 @@ class PatternViewCanvas(ttk.Frame):
         self.effectCanvas: tk.Canvas
 
         # Labels
-        self.noteLabel = ttk.Label(self, text=f"#{self.channel + 1}")
-        self.effectLabel = ttk.Label(self, text="")
+        # self.noteLabel = ttk.Label(self, text=f"#{self.channel + 1}")
 
         # Controls
+        self.__pixel = tk.PhotoImage(width=1, height=1)
+        s = 17
+        self.mute = Buttons.Toggle(topFrame1)
+        self.mute.config(
+            image=self.__pixel,
+            width=s,
+            height=s,
+            text="M",
+            compound="center",
+            padx=0,
+            pady=0,
+        )
+        self.mute.setState(self.pattern.channel.muted)
+        self.name = ValidatedEntry(ttk.Entry(topFrame1, width=0), Validators.Through())
+        self.name.value = self.pattern.channel.name
+
         self.noteDel = Buttons.Decrement(self)
         self.noteAdd = Buttons.Increment(self)
         self.effectDel = Buttons.Decrement(self)
         self.effectAdd = Buttons.Increment(self)
 
         # Layout
-        self.noteLabel.grid(row=0, column=0, sticky="ew")
-        self.noteDel.grid(row=0, column=1, sticky="ew")
-        self.noteAdd.grid(row=0, column=2, sticky="ew")
+        topFrame1.grid(row=0, column=0, sticky="nesw", columnspan=7)
+        self.mute.pack(side="left")
+        self.name.entry.pack(side="left", fill="x", expand=True)
 
-        self.effectLabel.grid(row=0, column=3, sticky="ew")
-        self.effectDel.grid(row=0, column=4, sticky="ew")
-        self.effectAdd.grid(row=0, column=5, sticky="ew")
+        self.noteDel.grid(row=1, column=1, sticky="ew")
+        self.noteAdd.grid(row=1, column=2, sticky="ew")
 
-        self.noteFrame.grid(row=1, column=0, columnspan=3)
-        self.effectFrame.grid(row=1, column=3, columnspan=3)
+        self.effectDel.grid(row=1, column=4, sticky="ew")
+        self.effectAdd.grid(row=1, column=5, sticky="ew")
+
+        self.noteFrame.grid(row=2, column=0, columnspan=3)
+        self.effectFrame.grid(row=2, column=3, columnspan=3)
 
         self.columnconfigure([0, 3], weight=1)
 
@@ -208,6 +228,18 @@ class PatternViewCanvas(ttk.Frame):
                     getattr(self.pattern.channel, "effectColumns") + 1,
                 ),
                 self.buildStaticElements(),
+            )
+        )
+        self.mute.command = lambda: (
+            setattr(self.pattern.channel, "muted", self.mute.getState())
+        )
+        self.name.Changed.connect(
+            lambda *_: (
+                setattr(
+                    self.pattern.channel,
+                    "name",
+                    self.name.value,
+                )
             )
         )
 

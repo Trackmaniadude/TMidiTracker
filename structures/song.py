@@ -246,8 +246,9 @@ class Song(ReactiveClass):
 
         for channelData in dct["songData"]["channelData"]:
             channel = s.channels[channelData["channel"]]
-            channel.noteColumns = channelData["noteColumns"]
-            channel.effectColumns = channelData["effectColumns"]
+            channel.updateFromDict(channelData)
+            # channel.noteColumns = channelData["noteColumns"]
+            # channel.effectColumns = channelData["effectColumns"]
 
         for channel, patternData in dct["songData"]["patterns"].items():
             channel = int(channel)  # dict int key becomes str in json
