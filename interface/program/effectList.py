@@ -3,7 +3,7 @@ from tkinter import ttk
 
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from interface.utilities.headerFrame import HeaderFrame
-from structures.effects import AbstractEffect, EffectCategory, Effects
+from structures.effectManager import AbstractEffect, EffectCategory
 
 
 class EffectCategoryDisplay(ttk.Frame):
@@ -16,14 +16,13 @@ class EffectCategoryDisplay(ttk.Frame):
         frame.pack(side="top", fill="x", expand=True)
         frame.collapse()
 
-        for childClass in category.__dict__.values():
-            if isinstance(childClass, type):
-                if issubclass(childClass, EffectCategory):
-                    f = EffectCategoryDisplay(frame.content, childClass)
-                    f.pack(side="top", fill="x")
-                elif issubclass(childClass, AbstractEffect):
-                    f = EffectDisplay(frame.content, childClass)
-                    f.pack(side="top", fill="x")
+        for subclass in category.__subclasses__():
+            if issubclass(subclass, AbstractEffect):
+                f = EffectDisplay(frame.content, subclass)
+                f.pack(side="top", fill="x")
+            elif issubclass(subclass, EffectCategory):
+                f = EffectCategoryDisplay(frame.content, subclass)
+                f.pack(side="top", fill="x")
 
 
 class EffectDisplay(ttk.Frame):
@@ -57,17 +56,10 @@ class EffectList(ttk.Frame):
         self.__content = sf.content
         self.__content.configure(width=280, height=2000)
 
-        for childClass in Effects.__dict__.values():
-            if isinstance(childClass, type):
-                if issubclass(childClass, EffectCategory):
-                    f = EffectCategoryDisplay(sf.content, childClass)
-                    f.pack(side="top", fill="x")
-                elif issubclass(childClass, AbstractEffect):
-                    f = EffectDisplay(sf.content, childClass)
-                    f.pack(side="top", fill="x")
-
-        # for effect in AbstractEffect.__subclasses__():
-        #     if type(effect) is type:
-        #         if issubclass(effect, AbstractEffect):
-        #             f = EffectDisplay(sf.content, effect)
-        #             f.pack(side="top", fill="x")
+        for subclass in EffectCategory.__subclasses__():
+            if issubclass(subclass, AbstractEffect):
+                f = EffectDisplay(sf.content, subclass)
+                f.pack(side="top", fill="x")
+            else:
+                f = EffectCategoryDisplay(sf.content, subclass)
+                f.pack(side="top", fill="x")

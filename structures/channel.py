@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Callable
 import mido
 
 from structures import program
-from structures.effects import runEffect
+from structures.effectManager import runEffect
 from utils.constants import (
     BEND_STEPS_PER_SEMITONE,
     DEFAULT_BEND_RANGE,
