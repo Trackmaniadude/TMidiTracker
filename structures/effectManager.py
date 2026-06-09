@@ -69,18 +69,35 @@ def runEffect(
 if __name__ == "__main__":
     print("effects:")
 
-    def t(c: type, l: int = 0):
+    knownPrefixes = dict[tuple[int, ...], list[type[AbstractEffect]]]()
+
+    def t(c: type[EffectCategory], l: int = 0):
         for s in c.__subclasses__():
-            print(f"{"|  "*l}{s}")
+            st = ""
+            if issubclass(s, AbstractEffect):
+                st = f"{s.prefixString()} - {s.__name__}"
+                if s.prefix not in knownPrefixes:
+                    knownPrefixes[s.prefix] = list()
+                knownPrefixes[s.prefix].append(s)
+            else:
+                st = f"[{s.__name__}]"
+            print(f"{"|  "*l}{st}")
             t(s, l + 1)
 
     t(EffectCategory)
+
+    print()
+    for prefix, effects in knownPrefixes.items():
+        if len(effects) > 1:
+            print(
+                f"PREFIX {effects[0].prefixString()} USED BY {[e.__name__ for e in effects]}"
+            )
     # for _, effect in effectsList.items():
     #     print(effect.__qualname__)
     #     print(effect.prefix)
     #     print(effect.color)
-    print()
-    print(getEffect((0, 0, 0)))
-    print(getEffect((0, 1, 0)))
-    print(getEffect((3, 0, 0)))
-    print(getEffect((3, 3, 3, 1)))
+    # print()
+    # print(getEffect((0, 0, 0)))
+    # print(getEffect((0, 1, 0)))
+    # print(getEffect((3, 0, 0)))
+    # print(getEffect((3, 3, 3, 1)))
