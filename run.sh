@@ -7,4 +7,4 @@ if ! [ -f "INSTALLED" ]; then
    pip install -r requirements.txt
    touch INSTALLED
 fi
-python3 main.py $*
+python3 main.py "$@"
