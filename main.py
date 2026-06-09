@@ -675,20 +675,23 @@ makeKeybinds()
 
 
 # Load open files
-openFile = args.file
-try:
-    program.p.currentSong = Song.fromFile(openFile)
-    program.p.currentFile = openFile
-    program.p.projectModified = False
-    updateWindowTitle()
-except:
-    try:
-        program.p.currentSong = Song.fromFile(Path("startup.tmt"))
-        program.p.currentFile = None
-        program.p.projectModified = False
-        updateWindowTitle()
-    except:
-        pass
+openFile: Path | None = None
+if args.file is None:
+    if len(recents) > 0:
+        openFile = recents[0]
+else:
+    openFile = Path(args.file)
+if openFile is not None:
+    if openFile.exists():
+        try:
+            newSong = Song.fromFile(openFile)
+        except:
+            pass
+        else:
+            program.p.currentSong = newSong
+            program.p.currentFile = openFile
+            program.p.projectModified = False
+            updateWindowTitle()
 
 
 def onClose():
@@ -700,13 +703,4 @@ def onClose():
 
 root.protocol("WM_DELETE_WINDOW", onClose)
 program.p.persistence.load()
-if args.recent:
-    try:
-        openFile = recents[0]
-        program.p.currentSong = Song.fromFile(openFile)
-        program.p.currentFile = openFile
-        program.p.projectModified = False
-        updateWindowTitle()
-    except:
-        pass
 root.mainloop()
