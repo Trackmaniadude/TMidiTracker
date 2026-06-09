@@ -1,11 +1,12 @@
 import math
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Literal
+from uuid import uuid4
 
 from mido import Message, MetaMessage
 
 from structures.effectClasses import AbstractEffect, EffectCategory
-from utils.misc import mapRange
+from utils.misc import clamp, mapRange
 from utils.types_ import note, velocity
 
 if TYPE_CHECKING:
@@ -41,6 +42,98 @@ class Detune(Pitch, AbstractEffect):
             channel.playbackState.pitchBends.pop(cls.bendName, None)
         else:
             channel.playbackState.pitchBends[cls.bendName] = bend
+
+
+class Bend(Pitch, AbstractEffect):
+    displayName = "Pitch Bend"
+    prefix = (0x2F,)
+    params = [
+        "2Faatt[rs]",
+        "aa",
+        "Amount",
+        "tt",
+        "Time",
+        "[r]",
+        "Reverse",
+        "[c]",
+        "Continue",
+    ]
+    help = (
+        "Slide pitch up/down [aa] semitones over [tt] ticks. [aa] 00-7F is positive, 80-FF is negative (03 = +3, 83 = -3).\n"
+        "Setting [r] to a non-zero value will start the bend at the far position rather than the current note.\n"
+        "Bends will stop when a new note is played, unless [c] is set non-zero. In this case, "
+        "any active bends on the channel can be stopped by using the effect with no arguments."
+    )
+
+    bendName = "Detune{}"
+    stopName = "DetuneCancel"
+
+    @dataclass
+    class loopValue:
+        bendName: str
+        amount: int
+        time: int
+        reverse: bool
+        cont: bool
+        t: int = 0
+
+    @classmethod
+    def actuate(
+        cls, channel: Channel, player: Player, data: tuple[int, ...]
+    ) -> None | list[Message | MetaMessage]:
+        if len(data) == 0:  # Stop
+            # Add signal and then immediately remove it.
+            # Anything active will have already scheduled, so this will end up last.
+            channel.playbackState.effectData[cls.stopName] = None
+            channel.scheduleEffect(
+                0,
+                lambda _: channel.playbackState.effectData.pop(cls.stopName, None),
+                None,
+            )
+        elif len(data) == 2 or len(data) == 3:
+
+            def loop(data: Bend.loopValue):
+                stop = False
+
+                # Stop when called for
+                if cls.stopName in channel.playbackState.effectData:
+                    stop = True
+                # Stop when another note starts (unless disabled)
+                if (
+                    len(channel.playbackState.queuedNotes) > 0
+                    and data.t > 0
+                    and not data.cont
+                ):
+                    stop = True
+                # Stop when a reversed slide ends
+                if data.reverse and data.t >= data.time:
+                    stop = True
+                if stop:
+                    channel.playbackState.pitchBends.pop(data.bendName, None)
+                    return
+
+                # Determine current bend
+                t = clamp(data.t, 0, data.time)
+                if data.reverse:
+                    t = data.time - t
+                bend: float = mapRange(0, data.time, 0, data.amount, t)
+
+                channel.playbackState.pitchBends[data.bendName] = bend
+
+                data.t += 1
+                channel.scheduleEffect(1, loop, data)
+
+            amount = data[0] if data[0] < 0x80 else 0x80 - data[0]
+            time = data[1]
+            reverse = bool((data[2] & 0xF0) >> 4) if len(data) == 3 else False
+            cont = bool(data[2] & 0x0F) if len(data) == 3 else False
+
+            name = cls.bendName.format(uuid4())
+            v = cls.loopValue(name, amount, time, reverse, cont)
+
+            channel.scheduleEffect(1, loop, v)
+        else:
+            raise Exception
 
 
 class VibratoEffects(Pitch):
