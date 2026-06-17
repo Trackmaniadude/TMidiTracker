@@ -6,6 +6,7 @@ import traceback
 from enum import Enum
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from threading import Thread
 from tkinter import filedialog, font, messagebox, ttk
 
 import mido
@@ -18,6 +19,7 @@ from interface.program.patternMatrix import PatternMatrix
 from interface.program.patternViewFrame import PatternViewFrame
 from interface.program.settingsView import SettingsView
 from interface.program.songDataView import SongDataView
+from interface.utilities.modal import Modal
 from structures import program  # This also inits the program object
 from structures.globalEvents import Copy, Cut, Paste, ProjectModified, SoundfontChanged
 from structures.player import Player
@@ -287,8 +289,19 @@ def menus():
 
             if filename == "" or filename == ():
                 return
-            player = Player()
-            player.toFile(Path(filename))
+
+            def _q():
+                modal = Modal(root, "Exporting MIDI")
+                try:
+                    player = Player()
+                    player.toFile(Path(filename))
+                except Exception as e:
+                    messagebox.showerror(
+                        "Export Error", f"An error occurred during export: {e}"
+                    )
+                modal.destroy()
+
+            Thread(target=_q, daemon=True).start()
 
         if FLUIDSYNTH_EXISTS:
 
@@ -314,12 +327,29 @@ def menus():
                 if filename == "" or filename == ():
                     return
 
-                with NamedTemporaryFile() as tmp:
-                    player = Player()
-                    player.toFile(Path(tmp.name))
-                    subprocess.run(
-                        [FLUIDSYNTH_COMMAND, "-F", filename, "-g", "1.0", tmp.name]
-                    )
+                def _q():
+                    modal = Modal(root, "Exporting WAV")
+                    try:
+                        with NamedTemporaryFile() as tmp:
+                            player = Player()
+                            player.toFile(Path(tmp.name))
+                            subprocess.run(
+                                [
+                                    FLUIDSYNTH_COMMAND,
+                                    "-F",
+                                    filename,
+                                    "-g",
+                                    "1.0",
+                                    tmp.name,
+                                ]
+                            )
+                    except Exception as e:
+                        messagebox.showerror(
+                            "Export Error", f"An error occurred during export: {e}"
+                        )
+                    modal.destroy()
+
+                Thread(target=_q, daemon=True).start()
 
         else:
             export_wav = lambda: None
