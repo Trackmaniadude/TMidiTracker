@@ -1,9 +1,11 @@
 import argparse
 import logging
+import subprocess
 import tkinter as tk
 import traceback
 from enum import Enum
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from tkinter import filedialog, font, messagebox, ttk
 
 import mido
@@ -27,8 +29,10 @@ from utils.constants import (
     PROGRAM_NAME,
     PROJECT_FILE_EXTENSION,
     PROJECT_FILE_TK_LIST,
+    WAV_FILE_EXTENSION,
+    WAV_FILE_TK_LIST,
 )
-from utils.fluidsynth import FLUIDSYNTH_EXISTS
+from utils.fluidsynth import FLUIDSYNTH_COMMAND, FLUIDSYNTH_EXISTS
 from utils.misc import incrementFilename
 from utils.persistence import USE_DEFAULT
 from utils.tk import blockEventFromTypes
@@ -262,7 +266,7 @@ def menus():
                 else:
                     program.p.projectModified = False
 
-        def export():
+        def export_midi():
             defFilename: str | None = (
                 program.p.currentFile.name.partition(".")[0]
                 if program.p.currentFile is not None
@@ -285,6 +289,40 @@ def menus():
                 return
             player = Player()
             player.toFile(Path(filename))
+
+        if FLUIDSYNTH_EXISTS:
+
+            def export_wav():
+                defFilename: str | None = (
+                    program.p.currentFile.name.partition(".")[0]
+                    if program.p.currentFile is not None
+                    else None
+                )  # Get project name from path
+                if (
+                    program.p.currentSong.metadata.title != ""
+                    and not program.p.currentSong.metadata.title.isspace()
+                ):
+                    defFilename = program.p.currentSong.metadata.title
+
+                filename = filedialog.asksaveasfilename(
+                    filetypes=WAV_FILE_TK_LIST,
+                    defaultextension=WAV_FILE_EXTENSION,
+                    initialdir=Settings.exportDirectory,
+                    initialfile=defFilename,
+                )
+
+                if filename == "" or filename == ():
+                    return
+
+                with NamedTemporaryFile() as tmp:
+                    player = Player()
+                    player.toFile(Path(tmp.name))
+                    subprocess.run(
+                        [FLUIDSYNTH_COMMAND, "-F", filename, "-g", "1.0", tmp.name]
+                    )
+
+        else:
+            export_wav = lambda: None
 
         def genRecentMenu():
             recentMenu = tk.Menu(menu)
@@ -344,10 +382,12 @@ def menus():
         menu.add_command(label="Save", command=save, accelerator="CTRL-S")
         menu.add_command(label="Save As", command=saveAs)
         menu.add_command(label="Save Incremental", command=saveIncremental)
-        menu.add_command(label="Export", command=export, accelerator="CTRL-E")
+        menu.add_command(label="Export MIDI", command=export_midi)
+        if FLUIDSYNTH_EXISTS:
+            menu.add_command(label="Export WAV", command=export_wav)
 
-        root.bind_all("<Control-S>", lambda *_: save())
-        root.bind_all("<Control-E>", lambda *_: export())
+        # root.bind_all("<Control-S>", lambda *_: save())
+        # root.bind_all("<Control-E>", lambda *_: export_midi())
 
         @promptSave
         def onClose():
