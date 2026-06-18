@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from re import L
 from typing import TYPE_CHECKING, Any, Callable
 
 import mido
@@ -36,8 +37,6 @@ class ChannelPlaybackState(ReactiveClass):
 
         self.velocities: dict[int, int] = dict()
         """[col, velocity] Current velocity for each column."""
-        self.activeNotes: set[int] = set()
-        """[note] All notes currently playing in this channel."""
         self.columnNotes: dict[int, int] = dict()
         """[col, note] What note each column is currently playing, if any."""
 
@@ -62,7 +61,6 @@ class ChannelPlaybackState(ReactiveClass):
 
     def reset(self):
         self.velocities.clear()
-        self.activeNotes.clear()
         self.columnNotes.clear()
         self.queuedNotes.clear()
         self.queuedVelocities.clear()
@@ -276,32 +274,29 @@ class Channel(ReactiveClass):
                 )
             self.playbackState.lastBend = bend
 
-            # Notes
-            for col, note in self.playbackState.queuedNotes.items():
-                prevNote = self.playbackState.columnNotes.get(col)
-                if note == "stop":
-                    if prevNote:
-                        if prevNote in self.playbackState.activeNotes:
-                            self.playbackState.activeNotes.remove(prevNote)
-                            del self.playbackState.columnNotes[col]
-                            messages.append(
-                                mido.Message(
-                                    "note_off", channel=self.channel, note=prevNote
-                                )
-                            )
-                elif note >= 0 and note <= 127:
-                    if prevNote:
-                        if prevNote in self.playbackState.activeNotes:
-                            self.playbackState.activeNotes.remove(prevNote)
-                            messages.append(
-                                mido.Message(
-                                    "note_off", channel=self.channel, note=prevNote
-                                )
-                            )
-                    if self.muted:
+            # Stop old notes
+            for col, _ in self.playbackState.queuedNotes.items():
+                if col in self.playbackState.columnNotes:
+                    messages.append(
+                        mido.Message(
+                            "note_off",
+                            channel=self.channel,
+                            note=self.playbackState.columnNotes[col],
+                        )
+                    )
+                    del self.playbackState.columnNotes[col]
+
+            # Start new notes
+            if not self.muted:
+                for col, note in self.playbackState.queuedNotes.items():
+                    if note == "stop":
+                        continue
+                    if note < 0 or note > 127:
+                        _logger.warning(
+                            f"Out of range note ({note}) on channel {self.channel}"
+                        )
                         continue
                     self.playbackState.columnNotes[col] = note
-                    self.playbackState.activeNotes.add(note)
                     velocity = self.playbackState.velocities.get(col, 64)
                     messages.append(
                         mido.Message(
@@ -311,8 +306,6 @@ class Channel(ReactiveClass):
                             velocity=velocity,
                         )
                     )
-                else:
-                    _logger.warning(f"Out of range note ({note})")
 
         return messages
 
