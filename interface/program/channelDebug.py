@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from structures import program
+from structures.globalEvents import SongReloaded
 from utils.constants import CHANNEL_ORDER_INVERSE
 from utils.reactiveClass import ReactiveClassView
 
@@ -25,15 +26,21 @@ class ChannelDebug(ttk.Frame):
         self.pack_propagate(False)
 
         self.__content = sf.content
-        self.__content.configure(width=1000, height=2000)
+        self.__content.configure(width=1000, height=4000)
 
         self.__content.pack_propagate(False)
 
-        for i, channel in enumerate(program.p.currentSong.channels):
-            # ii = CHANNEL_ORDER_INVERSE[i]
-            # row = ii // DISPLAY_COL
-            # col = ii % DISPLAY_COL
+        self.__views = list[ReactiveClassView]()
+        self.__makeViews()
 
+        SongReloaded.connect(self.__makeViews)
+
+    def __makeViews(self):
+        for view in self.__views:
+            view.destroy()
+        self.__views.clear()
+
+        for i, channel in enumerate(program.p.currentSong.channels):
             view = ReactiveClassView(
                 self.__content,
                 channel.playbackState,
@@ -42,6 +49,4 @@ class ChannelDebug(ttk.Frame):
             )
             view.config(relief="sunken", borderwidth=2)
             view.pack(side="top", fill="x")
-            # view.grid(row=row, column=col, sticky="nesw")
-            # view.grid(row=i, column=0, sticky="ew")
-            # view.grid_propagate(False)
+            self.__views.append(view)
