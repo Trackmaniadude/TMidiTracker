@@ -333,16 +333,21 @@ def menus():
                         with NamedTemporaryFile() as tmp:
                             player = Player()
                             player.toFile(Path(tmp.name))
-                            subprocess.run(
-                                [
-                                    FLUIDSYNTH_COMMAND,
-                                    "-F",
-                                    filename,
-                                    "-g",
-                                    "1.0",
-                                    tmp.name,
-                                ]
-                            )
+                            cmd = [
+                                FLUIDSYNTH_COMMAND,
+                                "-F",
+                                filename,
+                                "-g",
+                                "1.0",
+                                tmp.name,
+                            ]
+                            if program.p.fluidsynth.lastLoadedSoundfont is not None:
+                                cmd.append(
+                                    str(
+                                        program.p.fluidsynth.lastLoadedSoundfont.resolve()
+                                    )
+                                )
+                            subprocess.run(cmd)
                     except Exception as e:
                         messagebox.showerror(
                             "Export Error", f"An error occurred during export: {e}"
