@@ -748,11 +748,13 @@ makeKeybinds()
 
 # endregion
 
+program.p.persistence.load()
+# Has to be done before loading file (to load recents list)
 
 # Load open files
 openFile: Path | None = None
 if args.file is None:
-    if len(recents) > 0:
+    if len(recents) > 0 and args.recent:
         openFile = recents[0]
 else:
     openFile = Path(args.file)
@@ -777,5 +779,4 @@ def onClose():
 
 
 root.protocol("WM_DELETE_WINDOW", onClose)
-program.p.persistence.load()
 root.mainloop()
