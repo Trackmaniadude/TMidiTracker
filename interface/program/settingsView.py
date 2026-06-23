@@ -30,13 +30,17 @@ class SettingsView(ttk.Frame):
 
         ################
 
-        self.editor.addSubEditor("Directories").addValueEdit(
-            "projectDirectory", DSEEntries.Folder(), "Projects"
-        ).addValueEdit("exportDirectory", DSEEntries.Folder(), "Exports")
+        dirEdit = self.editor.addSubEditor("Directories")
+        dirEdit.addValueEdit("projectDirectory", DSEEntries.Folder(), "Projects")
+        dirEdit.addValueEdit("exportDirectory", DSEEntries.Folder(), "Exports")
 
-        self.editor.addSubEditor("Preferences").addValueEdit(
+        prefEdit = self.editor.addSubEditor("Preferences")
+        prefEdit.addValueEdit(
             "recentsLength", DSEEntries.Integer(min=1, max=50), "Max Recents"
-        ).addValueEdit("defaultAuthor", DSEEntries.SmallTextbox(), "Default Author")
+        )
+        prefEdit.addValueEdit(
+            "defaultAuthor", DSEEntries.SmallTextbox(), "Default Author"
+        )
 
         ################
 
@@ -51,9 +55,9 @@ class SettingsView(ttk.Frame):
                 if not child.name.endswith(".sf2"):
                     return
                 fonts[child] = str(child.name)
-            self.editor.addSubEditor("Fluidsynth").addValueEdit(
-                "soundfontDirectory", DSEEntries.Folder(), "Soundfonts"
-            ).addValueEdit(
+            fsEdit = self.editor.addSubEditor("Fluidsynth")
+            fsEdit.addValueEdit("soundfontDirectory", DSEEntries.Folder(), "Soundfonts")
+            fsEdit.addValueEdit(
                 "preferredSoundfont",
                 DSEEntries.List(values=fonts),
                 "Preferred Soundfont",

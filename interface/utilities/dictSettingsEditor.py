@@ -74,10 +74,10 @@ class DictSettingsEditor(HeaderFrame):
         self.__row += 1
         return row
 
-    def addValueEdit[TExt, TInt](
+    def addValueEdit[TExt, TInt, T](
         self,
         key: str,
-        entry: DSEEntry | None = None,
+        entry: DSEEntry[T] | None = None,
         label: str | None = None,
         *,
         transformIn: Callable[[TExt], TInt] = lambda v: v,
@@ -97,8 +97,7 @@ class DictSettingsEditor(HeaderFrame):
         tLabel = ttk.Label(self.gridFrame, text=label)
 
         if entry is None:
-            _logger.warning("DictEdit type inference unimplemented!")
-            return self
+            raise Exception("DictEdit type inference unimplemented!")
 
         tEntry = entry.instantiate(self.gridFrame)
 
@@ -122,7 +121,7 @@ class DictSettingsEditor(HeaderFrame):
         # Load in value
         tEntry.set(self.transforms[key][0](self.__internalDict[key]))
 
-        return self
+        return (tEntry, tLabel)
 
     def addSubEditor(self, label: str = "", *, dct: dict | None = None):
         """Add a labeled subframe."""
@@ -149,14 +148,15 @@ class DictSettingsEditor(HeaderFrame):
             "<Configure>",
             lambda *_: box.config(wraplength=box.winfo_width() - 5),
         )
-        return self
+        return box
 
     def addSeparator(self):
         """Add a horizontal line."""
-        ttk.Separator(self.gridFrame, orient="horizontal").grid(
+        sep = ttk.Separator(self.gridFrame, orient="horizontal")
+        sep.grid(
             row=self.getNewRow(), column=0, columnspan=2, sticky="nesw"
         )
-        return self
+        return sep
 
     def apply(self):
         """Copy changes to target dict."""
