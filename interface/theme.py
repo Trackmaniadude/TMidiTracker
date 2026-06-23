@@ -5,7 +5,7 @@ import tkinter as tk
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from tkinter import ttk
-from typing import cast
+from typing import Literal, cast
 
 _logger = logging.getLogger(__name__)
 
@@ -50,6 +50,12 @@ class BasicColor(StyleDC):
     foreground: str = "black"
 
 
+@dataclass
+class BasicColorBorder(BasicColor):
+    borderwidth: int = 0
+    relief: Literal["flat", "groove", "raised", "ridge", "solid", "sunken"] = "flat"
+
+
 def StyleBase(base: str):
     def inner(cls):
         for name in dir(cls):
@@ -85,6 +91,7 @@ class Colors:
 
     class Highlight:
         Default = "#FFFFBB"
+        Shade1 = "#DDDD99"
 
 
 # Styles
@@ -109,15 +116,66 @@ class MatrixSelector:
     Selection = BasicColor(Colors.Select.Default)
 
 
+@StyleBase("TLabel")
+class Tooltip:
+    StickyNote = BasicColorBorder(
+        Colors.Highlight.Default, borderwidth=2, relief="groove"
+    )
+
+
 def generate():
     s = ttk.Style()
-    # s.theme_use("winnative")  # Dated look but I kind of like it?
+    s.theme_use("default")
     Style.generateAll(s)
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    print(Note.__dict__)
+
+    print("Available themes: ", print(ttk.Style().theme_names()))
+    # print(Note.__dict__)
     generate()
-    print(Note.__dict__)
-    # print(s.theme_names())
+    # print(Note.__dict__)
+
+    # https://stackoverflow.com/a/48933106
+    def stylename_elements_options(stylename):
+        """Function to expose the options of every element associated to a widget
+        stylename."""
+        try:
+            # Get widget elements
+            style = ttk.Style()
+            layout = str(style.layout(stylename))
+            print("Stylename = {}".format(stylename))
+            print("Layout    = {}".format(layout))
+            elements = []
+            for n, x in enumerate(layout):
+                if x == "(":
+                    element = ""
+                    for y in layout[n + 2 :]:
+                        if y != ",":
+                            element = element + str(y)
+                        else:
+                            elements.append(element[:-1])
+                            break
+            print("\nElement(s) = {}\n".format(elements))
+
+            # Get options of widget elements
+            for element in elements:
+                print(
+                    "{0:30} options: {1}".format(
+                        element, style.element_options(element)
+                    )
+                )
+
+        except tk.TclError:
+            print(
+                '_tkinter.TclError: "{0}" in function'
+                "widget_elements_options({0}) is not a regonised stylename.".format(
+                    stylename
+                )
+            )
+
+    print()
+    stylename_elements_options(
+        "TLabel"
+    )  # For figuring out how these things can be styled
