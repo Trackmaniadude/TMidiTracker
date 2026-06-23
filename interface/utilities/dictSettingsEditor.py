@@ -14,7 +14,17 @@ if __name__ == "__main__":
 
 from interface.utilities.dictSettingsEditorEntries import DSEEntry, DSEShape
 from interface.utilities.headerFrame import HeaderFrame
+from interface.utilities.tooltip import Tooltip
 from utils.event import Connection, Event
+
+
+class ValueEdit:
+    def __init__(self, entry: DSEEntry, label: ttk.Label) -> None:
+        self.entry = entry
+        self.label = label
+
+    def addTooltip(self, text: str):
+        Tooltip(self.label, text)
 
 
 class DictSettingsEditor(HeaderFrame):
@@ -121,7 +131,7 @@ class DictSettingsEditor(HeaderFrame):
         # Load in value
         tEntry.set(self.transforms[key][0](self.__internalDict[key]))
 
-        return (tEntry, tLabel)
+        return ValueEdit(tEntry, tLabel)
 
     def addSubEditor(self, label: str = "", *, dct: dict | None = None):
         """Add a labeled subframe."""
@@ -153,9 +163,7 @@ class DictSettingsEditor(HeaderFrame):
     def addSeparator(self):
         """Add a horizontal line."""
         sep = ttk.Separator(self.gridFrame, orient="horizontal")
-        sep.grid(
-            row=self.getNewRow(), column=0, columnspan=2, sticky="nesw"
-        )
+        sep.grid(row=self.getNewRow(), column=0, columnspan=2, sticky="nesw")
         return sep
 
     def apply(self):
