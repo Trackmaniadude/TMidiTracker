@@ -20,7 +20,7 @@ class Tooltip:
         cursorOnHover: bool = True,
         clickDismisses: bool = True,
         hoverTimer: float = 0.75,
-        maxWidth: int = 200,
+        maxWidth: int = 400,
         edgeAvoidance: int = 20,
         offset: int = 20,
     ) -> None:
