@@ -31,16 +31,22 @@ class SettingsView(ttk.Frame):
         ################
 
         dirEdit = self.editor.addSubEditor("Directories")
-        dirEdit.addValueEdit("projectDirectory", DSEEntries.Folder(), "Projects")
-        dirEdit.addValueEdit("exportDirectory", DSEEntries.Folder(), "Exports")
+        dirEdit.addValueEdit(
+            "projectDirectory", DSEEntries.Folder(), "Projects"
+        ).addTooltip("Initial directory to show in file explorer when saving projects.")
+        dirEdit.addValueEdit(
+            "exportDirectory", DSEEntries.Folder(), "Exports"
+        ).addTooltip(
+            "Initial directory to show in file explorer when exporting projects."
+        )
 
         prefEdit = self.editor.addSubEditor("Preferences")
         prefEdit.addValueEdit(
             "recentsLength", DSEEntries.Integer(min=1, max=50), "Max Recents"
-        )
+        ).addTooltip("How many recently opened files to remember and display.")
         prefEdit.addValueEdit(
             "defaultAuthor", DSEEntries.SmallTextbox(), "Default Author"
-        )
+        ).addTooltip("Default entry for the project's 'Author' field.")
 
         ################
 
@@ -56,12 +62,14 @@ class SettingsView(ttk.Frame):
                     return
                 fonts[child] = str(child.name)
             fsEdit = self.editor.addSubEditor("Fluidsynth")
-            fsEdit.addValueEdit("soundfontDirectory", DSEEntries.Folder(), "Soundfonts")
+            fsEdit.addValueEdit(
+                "soundfontDirectory", DSEEntries.Folder(), "Soundfonts"
+            ).addTooltip("Directory to scan for soundfonts in.")
             fsEdit.addValueEdit(
                 "preferredSoundfont",
                 DSEEntries.List(values=fonts),
                 "Preferred Soundfont",
-            )
+            ).addTooltip("Which soundfont to select when the program is started.")
 
 
 if __name__ == "__main__":
