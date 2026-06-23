@@ -76,6 +76,8 @@ class SongDataView(ttk.Frame):
                 "clock",
                 DSEEntries.Float(min=1, max=1000),
                 "Clock (hz)",
+            ).addTooltip(
+                "Frequency at which to run the playback engine (ticks per second)."
             )
             timeEdit.addValueEdit(
                 "groove",
@@ -83,19 +85,16 @@ class SongDataView(ttk.Frame):
                 label="Groove",
                 transformIn=grooveTFIn,
                 transformOut=grooveTFOut,
-            )
-            timeEdit.addTextbox(
-                "Ticks to run before stepping to the next row. Can have multiple values to use different timings per row."
+            ).addTooltip(
+                "Ticks to run before stepping to the next row. Can have multiple values to use different timings per row. "
+                "Formatted as a list of numbers separated by spaces.\n\n"
                 "Ex: '6 4' will have every other row be shorter, which can be useful for swing."
             )
             timeEdit.addValueEdit(
                 "loopCount",
                 DSEEntries.Integer(min=1),
                 "Loop Count",
-            )
-            timeEdit.addTextbox(
-                "Loop count overrides indefinite loops during export (or other offline playback)."
-            )
+            ).addTooltip("How many times to indefinite loops should be used in export.")
             timeEdit.Applied.connect(
                 lambda changes: TimingChanged.fire(changes), self.connections
             )
@@ -162,6 +161,9 @@ class SongDataView(ttk.Frame):
                     "preferredSoundfont",
                     DSEEntries.List(values=fonts),
                     "Preferred Soundfont",
+                ).addTooltip(
+                    "Soundfont which will be loaded when the project is loaded.\n\n"
+                    "NOTE: Export soundfont is whichever soundfont is currently loaded, not this soundfont."
                 )
 
             doFsEdit()
