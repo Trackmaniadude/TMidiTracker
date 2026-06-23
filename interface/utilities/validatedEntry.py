@@ -85,7 +85,7 @@ class ValidatedEntry[Entry: ValidateableEntry]:
 
         def _v(*_):
             val = self.__validator.validate(self.__var.get())
-            if val:  # Success
+            if val is not None:  # Success
                 self.__var.set(val)  # Always set value
                 # Otherwise, if an invalid value is entered and then corrected to the current value,
                 # the invalid value will be left displaying (even though its correct internally)
