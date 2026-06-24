@@ -6,6 +6,7 @@ AKA the main editing window.
 from __future__ import annotations
 
 import logging
+import math
 import tkinter as tk
 from itertools import chain
 from tkinter import ttk
@@ -247,6 +248,7 @@ class PatternViewFrame(ttk.Frame):
             _logger.debug(f"Copying channel {channel}")
             entry = PatternViewClipboardChannel(channel - ch0)
             pattern = s.getPatternByLocation(channel, program.p.currentMatrixRow)
+
             entry.notes = {
                 (r, c): pattern.getNote(r, c) for (ch, r, c) in notes if ch == channel
             }
@@ -260,8 +262,31 @@ class PatternViewFrame(ttk.Frame):
                 for (ch, r, c) in effects
                 if ch == channel
             }
+
             _logger.debug(entry)
             self.clipboard.append(entry)
+
+        # Normalize entries (make lowest row # 0, make lowest col # 0 in leftmost channel)
+        rowOffset = min(self.target.row, self.secondaryTarget.row)
+        for entry in self.clipboard:
+            entry.notes = {(r - rowOffset, c): v for (r, c), v in entry.notes.items()}
+            entry.velocities = {
+                (r - rowOffset, c): v for (r, c), v in entry.velocities.items()
+            }
+            entry.effects = {
+                (r - rowOffset, c): v for (r, c), v in entry.effects.items()
+            }
+
+        colOffset = min(self.target.subcolumn, self.secondaryTarget.subcolumn)
+        self.clipboard[0].notes = {
+            (r, c - colOffset): v for (r, c), v in self.clipboard[0].notes.items()
+        }
+        self.clipboard[0].velocities = {
+            (r, c - colOffset): v for (r, c), v in self.clipboard[0].velocities.items()
+        }
+        self.clipboard[0].effects = {
+            (r, c - colOffset): v for (r, c), v in self.clipboard[0].effects.items()
+        }
 
         _logger.debug("FINISH COPY")
 
