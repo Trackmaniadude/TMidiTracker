@@ -221,7 +221,11 @@ class PatternViewFrame(ttk.Frame):
             self.connections,
         )
         Cut.connect(
-            lambda focus: self.copy() if tkutil.isDescendantOf(focus, self) else None,
+            lambda focus: (
+                (print("CUT"), self.copy(), self.clearSelection())
+                if tkutil.isDescendantOf(focus, self)
+                else None
+            ),
             self.connections,
         )
 
