@@ -720,11 +720,12 @@ class PatternViewCanvas(ttk.Frame):
         canvas.bind("<Control-equal>", lambda *_: adjust(1, 2))
         canvas.bind("<Control-minus>", lambda *_: adjust(-1, 2))
 
-        # Rebind global shortcuts that are getting overriden for some reason
-        canvas.bind("<Control-x>", lambda *_: Cut.fire(self))
-        canvas.bind("<Control-c>", lambda *_: Copy.fire(self))
-        canvas.bind("<Control-v>", lambda *_: Paste.fire(self))
-        canvas.bind("<Control-s>", lambda *_: Save.fire())
+        # Prevent previous bindings from overruling global bindings
+        # (I have no idea why this works the way it does)
+        canvas.bind("<Control-x>", lambda *_: None)
+        canvas.bind("<Control-c>", lambda *_: None)
+        canvas.bind("<Control-v>", lambda *_: None)
+        canvas.bind("<Control-s>", lambda *_: None)
 
     @tkutil.tkQueuedAction()
     def buildStaticElements(self):
