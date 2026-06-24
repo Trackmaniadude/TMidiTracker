@@ -356,7 +356,7 @@ def menus():
                                         program.p.fluidsynth.lastLoadedSoundfont.resolve()
                                     )
                                 )
-                            subprocess.run(cmd)
+                            subprocess.run(cmd).check_returncode()
                     except Exception as e:
                         messagebox.showerror(
                             "Export Error", f"An error occurred during export: {e}"
@@ -416,7 +416,7 @@ def menus():
                                             program.p.fluidsynth.lastLoadedSoundfont.resolve()
                                         )
                                     )
-                                subprocess.run(cmd)
+                                subprocess.run(cmd).check_returncode()
 
                                 # FFMPEG convert to desired
                                 ffmpeg.quickConvert(
