@@ -720,7 +720,7 @@ class PatternViewCanvas(ttk.Frame):
         canvas.bind("<Control-equal>", lambda *_: adjust(1, 2))
         canvas.bind("<Control-minus>", lambda *_: adjust(-1, 2))
 
-        # Copy/Pase
+        # Copy/Paste
         canvas.bind("<Control-x>", lambda *_: Cut.fire(self))
         canvas.bind("<Control-c>", lambda *_: Copy.fire(self))
         canvas.bind("<Control-v>", lambda *_: Paste.fire(self))
