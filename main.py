@@ -32,6 +32,7 @@ from structures.globalEvents import (
 from structures.player import Player
 from structures.settings import Settings
 from structures.song import Song
+from utils import ffmpeg
 from utils.constants import (
     MIDI_FILE_EXTENSION,
     MIDI_FILE_TK_LIST,
@@ -41,6 +42,7 @@ from utils.constants import (
     WAV_FILE_EXTENSION,
     WAV_FILE_TK_LIST,
 )
+from utils.ffmpeg import FFMPEG_EXISTS
 from utils.fluidsynth import FLUIDSYNTH_COMMAND, FLUIDSYNTH_EXISTS
 from utils.misc import incrementFilename
 from utils.persistence import USE_DEFAULT
@@ -366,6 +368,72 @@ def menus():
         else:
             export_wav = lambda: None
 
+        if FLUIDSYNTH_EXISTS and FFMPEG_EXISTS:
+
+            def export_advanced():
+                defFilename: str | None = (
+                    program.p.currentFile.name.partition(".")[0]
+                    if program.p.currentFile is not None
+                    else None
+                )  # Get project name from path
+                if (
+                    program.p.currentSong.metadata.title != ""
+                    and not program.p.currentSong.metadata.title.isspace()
+                ):
+                    defFilename = program.p.currentSong.metadata.title
+
+                filename = filedialog.asksaveasfilename(
+                    # filetypes=WAV_FILE_TK_LIST,
+                    # defaultextension=WAV_FILE_EXTENSION,
+                    initialdir=Settings.exportDirectory,
+                    initialfile=defFilename,
+                )
+
+                if filename == "" or filename == ():
+                    return
+
+                def _q():
+                    modal = Modal(root, "Exporting WAV")
+                    try:
+                        with NamedTemporaryFile() as midiExportFile:
+                            with NamedTemporaryFile() as wavExportFile:
+                                # Export Midi
+                                player = Player()
+                                player.toFile(Path(midiExportFile.name))
+
+                                # Fluidsynth Convert to WAV
+                                cmd = [
+                                    FLUIDSYNTH_COMMAND,
+                                    "-F",
+                                    wavExportFile.name,
+                                    "-g",
+                                    "1.0",
+                                    midiExportFile.name,
+                                ]
+                                if program.p.fluidsynth.lastLoadedSoundfont is not None:
+                                    cmd.append(
+                                        str(
+                                            program.p.fluidsynth.lastLoadedSoundfont.resolve()
+                                        )
+                                    )
+                                subprocess.run(cmd)
+
+                                # FFMPEG convert to desired
+                                ffmpeg.quickConvert(
+                                    Path(wavExportFile.name), Path(filename)
+                                )
+
+                    except Exception as e:
+                        messagebox.showerror(
+                            "Export Error", f"An error occurred during export: {e}"
+                        )
+                    modal.destroy()
+
+                Thread(target=_q, daemon=True).start()
+
+        else:
+            export_advanced = lambda: None
+
         def genRecentMenu():
             recentMenu = tk.Menu(menu)
 
@@ -427,6 +495,8 @@ def menus():
         menu.add_command(label="Export MIDI", command=export_midi)
         if FLUIDSYNTH_EXISTS:
             menu.add_command(label="Export WAV", command=export_wav)
+        if FLUIDSYNTH_EXISTS and FFMPEG_EXISTS:
+            menu.add_command(label="Export Advanced", command=export_advanced)
 
         root.bind_all("<Control-s>", lambda *_: Save.fire())
         Save.connect(save)
