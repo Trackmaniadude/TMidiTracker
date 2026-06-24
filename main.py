@@ -21,7 +21,14 @@ from interface.program.settingsView import SettingsView
 from interface.program.songDataView import SongDataView
 from interface.utilities.modal import Modal
 from structures import program  # This also inits the program object
-from structures.globalEvents import Copy, Cut, Paste, ProjectModified, SoundfontChanged
+from structures.globalEvents import (
+    Copy,
+    Cut,
+    Paste,
+    ProjectModified,
+    Save,
+    SoundfontChanged,
+)
 from structures.player import Player
 from structures.settings import Settings
 from structures.song import Song
@@ -414,14 +421,15 @@ def menus():
         menu.add_command(label="Open", command=open)
         menu.add_cascade(label="Recent", menu=genRecentMenu())
         menu.add_command(label="New", command=new)
-        menu.add_command(label="Save", command=save, accelerator="CTRL-S")
+        menu.add_command(label="Save", command=Save.fire, accelerator="CTRL-S")
         menu.add_command(label="Save As", command=saveAs)
         menu.add_command(label="Save Incremental", command=saveIncremental)
         menu.add_command(label="Export MIDI", command=export_midi)
         if FLUIDSYNTH_EXISTS:
             menu.add_command(label="Export WAV", command=export_wav)
 
-        # root.bind_all("<Control-S>", lambda *_: save())
+        root.bind_all("<Control-S>", lambda *_: Save.fire())
+        Save.connect(save)
         # root.bind_all("<Control-E>", lambda *_: export_midi())
 
         @promptSave

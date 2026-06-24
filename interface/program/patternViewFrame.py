@@ -20,7 +20,7 @@ from interface.theme import MatrixSelector
 from interface.utilities.doubleScrollFrame import DScrollFrame
 from interface.utilities.validatedEntryPrebuilts import Prebuilts
 from structures import program
-from structures.globalEvents import Copy, Paste, SongReloaded, StructureChanged
+from structures.globalEvents import Copy, Cut, Paste, SongReloaded, StructureChanged
 from utils.constants import (
     CHANNEL_COUNT,
     CHANNEL_ORDER,
@@ -218,6 +218,10 @@ class PatternViewFrame(ttk.Frame):
         )
         Paste.connect(
             lambda focus: self.paste() if tkutil.isDescendantOf(focus, self) else None,
+            self.connections,
+        )
+        Cut.connect(
+            lambda focus: self.copy() if tkutil.isDescendantOf(focus, self) else None,
             self.connections,
         )
 

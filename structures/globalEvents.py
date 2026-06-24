@@ -22,3 +22,6 @@ Copy: Event[tk.Misc] = Event("Copy")
 """Fired when the copy command is used. Argument is currently focused widget."""
 Paste: Event[tk.Misc] = Event("Paste")
 """Fired when the paste command is used. Argument is currently focused widget."""
+
+Save = Event[[]]("Save")
+"""Fired when the save command is used."""

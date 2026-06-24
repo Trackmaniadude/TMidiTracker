@@ -19,7 +19,7 @@ from interface.utilities.prebuilts import Buttons
 from interface.utilities.validatedEntry import ValidatedEntry, Validators
 from interface.utilities.validatedEntryPrebuilts import Prebuilts
 from structures import program
-from structures.globalEvents import Copy, Cut, Paste, StructureChanged
+from structures.globalEvents import Copy, Cut, Paste, Save, StructureChanged
 from utils.constants import (
     CHANNEL_ORDER_INVERSE,
     DRUM_CHANNEL,
@@ -720,10 +720,11 @@ class PatternViewCanvas(ttk.Frame):
         canvas.bind("<Control-equal>", lambda *_: adjust(1, 2))
         canvas.bind("<Control-minus>", lambda *_: adjust(-1, 2))
 
-        # Copy/Paste
+        # Rebind global shortcuts that are getting overriden for some reason
         canvas.bind("<Control-x>", lambda *_: Cut.fire(self))
         canvas.bind("<Control-c>", lambda *_: Copy.fire(self))
         canvas.bind("<Control-v>", lambda *_: Paste.fire(self))
+        canvas.bind("<Control-s>", lambda *_: Save.fire())
 
     @tkutil.tkQueuedAction()
     def buildStaticElements(self):
