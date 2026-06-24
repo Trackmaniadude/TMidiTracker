@@ -428,7 +428,7 @@ def menus():
         if FLUIDSYNTH_EXISTS:
             menu.add_command(label="Export WAV", command=export_wav)
 
-        root.bind_all("<Control-S>", lambda *_: Save.fire())
+        root.bind_all("<Control-s>", lambda *_: Save.fire())
         Save.connect(save)
         # root.bind_all("<Control-E>", lambda *_: export_midi())
 
@@ -465,9 +465,9 @@ def menus():
         menu.add_command(label="Copy", command=copy, accelerator="CTRL-C")
         menu.add_command(label="Paste", command=paste, accelerator="CTRL-V")
 
-        root.bind_all("<Control-X>", lambda *_: cut())
-        root.bind_all("<Control-C>", lambda *_: copy())
-        root.bind_all("<Control-V>", lambda *_: paste())
+        root.bind_all("<Control-x>", lambda *_: cut())
+        root.bind_all("<Control-c>", lambda *_: copy())
+        root.bind_all("<Control-v>", lambda *_: paste())
 
     editMenu()
 
