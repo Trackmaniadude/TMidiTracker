@@ -12,7 +12,7 @@ FFMPEG_EXISTS = shutil.which(FFMPEG_COMMAND) is not None
 
 def quickConvert(from_: Path, to: Path):
     _logger.debug(f"Using FFMPEG to convert {from_} to {to}")
-    cmd = [FFMPEG_COMMAND, "-i", str(from_.resolve()), str(to.resolve())]
+    cmd = [FFMPEG_COMMAND, "-y", "-i", str(from_.resolve()), str(to.resolve())]
     run(cmd).check_returncode()
 
 
