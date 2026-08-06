@@ -141,3 +141,19 @@ class SetPan(Control, AbstractEffect):
             return None
         else:
             return r  # type: ignore
+
+
+class SetGroove(Control, AbstractEffect):
+    displayName = "Set Groove"
+    prefix = (0x0F,)
+    params = ["0F[tt...]", "t", "Row Time (Ticks)"]
+    help = "Set groove pattern dynamically. Takes one or more values. No values returns to base groove."
+
+    @classmethod
+    def actuate(
+        cls, channel: Channel, player: Player, data: tuple[int, ...]
+    ) -> None | list[Message | MetaMessage]:
+        if len(data) == 0:
+            player.grooveOverride = None
+        else:
+            player.grooveOverride = data

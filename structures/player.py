@@ -31,6 +31,7 @@ class Player:
 
         self.grooveIndex: int = 0
         self.grooveTimer: int = 0
+        self.grooveOverride: tuple[int, ...] | None = None
 
         self.expectedTime: float = 0
         """For live mode, time we should wait to before starting the next tick."""
@@ -69,6 +70,12 @@ class Player:
         self.lastMatrixRow = self.currentMatrixRow
         self.lastPatternRow = self.currentPatternRow
 
+        groove = (
+            program.p.currentSong.groove
+            if self.grooveOverride is None
+            else self.grooveOverride
+        )
+
         # Some actions are only meant to occur when we step, rather than every tick.
         mainTick = False
         # Step to next row and update groove. Also mark this as a main tick.
@@ -78,11 +85,9 @@ class Player:
         ):  # Force handling of first row when started. (grooveIndex is never -1 in normal operation)
             mainTick = True
             self.grooveIndex += 1
-        elif self.grooveTimer >= program.p.currentSong.groove[self.grooveIndex]:
+        elif self.grooveTimer >= groove[self.grooveIndex]:
             self.grooveTimer = 0
-            self.grooveIndex = (self.grooveIndex + 1) % len(
-                program.p.currentSong.groove
-            )
+            self.grooveIndex = (self.grooveIndex + 1) % len(groove)
 
             # Jump Pattern Row
             if self.nextPatternRow is not None:
