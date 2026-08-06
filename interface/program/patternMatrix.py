@@ -249,6 +249,14 @@ class PatternSelector(ttk.Label):
                 )
         elif self.row == program.p.currentMatrixRow:
             style = MatrixSelector.CurrentRow
+        elif (
+            self.getPatternId()
+            == program.p.currentSong.getPatternIdByLocation(
+                self.channel, program.p.currentMatrixRow
+            )
+            and self.getPatternId() != 0
+        ):
+            style = MatrixSelector.MatchingPattern
         elif (self.row, self.channel) in program.p.currentSong.highlightedMatrixItems:
             style = MatrixSelector.Highlight
         else:

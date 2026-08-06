@@ -95,7 +95,7 @@ class Colors:
 
     class Relevant:
         Major = "#EECCCC"
-        Minor = "#FFEEEE"
+        Minor = "#EEDDDD"
 
 
 # Styles
@@ -120,7 +120,7 @@ class MatrixSelector:
     Selection = BasicColor(Colors.Select.Default)
 
     CurrentRow = BasicColor(Colors.Relevant.Major)
-    MatchingPatterns = BasicColor(Colors.Relevant.Minor)
+    MatchingPattern = BasicColor(Colors.Relevant.Minor)
 
 
 @StyleBase("TLabel")
