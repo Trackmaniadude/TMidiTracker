@@ -93,6 +93,10 @@ class Colors:
         Default = "#FFFFBB"
         Shade1 = "#DDDD99"
 
+    class Relevant:
+        Major = "#EECCCC"
+        Minor = "#FFEEEE"
+
 
 # Styles
 @StyleBase("TLabel")
@@ -114,6 +118,9 @@ class MatrixSelector:
     TargetAnchor = BasicColor(Colors.Target.Shade2)
     Highlight = BasicColor(Colors.Highlight.Default)
     Selection = BasicColor(Colors.Select.Default)
+
+    CurrentRow = BasicColor(Colors.Relevant.Major)
+    MatchingPatterns = BasicColor(Colors.Relevant.Minor)
 
 
 @StyleBase("TLabel")

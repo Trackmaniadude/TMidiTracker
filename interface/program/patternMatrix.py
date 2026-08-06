@@ -247,6 +247,8 @@ class PatternSelector(ttk.Label):
                     if self.channel % 2 == 1
                     else MatrixSelector.Target2
                 )
+        elif self.row == program.p.currentMatrixRow:
+            style = MatrixSelector.CurrentRow
         elif (self.row, self.channel) in program.p.currentSong.highlightedMatrixItems:
             style = MatrixSelector.Highlight
         else:
@@ -358,7 +360,7 @@ class PatternSelectorRowLabel(ttk.Label):
     @tkQueuedAction()
     def refresh(self):
         if self.row == program.p.currentMatrixRow:
-            style = MatrixSelector.Target2
+            style = MatrixSelector.CurrentRow
         else:
             highlighted = True
             for channel in range(program.p.currentSong.visibleChannels):
