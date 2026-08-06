@@ -15,7 +15,8 @@ if TYPE_CHECKING:
 
 
 class Pitch(EffectCategory):
-    pass
+    displayName = "Pitch"
+    description = "Effects that adjust a channel's pitch."
 
 
 # 20-2F
@@ -137,6 +138,8 @@ class Bend(Pitch, AbstractEffect):
 
 
 class VibratoEffects(Pitch):
+    displayName = "Vibrato Effects"
+    description = "Vibrato and associated supporting effects."
     settingsName = "VibratoSettings"
 
 

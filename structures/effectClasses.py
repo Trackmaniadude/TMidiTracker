@@ -59,3 +59,8 @@ class EffectCategory:
 
     To make a subcategory, subclass the category instead of this class.
     """
+
+    displayName: str
+    """Display name."""
+    description: str
+    """Rough description of contained effects."""

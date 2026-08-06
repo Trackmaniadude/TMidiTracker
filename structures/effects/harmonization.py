@@ -14,7 +14,8 @@ if TYPE_CHECKING:
 
 
 class Harmonization(EffectCategory):
-    pass
+    displayName = "Harmonization"
+    description = "Effects that play notes based off other channels."
 
 
 # 30-3F

@@ -12,7 +12,8 @@ if TYPE_CHECKING:
 
 
 class Timing(EffectCategory):
-    pass
+    displayName = "Timing"
+    description = "Effects that adjust when notes are played."
 
 
 # 10-1F

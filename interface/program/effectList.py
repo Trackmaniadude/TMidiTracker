@@ -11,11 +11,14 @@ class EffectCategoryDisplay(ttk.Frame):
         super().__init__(parent)
         self.config(relief="raised", borderwidth=2)
 
-        frame = HeaderFrame(self, category.__name__, userCollapsible=True)
+        frame = HeaderFrame(self, category.displayName, userCollapsible=True)
         frame.separator.pack_forget()
         frame.pack(side="top", fill="x", expand=True)
         frame.collapse()
 
+        ttk.Label(frame.content, text=category.description, wraplength=260).pack(
+            side="top", fill="x"
+        )
         for subclass in category.__subclasses__():
             if issubclass(subclass, AbstractEffect):
                 f = EffectDisplay(frame.content, subclass)

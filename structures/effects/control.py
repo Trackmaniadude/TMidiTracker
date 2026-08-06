@@ -10,7 +10,8 @@ if TYPE_CHECKING:
 
 
 class Control(EffectCategory):
-    pass
+    displayName = "Control"
+    description = "Effects that control midi state outside of notes, or that control tracker state."
 
 
 # 00-0F

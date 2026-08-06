@@ -13,7 +13,8 @@ if TYPE_CHECKING:
 
 
 class Flow(EffectCategory):
-    pass
+    displayName = "Flow"
+    description = "Effects that control song playback position."
 
 
 # F0-FE
