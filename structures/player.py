@@ -85,7 +85,9 @@ class Player:
         ):  # Force handling of first row when started. (grooveIndex is never -1 in normal operation)
             mainTick = True
             self.grooveIndex += 1
-        elif self.grooveTimer >= groove[self.grooveIndex]:
+        elif (
+            self.grooveTimer >= groove[self.grooveIndex % len(groove)]
+        ):  # Modulo to prevent errors when changing groove
             self.grooveTimer = 0
             self.grooveIndex = (self.grooveIndex + 1) % len(groove)
 
