@@ -6,7 +6,11 @@ from __future__ import annotations
 
 from enum import Enum
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Callable, Iterable, overload
+from typing import TYPE_CHECKING, Any, Callable, Iterable, cast, overload
+
+from mido.ports import BasePort
+
+from utils.constants import INTERNAL_FLUIDSYNTH_IDENTIFIER
 
 if TYPE_CHECKING:
     from _typeshed import SupportsRichComparison
@@ -171,9 +175,22 @@ def hex2(n: int) -> str:
     return s
 
 
-def formatPortNameForDisplay(port: str) -> str:
-    name = port[: port.find(":")]
-    num = port[port.rfind(" ") + 1 :]
+def formatPortNameForDisplay(port: str | None | BasePort) -> str:
+
+    if port is None:
+        return "No Port"
+
+    portName: str
+    if isinstance(port, BasePort):
+        portName = cast(str, port.name)
+    else:
+        portName = port
+
+    if portName.startswith(INTERNAL_FLUIDSYNTH_IDENTIFIER):
+        return "Internal Fluidsynth"
+
+    name = portName[: portName.find(":")]
+    num = portName[portName.rfind(" ") + 1 :]
     return f"{name} - {num}"
 
 

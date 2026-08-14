@@ -530,12 +530,7 @@ def menus():
             ports = [None] + program.p.getAvailablePorts()
 
             for port in ports:
-                if port is None:
-                    display = "No Port"
-                elif port.startswith(program.INTERNAL_FLUIDSYNTH_IDENTIFIER):
-                    display = "Internal Fluidsynth"
-                else:
-                    display = formatPortNameForDisplay(port)
+                display = formatPortNameForDisplay(port)
 
                 deviceMenu.add_radiobutton(
                     label=display,

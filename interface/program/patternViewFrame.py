@@ -28,7 +28,7 @@ from utils.constants import (
     DRUM_CHANNEL,
 )
 from utils.event import Connection, Event
-from utils.misc import flatten, minmax
+from utils.misc import flatten, formatPortNameForDisplay, minmax
 
 _logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ class InfoBar(ttk.Frame):
             side="left", fill="y", padx=tkutil.DEF_PAD
         )
 
-        port = ttk.Label(self, text=str(program.p.currentPort.name))
+        port = ttk.Label(self, text=formatPortNameForDisplay(program.p.currentPort))
         port.pack(side="right")
 
         ttk.Separator(self, orient="vertical").pack(
@@ -95,7 +95,9 @@ class InfoBar(ttk.Frame):
             lambda *_: timeStamp(), self.connections
         )
         program.p.getAttributeChangedEvent("currentPort").connect(
-            lambda *_: port.config(text=str(program.p.currentPort.name)),
+            lambda *_: port.config(
+                text=formatPortNameForDisplay(program.p.currentPort)
+            ),
             self.connections,
         )
         timeStamp()
