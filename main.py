@@ -536,7 +536,7 @@ def menus():
                     display = "Internal Fluidsynth"
                 else:
                     name = port[: port.find(":")]
-                    num = port[port.rfind(" ") :]
+                    num = port[port.rfind(" ") + 1 :]
                     display = f"{name} - {num}"
 
                 deviceMenu.add_radiobutton(
@@ -788,6 +788,10 @@ def makeKeybinds():
     root.bind_all(
         "<Control-Shift-space>", blockEventFromTypes(lambda *_: jumpToStartOfSong())
     )
+
+    root.bind_all("<Prior>", lambda *_: print("AAA"), "+")  # Page Up
+
+    root.bind_all("<Next>", lambda *_: print("BBB"), "+")  # Page Down
 
 
 makeKeybinds()
