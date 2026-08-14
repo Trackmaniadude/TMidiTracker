@@ -171,6 +171,12 @@ def hex2(n: int) -> str:
     return s
 
 
+def formatPortNameForDisplay(port: str) -> str:
+    name = port[: port.find(":")]
+    num = port[port.rfind(" ") + 1 :]
+    return f"{name} - {num}"
+
+
 BracketDictAccess = lambda v: v.__dict__
 """
 Cursed little class that lets us modify a class's  __dict__ via [brackets].

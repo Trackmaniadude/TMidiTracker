@@ -44,7 +44,7 @@ from utils.constants import (
 )
 from utils.ffmpeg import FFMPEG_EXISTS
 from utils.fluidsynth import FLUIDSYNTH_COMMAND, FLUIDSYNTH_EXISTS
-from utils.misc import incrementFilename
+from utils.misc import formatPortNameForDisplay, incrementFilename
 from utils.persistence import USE_DEFAULT
 from utils.tk import blockEventFromTypes
 
@@ -535,9 +535,7 @@ def menus():
                 elif port.startswith(program.INTERNAL_FLUIDSYNTH_IDENTIFIER):
                     display = "Internal Fluidsynth"
                 else:
-                    name = port[: port.find(":")]
-                    num = port[port.rfind(" ") + 1 :]
-                    display = f"{name} - {num}"
+                    display = formatPortNameForDisplay(port)
 
                 deviceMenu.add_radiobutton(
                     label=display,
