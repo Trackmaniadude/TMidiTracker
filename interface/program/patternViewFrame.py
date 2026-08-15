@@ -28,6 +28,7 @@ from utils.constants import (
     DRUM_CHANNEL,
 )
 from utils.event import Connection, Event
+from utils.fluidsynth import FLUIDSYNTH_EXISTS
 from utils.misc import flatten, formatPortNameForDisplay, minmax
 
 _logger = logging.getLogger(__name__)
@@ -65,6 +66,23 @@ class InfoBar(ttk.Frame):
         ttk.Separator(self, orient="vertical").pack(
             side="left", fill="y", padx=tkutil.DEF_PAD
         )
+
+        ttk.Frame(self).pack(fill="x", expand=True)
+
+        if FLUIDSYNTH_EXISTS:
+            volumeVar = tk.DoubleVar(self, 1.3)
+
+            def doVolume(*_):
+                program.p.fluidsynth.setGain(volumeVar.get())
+
+            ttk.Scale(self, variable=volumeVar, from_=0, to=5, command=doVolume).pack(
+                side="right", fill="x"
+            )
+            ttk.Label(self, text="Volume ").pack(side="right", fill="x")
+
+            ttk.Separator(self, orient="vertical").pack(
+                side="right", fill="y", padx=tkutil.DEF_PAD
+            )
 
         port = ttk.Label(self, text=formatPortNameForDisplay(program.p.currentPort))
         port.pack(side="right")
