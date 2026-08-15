@@ -3,7 +3,6 @@ Live playback code.
 """
 
 import logging
-import threading
 import time
 from itertools import chain
 from pathlib import Path
@@ -17,7 +16,6 @@ from structures.channel import Channel
 from structures.effectClasses import AbstractEffect
 from structures.effectManager import runEffect
 from structures.effects.flow import Flow
-from utils import event
 
 _logger = logging.getLogger(__name__)
 
