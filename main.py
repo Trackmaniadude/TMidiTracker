@@ -79,6 +79,17 @@ wGroup.add_argument(
     "-m", "--maximized", help="Start program maximized.", action="store_true"
 )
 
+parser.add_argument(
+    "--no-fs",
+    help="Disable fluidsynth support even if available. Meant for testing.",
+    action="store_true",
+)
+parser.add_argument(
+    "--no-ffmpeg",
+    help="Disable ffmpeg support even if available. Meant for testing.",
+    action="store_true",
+)
+
 args = parser.parse_args()
 
 if args.debug:
@@ -88,7 +99,10 @@ elif args.quiet:
 else:
     logging.basicConfig(level=logging.INFO)
 
+
 _logger = logging.getLogger(__name__)
+
+_logger.debug(args)
 
 
 # region TK Setup

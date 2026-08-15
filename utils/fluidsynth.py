@@ -1,5 +1,6 @@
 import logging
 import shutil
+import sys
 import time
 from pathlib import Path
 from subprocess import PIPE, Popen
@@ -11,6 +12,8 @@ _logger = logging.getLogger(__name__)
 
 FLUIDSYNTH_COMMAND = "fluidsynth"
 FLUIDSYNTH_EXISTS = shutil.which(FLUIDSYNTH_COMMAND) is not None
+if "--no-fs" in sys.argv:
+    FLUIDSYNTH_EXISTS = False
 
 
 class Fluidsynth:
