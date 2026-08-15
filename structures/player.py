@@ -208,11 +208,14 @@ class Player:
                     return None
 
             # Reset some things
-            self.playing = False
-            self.nextMatrixRow = 0
-            self.nextPatternRow = 0
+            self.grooveIndex = 0
+            self.grooveTimer = 0
+            self.grooveOverride = None
+
             self.currentMatrixRow = 0
             self.currentPatternRow = 0
+            self.nextMatrixRow = None
+            self.nextPatternRow = None
 
             return totalRows
 
