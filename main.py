@@ -357,7 +357,8 @@ def menus():
                 return
 
             def _q():
-                modal = Modal(root, "Exporting WAV")
+                fileExtensionDisplay = filename[filename.rfind(".") + 1 :].upper()
+                modal = Modal(root, f"Exporting {fileExtensionDisplay}")
                 try:
                     if filename.endswith(".wav"):
                         # Export to wav does not require secondary conversion
