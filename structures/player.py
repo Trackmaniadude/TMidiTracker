@@ -168,7 +168,7 @@ class Player:
             dummyChannel = Channel(program.p.currentSong, -1)
 
             totalRows = 0
-            columns = [10] + list(range(program.p.currentSong.visibleChannels))
+            columns = {10}.intersection(range(program.p.currentSong.visibleChannels))
             while (
                 self.currentMatrixRow < program.p.currentSong.visibleMatrixRows
                 and self.playing
