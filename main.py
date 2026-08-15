@@ -7,6 +7,7 @@ from enum import Enum
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from threading import Thread
+from time import time
 from tkinter import filedialog, font, messagebox, ttk
 
 import mido
@@ -315,9 +316,42 @@ def menus():
 
             def _q():
                 modal = Modal(root, "Exporting MIDI")
+                modal.geometry("200x150")
+
+                updateRate = 1 / 30  # Throttle cause thats a lot of ui updates
+
+                exportText = "Exporting MIDI"
+                exportText2 = exportText + "\nRow {row}/{rows}"
+
+                frame = ttk.Frame(modal)
+                frame.place(relx=0.5, rely=0.5, anchor="center")
+
+                label = ttk.Label(frame, text=exportText, justify="left")
+                label.pack(side="top", fill="x")
+
+                progress = ttk.Progressbar(frame, value=50, length=150)
+                progress.pack(side="top", fill="x")
+
+                t = time()
+
+                def status(current: int, length: int | None):
+                    nonlocal t
+                    if time() - t > updateRate:
+                        if length is None:
+                            progress.config(mode="indeterminate")
+                            label.config(
+                                text=exportText2.format(row=current, rows="???")
+                            )
+                        else:
+                            progress.config(maximum=length, value=current)
+                            label.config(
+                                text=exportText2.format(row=current, rows=length)
+                            )
+                        t = time()
+
                 try:
                     player = Player()
-                    player.toFile(Path(filename))
+                    player.toFile(Path(filename), status)
                 except Exception as e:
                     messagebox.showerror(
                         "Export Error", f"An error occurred during export: {e}"
@@ -359,12 +393,48 @@ def menus():
             def _q():
                 fileExtensionDisplay = filename[filename.rfind(".") + 1 :].upper()
                 modal = Modal(root, f"Exporting {fileExtensionDisplay}")
+
+                updateRate = 1 / 30  # Throttle cause thats a lot of ui updates
+
+                exportText = "Exporting MIDI"
+                exportText2 = exportText + "\nRow {row}/{rows}"
+
+                frame = ttk.Frame(modal)
+                frame.place(relx=0.5, rely=0.5, anchor="center")
+
+                label = ttk.Label(frame, text=exportText, justify="left")
+                label.pack(side="top", fill="x")
+
+                progress = ttk.Progressbar(frame, value=50, length=150)
+                progress.pack(side="top", fill="x")
+
+                t = time()
+
+                def status(current: int, length: int | None):
+                    nonlocal t
+                    if time() - t > updateRate:
+                        if length is None:
+                            progress.config(mode="indeterminate")
+                            label.config(
+                                text=exportText2.format(row=current, rows="???")
+                            )
+                        else:
+                            progress.config(maximum=length, value=current)
+                            label.config(
+                                text=exportText2.format(row=current, rows=length)
+                            )
+                        t = time()
+
                 try:
                     if filename.endswith(".wav"):
                         # Export to wav does not require secondary conversion
                         with NamedTemporaryFile() as midiExportFile:
                             player = Player()
-                            player.toFile(Path(midiExportFile.name))
+                            player.toFile(Path(midiExportFile.name), status)
+
+                            progress.config(mode="indeterminate")
+                            label.config(text="Rendering audio...")
+
                             cmd = [
                                 FLUIDSYNTH_COMMAND,
                                 "-F",
@@ -386,7 +456,10 @@ def menus():
                             with NamedTemporaryFile() as midiExportFile:
                                 # Export Midi
                                 player = Player()
-                                player.toFile(Path(midiExportFile.name))
+                                player.toFile(Path(midiExportFile.name), status)
+
+                                progress.config(mode="indeterminate")
+                                label.config(text="Rendering audio...")
 
                                 # Fluidsynth Convert to WAV
                                 cmd = [
@@ -404,6 +477,8 @@ def menus():
                                         )
                                     )
                                 subprocess.run(cmd).check_returncode()
+
+                                label.config(text="Converting audio...")
 
                                 # FFMPEG convert to desired
                                 ffmpeg.quickConvert(

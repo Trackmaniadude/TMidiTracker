@@ -8,10 +8,15 @@ import time
 from itertools import chain
 from pathlib import Path
 from threading import Event, Thread
+from typing import Callable, cast
 
 from mido import Message, MetaMessage, MidiFile, MidiTrack
 
 from structures import program  # Note: Can't use during init
+from structures.channel import Channel
+from structures.effectClasses import AbstractEffect
+from structures.effectManager import runEffect
+from structures.effects.flow import Flow
 from utils import event
 
 _logger = logging.getLogger(__name__)
@@ -135,12 +140,85 @@ class Player:
 
         return messages
 
-    def playOffline(self) -> tuple[list[Message | MetaMessage], int]:
+    def playOffline(
+        self, statusCallback: Callable[[int, int | None], None] | None = None
+    ) -> tuple[list[Message | MetaMessage], int]:
         """
         Play the entire song out to a list of timed messages. This can be easily dumped to file.
         Also returns some extra information.
           Currently: ticks per beat (since this is needed to write to file)
         """
+
+        # Determine song length so we can tell the user export progress
+        # Unfortunately this requires iterating over the song
+        # Value is in rows
+        def getSongLength() -> int | None:
+            self.playing = True
+            self.currentMatrixRow = 0
+            self.currentPatternRow = 0
+
+            t = time.time()  # Watch time just in cases song jumps cause it to never end
+            maxTime = 2
+
+            flowEffects: list[type[AbstractEffect]] = [
+                cast(type[AbstractEffect], effect) for effect in Flow.__subclasses__()
+            ]
+            flowEffectPrefixes = {effect.prefix for effect in flowEffects}
+
+            dummyChannel = Channel(program.p.currentSong, -1)
+
+            totalRows = 0
+            columns = [10] + list(range(program.p.currentSong.visibleChannels))
+            while (
+                self.currentMatrixRow < program.p.currentSong.visibleMatrixRows
+                and self.playing
+            ):
+                totalRows += program.p.currentSong.patternLength
+                self.nextMatrixRow = self.currentMatrixRow + 1
+
+                # Get effects
+                patterns = [
+                    program.p.currentSong.getPatternByLocation(
+                        column, self.currentMatrixRow
+                    )
+                    for column in columns
+                ]
+                effects = chain.from_iterable(
+                    pattern.effects.values() for pattern in patterns
+                )
+                targetEffects = [  # Get any effects that match flow effects
+                    effect
+                    for effect in effects
+                    if len(effect) > 0
+                    and any(  # If this effect starts with any of the known effects
+                        all(
+                            a == b for a, b in zip(effect, testEffect)
+                        )  # Basically tuple startswith
+                        for testEffect in flowEffectPrefixes
+                    )
+                ]
+
+                if len(targetEffects) > 0:
+                    for effect in targetEffects:
+                        runEffect(dummyChannel, self, effect)
+
+                self.currentMatrixRow = self.nextMatrixRow
+
+                if time.time() - t > maxTime:
+                    return None
+
+            # Reset some things
+            self.playing = False
+            self.nextMatrixRow = 0
+            self.nextPatternRow = 0
+            self.currentMatrixRow = 0
+            self.currentPatternRow = 0
+
+            return totalRows
+
+        songLength = getSongLength()
+        _logger.info(f"Song is roughly {songLength} rows total.")
+
         for channel in program.p.currentSong.channels:
             channel.reset()
 
@@ -152,6 +230,7 @@ class Player:
         # Determine time signature (makes midi nicer)
         # Assumes a quarter note is the minor split marker, a measure is the major split marker
         # If groove does not fit evenly into minor split, will give wonky results. TODO: tell the user that, not our problem here
+        # TODO: this also fails if we later change the groove.
         def getTimeSignature() -> tuple[int, int, int, int]:
             # Determine ticks per quarter (per minor split)
             ticksPerQuarter = 0
@@ -219,6 +298,7 @@ tempo={int(1000000 / s.clock) * ticksPerBeat}
         self.ticksSinceLastMessage = 0
         self.playing = True
 
+        rowsPlayed = 0
         while self.playing:
             # _logger.debug("TICK")
             messages = self.tick()
@@ -227,15 +307,23 @@ tempo={int(1000000 / s.clock) * ticksPerBeat}
                 messages[0].time = self.ticksSinceLastMessage
                 self.ticksSinceLastMessage = 0
             # _logger.debug(messages)
+            if self.grooveTimer == 0:
+                rowsPlayed += 1
+            if statusCallback:
+                statusCallback(rowsPlayed, songLength)
             out += messages
         out.append(MetaMessage("end_of_track", time=self.ticksSinceLastMessage))
 
         return out, ticksPerBeat
 
-    def toFile(self, path: Path):
+    def toFile(
+        self,
+        path: Path,
+        statusCallback: Callable[[int, int | None], None] | None = None,
+    ):
         """Use playOffline to save the song to file."""
         track = MidiTrack()
-        messages, ticksPerBeat = self.playOffline()
+        messages, ticksPerBeat = self.playOffline(statusCallback)
         for message in messages:
             track.append(message)
         MidiFile(type=0, ticks_per_beat=ticksPerBeat, tracks=[track]).save(
